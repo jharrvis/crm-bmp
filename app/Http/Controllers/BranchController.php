@@ -54,9 +54,22 @@ class BranchController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Branch $branch)
+    public function show(Request $request, Branch $branch)
     {
         $branch->load('users');
+
+        // Return JSON for AJAX requests
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'id' => $branch->id,
+                'name' => $branch->name,
+                'code' => $branch->code,
+                'phone' => $branch->phone,
+                'address' => $branch->address,
+                'users' => $branch->users->map(fn($u) => ['id' => $u->id, 'name' => $u->name])
+            ]);
+        }
+
         return view('branches.show', compact('branch'));
     }
 
