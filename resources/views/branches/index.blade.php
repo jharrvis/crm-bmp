@@ -23,14 +23,14 @@
                     <thead>
                         <tr
                             class="text-slate-400 text-xs font-bold uppercase tracking-wider border-b border-slate-100 dark:border-slate-700">
-                            <th class="py-4">Kode</th>
-                            <th class="py-4">Nama Cabang</th>
-                            <th class="py-4">Alamat</th>
-                            <th class="py-4">Telepon</th>
-                            <th class="py-4 text-center">Aksi</th>
+                            <th class="p-4 pl-6">Kode</th>
+                            <th class="p-4">Nama Cabang</th>
+                            <th class="p-4">Alamat</th>
+                            <th class="p-4">Telepon</th>
+                            <th class="p-4 pr-6 text-center">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="text-sm font-medium text-slate-600 dark:text-slate-300">
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
                         <!-- Data populated by DataTables -->
                     </tbody>
                 </table>
@@ -60,7 +60,6 @@
                 <form id="branchForm">
                     @csrf
                     <input type="hidden" id="branchId" name="id">
-                    <input type="hidden" id="branchMethod" name="_method" value="POST">
                     <div class="p-6 space-y-4">
                         <div>
                             <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nama Cabang
@@ -142,9 +141,13 @@
         <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 
         <script>
+            // Base URL for API calls
+            const baseUrl = '{{ url('/') }}';
+
             // Branch Data from Server
             let branchData = @json($branches);
             let table;
+            let confirmCallback = null;
 
             $(document).ready(function () {
                 // Init DataTables
@@ -153,29 +156,34 @@
                     columns: [
                         {
                             data: 'code',
+                            className: 'p-4 pl-6',
                             render: (data) => `<span class="font-mono text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded">${data}</span>`
                         },
                         {
                             data: 'name',
+                            className: 'p-4',
                             render: (data) => `<span class="font-bold text-slate-700 dark:text-slate-200">${data}</span>`
                         },
                         {
                             data: 'address',
-                            render: (data) => `<div class="truncate w-48" title="${data || ''}">${data || '-'}</div>`
+                            className: 'p-4',
+                            render: (data) => `<div class="truncate max-w-xs text-slate-500 dark:text-slate-400" title="${data || ''}">${data || '-'}</div>`
                         },
                         {
                             data: 'phone',
-                            render: (data) => data || '-'
+                            className: 'p-4',
+                            render: (data) => `<span class="text-slate-500 dark:text-slate-400">${data || '-'}</span>`
                         },
                         {
                             data: null,
-                            className: "text-center",
+                            className: "p-4 pr-6 text-center",
+                            orderable: false,
                             render: function (data, type, row) {
                                 return `
                                     <div class="flex items-center justify-center gap-2">
-                                        <button onclick="viewBranch(${row.id})" class="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 rounded-lg transition-colors" title="Lihat">
+                                        <a href="${baseUrl}/branches/${row.id}" class="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 rounded-lg transition-colors" title="Lihat">
                                             <i data-lucide="eye" class="w-4 h-4"></i>
-                                        </button>
+                                        </a>
                                         <button onclick="editBranch(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
                                             <i data-lucide="pencil" class="w-4 h-4"></i>
                                         </button>
@@ -194,6 +202,7 @@
                         lengthMenu: "Tampilkan _MENU_ data",
                         info: "Menampilkan _START_ - _END_ dari _TOTAL_ data",
                         infoEmpty: "Tidak ada data",
+                        zeroRecords: "Data tidak ditemukan",
                         paginate: {
                             first: "Awal",
                             last: "Akhir",
@@ -203,8 +212,76 @@
                     },
                     drawCallback: function () {
                         lucide.createIcons();
+                    },
+                    createdRow: function (row, data, dataIndex) {
+                        $(row).addClass('hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors');
                     }
                 });
+            });
+
+            // Toast Function
+            function showToast(message, type = 'success') {
+                let container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                const bgColor = type === 'success' ? 'bg-white dark:bg-slate-800' : 'bg-red-50 dark:bg-red-900/50';
+                const iconColor = type === 'success' ? 'text-green-500' : 'text-red-500';
+                const icon = type === 'success' ? 'check-circle' : 'alert-circle';
+
+                toast.className = `${bgColor} border border-slate-200 dark:border-slate-700 shadow-xl rounded-2xl p-4 flex items-center gap-3 transform transition-all duration-300 translate-x-full opacity-0 pointer-events-auto min-w-[300px]`;
+                toast.innerHTML = `
+                    <i data-lucide="${icon}" class="${iconColor} w-6 h-6 shrink-0"></i>
+                    <p class="font-bold text-sm text-slate-800 dark:text-white">${message}</p>
+                `;
+
+                container.appendChild(toast);
+                lucide.createIcons();
+
+                requestAnimationFrame(() => {
+                    toast.classList.remove('translate-x-full', 'opacity-0');
+                });
+
+                setTimeout(() => {
+                    toast.classList.add('translate-x-full', 'opacity-0');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
+
+            // Confirm Modal Functions
+            function showConfirmModal(title, text, callback) {
+                confirmCallback = callback;
+                const modal = document.getElementById('confirmModal');
+                const backdrop = document.getElementById('confirmBackdrop');
+                const panel = document.getElementById('confirmPanel');
+
+                document.getElementById('confirmTitle').innerText = title;
+                document.getElementById('confirmText').innerText = text;
+
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    backdrop.classList.remove('opacity-0');
+                    panel.classList.remove('scale-95', 'opacity-0');
+                    panel.classList.add('scale-100', 'opacity-100');
+                }, 10);
+            }
+
+            function closeConfirmModal() {
+                const modal = document.getElementById('confirmModal');
+                const backdrop = document.getElementById('confirmBackdrop');
+                const panel = document.getElementById('confirmPanel');
+
+                backdrop.classList.add('opacity-0');
+                panel.classList.remove('scale-100', 'opacity-100');
+                panel.classList.add('scale-95', 'opacity-0');
+
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    confirmCallback = null;
+                }, 300);
+            }
+
+            document.getElementById('confirmYesBtn').addEventListener('click', () => {
+                if (confirmCallback) confirmCallback();
+                closeConfirmModal();
             });
 
             // Modal Functions
@@ -225,7 +302,6 @@
                     document.getElementById('branchSubmitText').innerText = 'Simpan Data';
                     document.getElementById('branchForm').reset();
                     document.getElementById('branchId').value = '';
-                    document.getElementById('branchMethod').value = 'POST';
                 }
 
                 lucide.createIcons();
@@ -246,10 +322,6 @@
             }
 
             // CRUD Functions
-            function viewBranch(id) {
-                window.location.href = `/branches/${id}`;
-            }
-
             function editBranch(id) {
                 const branch = branchData.find(b => b.id === id);
                 if (branch) {
@@ -260,7 +332,6 @@
                     document.getElementById('branchCode').value = branch.code;
                     document.getElementById('branchPhone').value = branch.phone || '';
                     document.getElementById('branchAddress').value = branch.address || '';
-                    document.getElementById('branchMethod').value = 'PUT';
                     openBranchModal(true);
                 }
             }
@@ -269,14 +340,17 @@
             function deleteBranch(id) {
                 deleteId = id;
                 showConfirmModal('Hapus Cabang?', 'Data yang dihapus tidak dapat dikembalikan.', () => {
-                    // Send delete request
-                    fetch(`/branches/${deleteId}`, {
-                        method: 'DELETE',
+                    // Send delete request using POST with _method
+                    fetch(`${baseUrl}/branches/${deleteId}`, {
+                        method: 'POST',
                         headers: {
                             'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
                             'Accept': 'application/json',
                             'Content-Type': 'application/json'
-                        }
+                        },
+                        body: JSON.stringify({
+                            _method: 'DELETE'
+                        })
                     })
                         .then(response => response.json())
                         .then(data => {
@@ -299,21 +373,25 @@
                 e.preventDefault();
 
                 const id = document.getElementById('branchId').value;
-                const method = id ? 'PUT' : 'POST';
-                const url = id ? `/branches/${id}` : '/branches';
+                const isUpdate = !!id;
+                const url = isUpdate ? `${baseUrl}/branches/${id}` : `${baseUrl}/branches`;
 
                 const formData = {
                     name: document.getElementById('branchName').value,
                     code: document.getElementById('branchCode').value.toUpperCase(),
                     phone: document.getElementById('branchPhone').value,
                     address: document.getElementById('branchAddress').value,
-                    _token: document.querySelector('input[name="_token"]').value
                 };
 
+                // For update, use POST with _method=PUT (Laravel method spoofing)
+                if (isUpdate) {
+                    formData._method = 'PUT';
+                }
+
                 fetch(url, {
-                    method: method,
+                    method: 'POST',
                     headers: {
-                        'X-CSRF-TOKEN': formData._token,
+                        'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
                         'Accept': 'application/json',
                         'Content-Type': 'application/json'
                     },
@@ -322,7 +400,7 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            if (id) {
+                            if (isUpdate) {
                                 // Update existing
                                 const index = branchData.findIndex(b => b.id === parseInt(id));
                                 if (index >= 0) {
@@ -346,6 +424,7 @@
                         }
                     })
                     .catch(error => {
+                        console.error('Error:', error);
                         showToast('Terjadi kesalahan!', 'error');
                     });
             });
