@@ -58,47 +58,60 @@ function toggleSidebarMobile() {
 function toggleSubmenu(id) {
     const sidebar = document.getElementById('sidebar');
     const menu = document.getElementById(id);
+    const content = menu.querySelector('.submenu-content');
+    const btn = menu.querySelector('button .chevron-icon');
 
-    // Check if Sidebar is Collapsed on Desktop
-    if (sidebar.classList.contains('sidebar-collapsed') && window.innerWidth >= 1024) {
-        // If collapsed, we treat it as a hover/popover menu interaction (handled by CSS/hover mostly)
-        // But if we want click to toggle:
-
-        // Close other open submenus first
-        document.querySelectorAll('.submenu-container.submenu-active').forEach(el => {
-            if (el.id !== id) el.classList.remove('submenu-active');
-        });
-
-        // Toggle this one
-        menu.classList.toggle('submenu-active');
-
-        // Logic to handle "floating" nature if needed by JS, or rely on CSS group-hover
-        // The CSS approach is usually cleaner for collapsed sidebars (hover to show absolute div).
-        // If current design requires click to expand sidebar:
-        // toggleSidebar(); 
-
-        return;
+    // If sidebar is collapsed on desktop, let CSS handle hover
+    if (sidebar && sidebar.classList.contains('sidebar-collapsed') && window.innerWidth >= 1024) {
+        return; // Don't toggle via click, CSS hover handles it
     }
 
-    // Normal State
+    // Toggle submenu active state
     menu.classList.toggle('submenu-active');
 
     // Rotate chevron
-    const btn = menu.querySelector('button .chevron-icon');
     if (btn) btn.classList.toggle('rotate-180');
 
-    // Show/Hide Content
-    const content = menu.querySelector('.submenu-content');
-    if (content) content.classList.toggle('hidden');
+    // Toggle visibility using max-height animation
+    if (content) {
+        if (content.classList.contains('submenu-open')) {
+            content.classList.remove('submenu-open');
+            content.style.maxHeight = '0';
+        } else {
+            content.classList.add('submenu-open');
+            content.style.maxHeight = content.scrollHeight + 'px';
+        }
+    }
+}
+
+// Initialize submenus that should be open (active routes)
+function initSubmenus() {
+    document.querySelectorAll('.submenu-container').forEach(menu => {
+        const content = menu.querySelector('.submenu-content');
+        if (content && !content.classList.contains('submenu-closed')) {
+            // Check if any child link is active
+            const hasActiveChild = content.querySelector('a.text-blue-600, a.font-bold');
+            if (hasActiveChild) {
+                content.classList.add('submenu-open');
+                content.style.maxHeight = content.scrollHeight + 'px';
+                menu.classList.add('submenu-active');
+            } else {
+                content.style.maxHeight = '0';
+            }
+        }
+    });
 }
 
 function toggleDropdown(id) {
     const dropdown = document.getElementById(id);
+    if (!dropdown) return;
+
     const allDropdowns = ['profile-menu', 'notification-menu'];
 
     // Close other dropdowns
     allDropdowns.forEach(d => {
-        if (d !== id) document.getElementById(d).classList.add('hidden');
+        const el = document.getElementById(d);
+        if (el && d !== id) el.classList.add('hidden');
     });
 
     dropdown.classList.toggle('hidden');
@@ -106,9 +119,12 @@ function toggleDropdown(id) {
 
 // Close dropdowns on outside click
 window.onclick = function (event) {
+    const profileMenu = document.getElementById('profile-menu');
+    const notificationMenu = document.getElementById('notification-menu');
+
     if (!event.target.closest('#profile-menu') && !event.target.closest('#notification-menu') && !event.target.closest('button')) {
-        document.getElementById('profile-menu').classList.add('hidden');
-        document.getElementById('notification-menu').classList.add('hidden');
+        if (profileMenu) profileMenu.classList.add('hidden');
+        if (notificationMenu) notificationMenu.classList.add('hidden');
     }
 }
 
@@ -117,24 +133,29 @@ function changeSection(id) {
     const skeleton = document.getElementById('skeleton-loader');
     const realContent = document.getElementById('real-content');
 
-    realContent.classList.add('opacity-0');
-    skeleton.classList.remove('hidden');
+    if (realContent) realContent.classList.add('opacity-0');
+    if (skeleton) skeleton.classList.remove('hidden');
 
     setTimeout(() => {
-        skeleton.classList.add('hidden');
-        realContent.classList.remove('opacity-0');
+        if (skeleton) skeleton.classList.add('hidden');
+        if (realContent) realContent.classList.remove('opacity-0');
         console.log('Navigated to:', id);
     }, 600);
 }
 
 // Chart.js Configuration
 function initCharts() {
+    const growthCanvas = document.getElementById('growthChart');
+    const ticketCanvas = document.getElementById('ticketChart');
+
+    if (!growthCanvas || !ticketCanvas) return; // Skip if charts don't exist
+
     const isDark = document.documentElement.classList.contains('dark');
     const gridColor = isDark ? '#334155' : '#f1f5f9';
     const textColor = isDark ? '#94a3b8' : '#64748b';
 
     // Growth Chart
-    const ctxGrowth = document.getElementById('growthChart').getContext('2d');
+    const ctxGrowth = growthCanvas.getContext('2d');
     new Chart(ctxGrowth, {
         type: 'line',
         data: {
@@ -164,7 +185,7 @@ function initCharts() {
     });
 
     // Ticket Category Chart
-    const ctxTicket = document.getElementById('ticketChart').getContext('2d');
+    const ctxTicket = ticketCanvas.getContext('2d');
     new Chart(ctxTicket, {
         type: 'doughnut',
         data: {
@@ -194,13 +215,134 @@ function initCharts() {
     });
 }
 
+// Toast Notification System
+function showToast(message, type = 'success') {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'fixed top-4 right-4 z-[80] flex flex-col gap-2 pointer-events-none';
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    const bgColor = type === 'success' ? 'bg-white dark:bg-slate-800' : 'bg-red-50 dark:bg-red-900/50';
+    const iconColor = type === 'success' ? 'text-green-500' : 'text-red-500';
+    const icon = type === 'success' ? 'check-circle' : 'alert-circle';
+    const textColor = 'text-slate-800 dark:text-white';
+
+    toast.className = `${bgColor} border border-slate-200 dark:border-slate-700 shadow-xl rounded-2xl p-4 flex items-center gap-3 transform transition-all duration-300 translate-x-full opacity-0 pointer-events-auto min-w-[300px]`;
+    toast.innerHTML = `
+        <i data-lucide="${icon}" class="${iconColor} w-6 h-6 shrink-0"></i>
+        <p class="font-bold text-sm ${textColor}">${message}</p>
+    `;
+
+    container.appendChild(toast);
+    lucide.createIcons();
+
+    // Animate In
+    requestAnimationFrame(() => {
+        toast.classList.remove('translate-x-full', 'opacity-0');
+    });
+
+    // Remove after 3s
+    setTimeout(() => {
+        toast.classList.add('translate-x-full', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Confirm Modal System
+let confirmCallback = null;
+
+function showConfirmModal(title, text, callback) {
+    confirmCallback = callback;
+    const modal = document.getElementById('confirmModal');
+    const backdrop = document.getElementById('confirmBackdrop');
+    const panel = document.getElementById('confirmPanel');
+
+    if (!modal || !backdrop || !panel) return;
+
+    document.getElementById('confirmTitle').innerText = title;
+    document.getElementById('confirmText').innerText = text;
+
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        backdrop.classList.remove('opacity-0');
+        panel.classList.remove('scale-95', 'opacity-0');
+        panel.classList.add('scale-100', 'opacity-100');
+    }, 10);
+}
+
+function closeConfirmModal() {
+    const modal = document.getElementById('confirmModal');
+    const backdrop = document.getElementById('confirmBackdrop');
+    const panel = document.getElementById('confirmPanel');
+
+    if (!modal || !backdrop || !panel) return;
+
+    backdrop.classList.add('opacity-0');
+    panel.classList.remove('scale-100', 'opacity-100');
+    panel.classList.add('scale-95', 'opacity-0');
+
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        confirmCallback = null;
+    }, 300);
+}
+
+// Generic Modal Open/Close
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    const backdrop = modal.querySelector('[id$="Backdrop"]') || modal.querySelector('.modal-backdrop');
+    const panel = modal.querySelector('[id$="Panel"]') || modal.querySelector('.modal-panel');
+
+    if (!modal) return;
+
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        if (backdrop) backdrop.classList.remove('opacity-0');
+        if (panel) {
+            panel.classList.remove('scale-95', 'opacity-0');
+            panel.classList.add('scale-100', 'opacity-100');
+        }
+    }, 10);
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    const backdrop = modal.querySelector('[id$="Backdrop"]') || modal.querySelector('.modal-backdrop');
+    const panel = modal.querySelector('[id$="Panel"]') || modal.querySelector('.modal-panel');
+
+    if (!modal) return;
+
+    if (backdrop) backdrop.classList.add('opacity-0');
+    if (panel) {
+        panel.classList.remove('scale-100', 'opacity-100');
+        panel.classList.add('scale-95', 'opacity-0');
+    }
+
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 300);
+}
+
 // Initialize App
-window.onload = () => {
-    initCharts();
-    // Show dynamic greeting based on time
-    const hour = new Date().getHours();
-    const welcome = document.querySelector('h1');
-    if (hour < 12) welcome.innerHTML = "Selamat Pagi, Rizky! 🌅";
-    else if (hour < 18) welcome.innerHTML = "Selamat Siang, Rizky! ☀️";
-    else welcome.innerHTML = "Selamat Malam, Rizky! 🌙";
-};
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize submenus
+    initSubmenus();
+
+    // Initialize charts if on dashboard
+    if (typeof Chart !== 'undefined') {
+        initCharts();
+    }
+
+    // Confirm modal button handler
+    const confirmBtn = document.getElementById('confirmYesBtn');
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', () => {
+            if (confirmCallback) confirmCallback();
+            closeConfirmModal();
+        });
+    }
+});

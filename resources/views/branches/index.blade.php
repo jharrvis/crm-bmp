@@ -1,92 +1,354 @@
 <x-app-layout>
     <div class="space-y-6">
-        <div class="flex items-center justify-between">
-            <div>
-                <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Manajemen Cabang</h2>
-                <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Daftar kantor cabang operasional.</p>
-            </div>
-            <a href="{{ route('branches.create') }}"
-                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-600/20 transition-all flex items-center gap-2">
-                <i data-lucide="plus" class="w-4 h-4"></i>
-                Tambah Cabang
-            </a>
-        </div>
-
-        @if(session('success'))
-            <div
-                class="p-4 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-xl text-sm font-bold flex items-center gap-2">
-                <i data-lucide="check-circle" class="w-4 h-4"></i>
-                {{ session('success') }}
-            </div>
-        @endif
-
         <div
-            class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
+            class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6 md:p-8">
+
+            <!-- Toolbar -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-800 dark:text-white">Manajemen Cabang</h3>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Kelola data kantor cabang operasional.
+                    </p>
+                </div>
+                <button onclick="openBranchModal()"
+                    class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-blue-200 dark:shadow-none transition-all">
+                    <i data-lucide="plus" class="w-5 h-5"></i>
+                    <span>Tambah Cabang</span>
+                </button>
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto no-scrollbar">
+                <table id="branchTable" class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-700/20">
-                            <th
-                                class="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest pl-6">
-                                Kode</th>
-                            <th
-                                class="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-                                Nama Cabang</th>
-                            <th
-                                class="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-                                Alamat</th>
-                            <th
-                                class="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-                                Telepon</th>
-                            <th
-                                class="p-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-right pr-6">
-                                Aksi</th>
+                        <tr
+                            class="text-slate-400 text-xs font-bold uppercase tracking-wider border-b border-slate-100 dark:border-slate-700">
+                            <th class="py-4">Kode</th>
+                            <th class="py-4">Nama Cabang</th>
+                            <th class="py-4">Alamat</th>
+                            <th class="py-4">Telepon</th>
+                            <th class="py-4 text-center">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
-                        @forelse($branches as $branch)
-                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                                <td class="p-4 pl-6 text-sm font-bold text-slate-800 dark:text-white">{{ $branch->code }}
-                                </td>
-                                <td class="p-4 text-sm font-medium text-slate-600 dark:text-slate-300">{{ $branch->name }}
-                                </td>
-                                <td class="p-4 text-sm text-slate-500 dark:text-slate-400">
-                                    {{ Str::limit($branch->address, 50) }}
-                                </td>
-                                <td class="p-4 text-sm text-slate-500 dark:text-slate-400">{{ $branch->phone ?? '-' }}</td>
-                                <td class="p-4 pr-6 text-right">
-                                    <div class="flex items-center justify-end gap-2">
-                                        <a href="{{ route('branches.show', $branch) }}"
-                                            class="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">
-                                            <i data-lucide="eye" class="w-4 h-4"></i>
-                                        </a>
-                                        <a href="{{ route('branches.edit', $branch) }}"
-                                            class="p-2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 rounded-lg hover:bg-yellow-100 dark:hover:bg-yellow-900/40 transition-colors">
-                                            <i data-lucide="edit-2" class="w-4 h-4"></i>
-                                        </a>
-                                        <form action="{{ route('branches.destroy', $branch) }}" method="POST"
-                                            class="inline-block"
-                                            onsubmit="return confirm('Apakah Anda yakin ingin menghapus cabang ini?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit"
-                                                class="p-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
-                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="p-8 text-center text-slate-400 dark:text-slate-500 text-sm">
-                                    Belum ada data cabang.
-                                </td>
-                            </tr>
-                        @endforelse
+                    <tbody class="text-sm font-medium text-slate-600 dark:text-slate-300">
+                        <!-- Data populated by DataTables -->
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
+
+    <!-- Branch Form Modal -->
+    <div id="branchModal" class="fixed inset-0 z-[60] hidden">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity opacity-0"
+            id="branchModalBackdrop"></div>
+
+        <!-- Modal Content -->
+        <div class="absolute inset-0 flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-lg transform scale-95 opacity-0 transition-all duration-300"
+                id="branchModalPanel">
+                <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-white" id="branchModalTitle">Tambah Cabang
+                        Baru</h3>
+                    <button onclick="closeBranchModal()"
+                        class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+                <!-- Body -->
+                <form id="branchForm">
+                    @csrf
+                    <input type="hidden" id="branchId" name="id">
+                    <input type="hidden" id="branchMethod" name="_method" value="POST">
+                    <div class="p-6 space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nama Cabang
+                                <span class="text-red-500">*</span></label>
+                            <input type="text" id="branchName" name="name" required
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                placeholder="Contoh: Cabang Salatiga">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Kode Cabang
+                                <span class="text-red-500">*</span></label>
+                            <input type="text" id="branchCode" name="code" required maxlength="10"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all uppercase"
+                                placeholder="Contoh: SLT">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nomor
+                                Telepon</label>
+                            <input type="text" id="branchPhone" name="phone"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                placeholder="Contoh: 0298-123456">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Alamat
+                                Lengkap</label>
+                            <textarea id="branchAddress" name="address" rows="3"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                placeholder="Alamat lengkap kantor cabang..."></textarea>
+                        </div>
+                    </div>
+                    <!-- Footer -->
+                    <div class="p-6 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3">
+                        <button type="button" onclick="closeBranchModal()"
+                            class="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Batal</button>
+                        <button type="submit"
+                            class="px-5 py-2.5 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200 dark:shadow-none transition-all">
+                            <span id="branchSubmitText">Simpan Data</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div id="confirmModal" class="fixed inset-0 z-[70] hidden">
+        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity opacity-0"
+            id="confirmBackdrop"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-sm transform scale-95 opacity-0 transition-all duration-300"
+                id="confirmPanel">
+                <div class="p-6 text-center">
+                    <div
+                        class="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="alert-triangle" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 dark:text-white mb-2" id="confirmTitle">Hapus Cabang?
+                    </h3>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm mb-6" id="confirmText">Data yang dihapus tidak
+                        dapat dikembalikan lagi.</p>
+                    <div class="flex gap-3 justify-center">
+                        <button onclick="closeConfirmModal()"
+                            class="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Batal</button>
+                        <button id="confirmYesBtn"
+                            class="px-5 py-2.5 rounded-xl font-bold bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-200 dark:shadow-none transition-all">Ya,
+                            Hapus!</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-[80] flex flex-col gap-2 pointer-events-none"></div>
+
+    @push('scripts')
+        <!-- jQuery & DataTables -->
+        <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+
+        <script>
+            // Branch Data from Server
+            let branchData = @json($branches);
+            let table;
+
+            $(document).ready(function () {
+                // Init DataTables
+                table = $('#branchTable').DataTable({
+                    data: branchData,
+                    columns: [
+                        {
+                            data: 'code',
+                            render: (data) => `<span class="font-mono text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded">${data}</span>`
+                        },
+                        {
+                            data: 'name',
+                            render: (data) => `<span class="font-bold text-slate-700 dark:text-slate-200">${data}</span>`
+                        },
+                        {
+                            data: 'address',
+                            render: (data) => `<div class="truncate w-48" title="${data || ''}">${data || '-'}</div>`
+                        },
+                        {
+                            data: 'phone',
+                            render: (data) => data || '-'
+                        },
+                        {
+                            data: null,
+                            className: "text-center",
+                            render: function (data, type, row) {
+                                return `
+                                    <div class="flex items-center justify-center gap-2">
+                                        <button onclick="viewBranch(${row.id})" class="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 rounded-lg transition-colors" title="Lihat">
+                                            <i data-lucide="eye" class="w-4 h-4"></i>
+                                        </button>
+                                        <button onclick="editBranch(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
+                                            <i data-lucide="pencil" class="w-4 h-4"></i>
+                                        </button>
+                                        <button onclick="deleteBranch(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                `;
+                            }
+                        }
+                    ],
+                    dom: '<"flex flex-col md:flex-row justify-between items-center mb-4 gap-4"lf>rt<"flex flex-col md:flex-row justify-between items-center mt-4 gap-4"ip>',
+                    language: {
+                        search: "",
+                        searchPlaceholder: "Cari cabang...",
+                        lengthMenu: "Tampilkan _MENU_ data",
+                        info: "Menampilkan _START_ - _END_ dari _TOTAL_ data",
+                        infoEmpty: "Tidak ada data",
+                        paginate: {
+                            first: "Awal",
+                            last: "Akhir",
+                            next: "»",
+                            previous: "«"
+                        }
+                    },
+                    drawCallback: function () {
+                        lucide.createIcons();
+                    }
+                });
+            });
+
+            // Modal Functions
+            function openBranchModal(isEdit = false) {
+                const modal = document.getElementById('branchModal');
+                const backdrop = document.getElementById('branchModalBackdrop');
+                const panel = document.getElementById('branchModalPanel');
+
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    backdrop.classList.remove('opacity-0');
+                    panel.classList.remove('scale-95', 'opacity-0');
+                    panel.classList.add('scale-100', 'opacity-100');
+                }, 10);
+
+                if (!isEdit) {
+                    document.getElementById('branchModalTitle').innerText = 'Tambah Cabang Baru';
+                    document.getElementById('branchSubmitText').innerText = 'Simpan Data';
+                    document.getElementById('branchForm').reset();
+                    document.getElementById('branchId').value = '';
+                    document.getElementById('branchMethod').value = 'POST';
+                }
+
+                lucide.createIcons();
+            }
+
+            function closeBranchModal() {
+                const modal = document.getElementById('branchModal');
+                const backdrop = document.getElementById('branchModalBackdrop');
+                const panel = document.getElementById('branchModalPanel');
+
+                backdrop.classList.add('opacity-0');
+                panel.classList.remove('scale-100', 'opacity-100');
+                panel.classList.add('scale-95', 'opacity-0');
+
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
+
+            // CRUD Functions
+            function viewBranch(id) {
+                window.location.href = `/branches/${id}`;
+            }
+
+            function editBranch(id) {
+                const branch = branchData.find(b => b.id === id);
+                if (branch) {
+                    document.getElementById('branchModalTitle').innerText = 'Edit Data Cabang';
+                    document.getElementById('branchSubmitText').innerText = 'Update Data';
+                    document.getElementById('branchId').value = branch.id;
+                    document.getElementById('branchName').value = branch.name;
+                    document.getElementById('branchCode').value = branch.code;
+                    document.getElementById('branchPhone').value = branch.phone || '';
+                    document.getElementById('branchAddress').value = branch.address || '';
+                    document.getElementById('branchMethod').value = 'PUT';
+                    openBranchModal(true);
+                }
+            }
+
+            let deleteId = null;
+            function deleteBranch(id) {
+                deleteId = id;
+                showConfirmModal('Hapus Cabang?', 'Data yang dihapus tidak dapat dikembalikan.', () => {
+                    // Send delete request
+                    fetch(`/branches/${deleteId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                branchData = branchData.filter(b => b.id !== deleteId);
+                                table.clear().rows.add(branchData).draw();
+                                showToast('Cabang berhasil dihapus!');
+                            } else {
+                                showToast(data.message || 'Gagal menghapus data', 'error');
+                            }
+                        })
+                        .catch(error => {
+                            showToast('Terjadi kesalahan!', 'error');
+                        });
+                });
+            }
+
+            // Form Submit Handler
+            document.getElementById('branchForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const id = document.getElementById('branchId').value;
+                const method = id ? 'PUT' : 'POST';
+                const url = id ? `/branches/${id}` : '/branches';
+
+                const formData = {
+                    name: document.getElementById('branchName').value,
+                    code: document.getElementById('branchCode').value.toUpperCase(),
+                    phone: document.getElementById('branchPhone').value,
+                    address: document.getElementById('branchAddress').value,
+                    _token: document.querySelector('input[name="_token"]').value
+                };
+
+                fetch(url, {
+                    method: method,
+                    headers: {
+                        'X-CSRF-TOKEN': formData._token,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (id) {
+                                // Update existing
+                                const index = branchData.findIndex(b => b.id === parseInt(id));
+                                if (index >= 0) {
+                                    branchData[index] = data.branch;
+                                }
+                                showToast('Cabang berhasil diperbarui!');
+                            } else {
+                                // Add new
+                                branchData.push(data.branch);
+                                showToast('Cabang berhasil ditambahkan!');
+                            }
+                            table.clear().rows.add(branchData).draw();
+                            closeBranchModal();
+                        } else {
+                            // Handle validation errors
+                            let errorMsg = data.message || 'Gagal menyimpan data';
+                            if (data.errors) {
+                                errorMsg = Object.values(data.errors).flat().join(', ');
+                            }
+                            showToast(errorMsg, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        showToast('Terjadi kesalahan!', 'error');
+                    });
+            });
+        </script>
+    @endpush
 </x-app-layout>

@@ -11,18 +11,22 @@
     </div>
 
     <!-- Submenu: Organisasi -->
-    <div class="submenu-container" id="menu-organisasi" data-menu-title="Organisasi">
+    @php
+        $isOrgActive = request()->routeIs('branches.*') || request()->routeIs('divisions.*') || request()->routeIs('employees.*');
+    @endphp
+    <div class="submenu-container {{ $isOrgActive ? 'submenu-active' : '' }}" id="menu-organisasi"
+        data-menu-title="Organisasi">
         <button onclick="toggleSubmenu('menu-organisasi')"
-            class="w-full flex items-center justify-between px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all whitespace-nowrap group {{ request()->routeIs('branches.*') || request()->routeIs('divisions.*') || request()->routeIs('employees.*') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
+            class="w-full flex items-center justify-between px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all whitespace-nowrap group {{ $isOrgActive ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
             <div class="flex items-center gap-3">
                 <i data-lucide="building-2" class="w-5 h-5 shrink-0 transition-colors"></i>
                 <span class="font-medium text-sm menu-text">Organisasi</span>
             </div>
             <i data-lucide="chevron-down"
-                class="chevron-icon w-4 h-4 transition-transform duration-200 {{ request()->routeIs('branches.*') || request()->routeIs('divisions.*') || request()->routeIs('employees.*') ? 'rotate-180' : '' }}"></i>
+                class="chevron-icon w-4 h-4 transition-transform duration-200 {{ $isOrgActive ? 'rotate-180' : '' }}"></i>
         </button>
-        <div
-            class="submenu-content flex flex-col pl-12 lg:group-hover:pl-2 space-y-1 mt-1 {{ request()->routeIs('branches.*') || request()->routeIs('divisions.*') || request()->routeIs('employees.*') ? '' : 'hidden' }}">
+        <div class="submenu-content flex flex-col pl-12 lg:group-hover:pl-2 space-y-1 mt-1 overflow-hidden transition-all duration-300 {{ $isOrgActive ? 'submenu-open' : '' }}"
+            style="{{ $isOrgActive ? 'max-height: 500px;' : 'max-height: 0;' }}">
             <a href="{{ route('branches.index') }}"
                 class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('branches.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
                 Kantor Cabang
@@ -50,7 +54,8 @@
             </div>
             <i data-lucide="chevron-down" class="chevron-icon w-4 h-4 transition-transform duration-200"></i>
         </button>
-        <div class="submenu-content flex flex-col pl-12 lg:group-hover:pl-2 space-y-1 mt-1 hidden">
+        <div class="submenu-content flex flex-col pl-12 lg:group-hover:pl-2 space-y-1 mt-1 overflow-hidden transition-all duration-300"
+            style="max-height: 0;">
             <a href="#"
                 class="text-sm py-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50">Monitoring
                 OLT</a>
@@ -73,7 +78,8 @@
             </div>
             <i data-lucide="chevron-down" class="chevron-icon w-4 h-4 transition-transform duration-200"></i>
         </button>
-        <div class="submenu-content flex flex-col pl-12 lg:group-hover:pl-2 space-y-1 mt-1 hidden">
+        <div class="submenu-content flex flex-col pl-12 lg:group-hover:pl-2 space-y-1 mt-1 overflow-hidden transition-all duration-300"
+            style="max-height: 0;">
             <a href="#"
                 class="text-sm py-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50">Pelanggan
                 Aktif</a>

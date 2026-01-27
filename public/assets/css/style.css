@@ -90,27 +90,33 @@ body {
 
     /* Show on Hover */
     .sidebar-collapsed .submenu-container:hover .submenu-content {
-        display: flex;
+        display: flex !important;
+        flex-direction: column;
         opacity: 1;
         transform: translateX(0);
     }
 
+    /* Reset padding for floating submenu items */
+    .sidebar-collapsed .submenu-content a {
+        padding-left: 1rem !important;
+        margin-left: 0 !important;
+    }
+
     /* Add a pseudo-element bridge to prevent gap closing menu */
-    .sidebar-collapsed .submenu-container:hover .submenu-content::before,
-    .sidebar-collapsed .submenu-content:hover::before {
+    .sidebar-collapsed .submenu-container .submenu-content::before {
         content: '';
         position: absolute;
-        left: -2rem;
-        /* Wider bridge */
-        top: 0;
-        bottom: 0;
+        left: -1.5rem;
+        top: -0.5rem;
+        bottom: -0.5rem;
         width: 2rem;
         background: transparent;
     }
 
     /* Keep menu open when hovering the content itself */
     .sidebar-collapsed .submenu-content:hover {
-        display: flex;
+        display: flex !important;
+        flex-direction: column;
         opacity: 1;
         transform: translateX(0);
     }

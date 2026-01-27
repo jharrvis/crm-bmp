@@ -29,14 +29,23 @@ class BranchController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:10|unique:branches,code',
             'address' => 'nullable|string',
             'phone' => 'nullable|string|max:20',
         ]);
 
-        Branch::create($request->all());
+        $branch = Branch::create($validated);
+
+        // Return JSON for AJAX requests
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Cabang berhasil ditambahkan.',
+                'branch' => $branch
+            ]);
+        }
 
         return redirect()->route('branches.index')
             ->with('success', 'Cabang berhasil ditambahkan.');
@@ -47,6 +56,7 @@ class BranchController extends Controller
      */
     public function show(Branch $branch)
     {
+        $branch->load('users');
         return view('branches.show', compact('branch'));
     }
 
@@ -63,14 +73,23 @@ class BranchController extends Controller
      */
     public function update(Request $request, Branch $branch)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:10|unique:branches,code,' . $branch->id,
             'address' => 'nullable|string',
             'phone' => 'nullable|string|max:20',
         ]);
 
-        $branch->update($request->all());
+        $branch->update($validated);
+
+        // Return JSON for AJAX requests
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Cabang berhasil diperbarui.',
+                'branch' => $branch->fresh()
+            ]);
+        }
 
         return redirect()->route('branches.index')
             ->with('success', 'Cabang berhasil diperbarui.');
@@ -79,9 +98,28 @@ class BranchController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Branch $branch)
+    public function destroy(Request $request, Branch $branch)
     {
+        // Check if branch has users
+        if ($branch->users()->count() > 0) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak dapat menghapus cabang yang masih memiliki karyawan.'
+                ], 422);
+            }
+            return back()->with('error', 'Tidak dapat menghapus cabang yang masih memiliki karyawan.');
+        }
+
         $branch->delete();
+
+        // Return JSON for AJAX requests
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Cabang berhasil dihapus.'
+            ]);
+        }
 
         return redirect()->route('branches.index')
             ->with('success', 'Cabang berhasil dihapus.');
