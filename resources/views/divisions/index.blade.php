@@ -43,9 +43,14 @@
                                 <td class="p-4 pl-6 text-sm font-bold text-slate-800 dark:text-white">{{ $division->name }}
                                 </td>
                                 <td class="p-4 text-sm text-slate-500 dark:text-slate-400">
-                                    {{ Str::limit($division->description, 100) }}</td>
+                                    {{ Str::limit($division->description, 100) }}
+                                </td>
                                 <td class="p-4 pr-6 text-right">
                                     <div class="flex items-center justify-end gap-2">
+                                        <a href="{{ route('divisions.show', $division) }}"
+                                            class="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">
+                                            <i data-lucide="eye" class="w-4 h-4"></i>
+                                        </a>
                                         <a href="{{ route('divisions.edit', $division) }}"
                                             class="p-2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 rounded-lg hover:bg-yellow-100 dark:hover:bg-yellow-900/40 transition-colors">
                                             <i data-lucide="edit-2" class="w-4 h-4"></i>

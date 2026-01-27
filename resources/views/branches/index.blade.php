@@ -51,10 +51,15 @@
                                 <td class="p-4 text-sm font-medium text-slate-600 dark:text-slate-300">{{ $branch->name }}
                                 </td>
                                 <td class="p-4 text-sm text-slate-500 dark:text-slate-400">
-                                    {{ Str::limit($branch->address, 50) }}</td>
+                                    {{ Str::limit($branch->address, 50) }}
+                                </td>
                                 <td class="p-4 text-sm text-slate-500 dark:text-slate-400">{{ $branch->phone ?? '-' }}</td>
                                 <td class="p-4 pr-6 text-right">
                                     <div class="flex items-center justify-end gap-2">
+                                        <a href="{{ route('branches.show', $branch) }}"
+                                            class="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">
+                                            <i data-lucide="eye" class="w-4 h-4"></i>
+                                        </a>
                                         <a href="{{ route('branches.edit', $branch) }}"
                                             class="p-2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 rounded-lg hover:bg-yellow-100 dark:hover:bg-yellow-900/40 transition-colors">
                                             <i data-lucide="edit-2" class="w-4 h-4"></i>
