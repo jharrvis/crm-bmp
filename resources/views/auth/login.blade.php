@@ -81,10 +81,14 @@
                 </div>
 
                 <!-- Button -->
-                <button type="submit"
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 transition-all duration-300 transform active:scale-[0.98] flex items-center justify-center gap-2">
-                    <span>Masuk Dashboard</span>
-                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                <button type="submit" id="login-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 transition-all duration-300 transform active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none">
+                    <span id="btn-text">Masuk Dashboard</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4" id="btn-icon"></i>
+                    <!-- Loading Spinner (Hidden by default) -->
+                    <svg id="btn-spinner" class="hidden animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
                 </button>
             </form>
         </div>
@@ -108,6 +112,27 @@
                 eyeIcon.setAttribute('data-lucide', 'eye');
             }
             lucide.createIcons();
+        }
+
+        // Loading State Logic
+        const loginForm = document.querySelector('form');
+        if (loginForm) {
+            loginForm.addEventListener('submit', function() {
+                const btn = document.getElementById('login-btn');
+                const text = document.getElementById('btn-text');
+                const icon = document.getElementById('btn-icon');
+                const spinner = document.getElementById('btn-spinner');
+
+                if(btn && text && icon && spinner) {
+                    // Disable button
+                    btn.disabled = true;
+                    
+                    // Hide text/icon & Show spinner
+                    text.classList.add('hidden');
+                    icon.classList.add('hidden');
+                    spinner.classList.remove('hidden');
+                }
+            });
         }
     </script>
 </x-guest-layout>
