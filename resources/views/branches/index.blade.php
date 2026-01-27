@@ -141,293 +141,290 @@
         <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 
         <script>
-            // Base URL for API calls
-            const baseUrl = '{{ url('/') }}';
+            (function () {
+                // Base URL for API calls
+                const baseUrl = '{{ url('/') }}';
 
-            // Branch Data from Server
-            let branchData = @json($branches);
-            let table;
-            let confirmCallback = null;
+                // Branch Data from Server
+                let branchData = @json($branches);
+                let table;
+                let confirmCallback = null;
 
-            $(document).ready(function () {
-                // Init DataTables
-                table = $('#branchTable').DataTable({
-                    data: branchData,
-                    columns: [
-                        {
-                            data: 'code',
-                            className: 'p-4 pl-6',
-                            render: (data) => `<span class="font-mono text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded">${data}</span>`
-                        },
-                        {
-                            data: 'name',
-                            className: 'p-4',
-                            render: (data) => `<span class="font-bold text-slate-700 dark:text-slate-200">${data}</span>`
-                        },
-                        {
-                            data: 'address',
-                            className: 'p-4',
-                            render: (data) => `<div class="truncate max-w-xs text-slate-500 dark:text-slate-400" title="${data || ''}">${data || '-'}</div>`
-                        },
-                        {
-                            data: 'phone',
-                            className: 'p-4',
-                            render: (data) => `<span class="text-slate-500 dark:text-slate-400">${data || '-'}</span>`
-                        },
-                        {
-                            data: null,
-                            className: "p-4 pr-6 text-center",
-                            orderable: false,
-                            render: function (data, type, row) {
-                                return `
-                                    <div class="flex items-center justify-center gap-2">
-                                        <a href="${baseUrl}/branches/${row.id}" class="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 rounded-lg transition-colors" title="Lihat">
-                                            <i data-lucide="eye" class="w-4 h-4"></i>
-                                        </a>
-                                        <button onclick="editBranch(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
-                                            <i data-lucide="pencil" class="w-4 h-4"></i>
-                                        </button>
-                                        <button onclick="deleteBranch(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
-                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                        </button>
-                                    </div>
-                                `;
+                $(document).ready(function () {
+                    // Init DataTables
+                    table = $('#branchTable').DataTable({
+                        data: branchData,
+                        columns: [
+                            {
+                                data: 'code',
+                                className: 'p-4 pl-6',
+                                render: (data) => `<span class="font-mono text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded">${data}</span>`
+                            },
+                            {
+                                data: 'name',
+                                className: 'p-4',
+                                render: (data) => `<span class="font-bold text-slate-700 dark:text-slate-200">${data}</span>`
+                            },
+                            {
+                                data: 'address',
+                                className: 'p-4',
+                                render: (data) => `<div class="truncate max-w-xs text-slate-500 dark:text-slate-400" title="${data || ''}">${data || '-'}</div>`
+                            },
+                            {
+                                data: 'phone',
+                                className: 'p-4',
+                                render: (data) => `<span class="text-slate-500 dark:text-slate-400">${data || '-'}</span>`
+                            },
+                            {
+                                data: null,
+                                className: "p-4 pr-6 text-center",
+                                orderable: false,
+                                render: function (data, type, row) {
+                                    return `
+                                            <div class="flex items-center justify-center gap-2">
+                                                <a href="${baseUrl}/branches/${row.id}" class="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 rounded-lg transition-colors" title="Lihat">
+                                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                                </a>
+                                                <button onclick="window.editBranch(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
+                                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                                </button>
+                                                <button onclick="window.deleteBranch(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
+                                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                </button>
+                                            </div>
+                                        `;
+                                }
                             }
+                        ],
+                        dom: '<"flex flex-col md:flex-row justify-between items-center mb-4 gap-4"lf>rt<"flex flex-col md:flex-row justify-between items-center mt-4 gap-4"ip>',
+                        language: {
+                            search: "",
+                            searchPlaceholder: "Cari cabang...",
+                            lengthMenu: "Tampilkan _MENU_ data",
+                            info: "Menampilkan _START_ - _END_ dari _TOTAL_ data",
+                            infoEmpty: "Tidak ada data",
+                            zeroRecords: "Data tidak ditemukan",
+                            paginate: {
+                                first: "Awal",
+                                last: "Akhir",
+                                next: "»",
+                                previous: "«"
+                            }
+                        },
+                        drawCallback: function () {
+                            lucide.createIcons();
+                        },
+                        createdRow: function (row, data, dataIndex) {
+                            $(row).addClass('hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors');
                         }
-                    ],
-                    dom: '<"flex flex-col md:flex-row justify-between items-center mb-4 gap-4"lf>rt<"flex flex-col md:flex-row justify-between items-center mt-4 gap-4"ip>',
-                    language: {
-                        search: "",
-                        searchPlaceholder: "Cari cabang...",
-                        lengthMenu: "Tampilkan _MENU_ data",
-                        info: "Menampilkan _START_ - _END_ dari _TOTAL_ data",
-                        infoEmpty: "Tidak ada data",
-                        zeroRecords: "Data tidak ditemukan",
-                        paginate: {
-                            first: "Awal",
-                            last: "Akhir",
-                            next: "»",
-                            previous: "«"
-                        }
-                    },
-                    drawCallback: function () {
-                        lucide.createIcons();
-                    },
-                    createdRow: function (row, data, dataIndex) {
-                        $(row).addClass('hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors');
+                    });
+                });
+
+                // Local Toast Function
+                function showToast(message, type = 'success') {
+                    let container = document.getElementById('toast-container');
+                    const toast = document.createElement('div');
+                    const bgColor = type === 'success' ? 'bg-white dark:bg-slate-800' : 'bg-red-50 dark:bg-red-900/50';
+                    const iconColor = type === 'success' ? 'text-green-500' : 'text-red-500';
+                    const icon = type === 'success' ? 'check-circle' : 'alert-circle';
+
+                    toast.className = `${bgColor} border border-slate-200 dark:border-slate-700 shadow-xl rounded-2xl p-4 flex items-center gap-3 transform transition-all duration-300 translate-x-full opacity-0 pointer-events-auto min-w-[300px]`;
+                    toast.innerHTML = `
+                            <i data-lucide="${icon}" class="${iconColor} w-6 h-6 shrink-0"></i>
+                            <p class="font-bold text-sm text-slate-800 dark:text-white">${message}</p>
+                        `;
+
+                    container.appendChild(toast);
+                    lucide.createIcons();
+
+                    requestAnimationFrame(() => {
+                        toast.classList.remove('translate-x-full', 'opacity-0');
+                    });
+
+                    setTimeout(() => {
+                        toast.classList.add('translate-x-full', 'opacity-0');
+                        setTimeout(() => toast.remove(), 300);
+                    }, 3000);
+                }
+
+                // Local Confirm Modal Functions
+                function showConfirmModal(title, text, callback) {
+                    confirmCallback = callback;
+                    const modal = document.getElementById('confirmModal');
+                    const backdrop = document.getElementById('confirmBackdrop');
+                    const panel = document.getElementById('confirmPanel');
+
+                    document.getElementById('confirmTitle').innerText = title;
+                    document.getElementById('confirmText').innerText = text;
+
+                    modal.classList.remove('hidden');
+                    setTimeout(() => {
+                        backdrop.classList.remove('opacity-0');
+                        panel.classList.remove('scale-95', 'opacity-0');
+                        panel.classList.add('scale-100', 'opacity-100');
+                    }, 10);
+                }
+
+                function closeConfirmModal() {
+                    const modal = document.getElementById('confirmModal');
+                    const backdrop = document.getElementById('confirmBackdrop');
+                    const panel = document.getElementById('confirmPanel');
+
+                    backdrop.classList.add('opacity-0');
+                    panel.classList.remove('scale-100', 'opacity-100');
+                    panel.classList.add('scale-95', 'opacity-0');
+
+                    setTimeout(() => {
+                        modal.classList.add('hidden');
+                        confirmCallback = null;
+                    }, 300);
+                }
+
+                document.getElementById('confirmYesBtn').addEventListener('click', () => {
+                    if (confirmCallback) confirmCallback();
+                    closeConfirmModal();
+                });
+
+                // Modal Functions (exposed to window for onclick)
+                window.openBranchModal = function (isEdit = false) {
+                    const modal = document.getElementById('branchModal');
+                    const backdrop = document.getElementById('branchModalBackdrop');
+                    const panel = document.getElementById('branchModalPanel');
+
+                    modal.classList.remove('hidden');
+                    setTimeout(() => {
+                        backdrop.classList.remove('opacity-0');
+                        panel.classList.remove('scale-95', 'opacity-0');
+                        panel.classList.add('scale-100', 'opacity-100');
+                    }, 10);
+
+                    if (!isEdit) {
+                        document.getElementById('branchModalTitle').innerText = 'Tambah Cabang Baru';
+                        document.getElementById('branchSubmitText').innerText = 'Simpan Data';
+                        document.getElementById('branchForm').reset();
+                        document.getElementById('branchId').value = '';
                     }
-                });
-            });
 
-            // Toast Function
-            function showToast(message, type = 'success') {
-                let container = document.getElementById('toast-container');
-                const toast = document.createElement('div');
-                const bgColor = type === 'success' ? 'bg-white dark:bg-slate-800' : 'bg-red-50 dark:bg-red-900/50';
-                const iconColor = type === 'success' ? 'text-green-500' : 'text-red-500';
-                const icon = type === 'success' ? 'check-circle' : 'alert-circle';
+                    lucide.createIcons();
+                };
 
-                toast.className = `${bgColor} border border-slate-200 dark:border-slate-700 shadow-xl rounded-2xl p-4 flex items-center gap-3 transform transition-all duration-300 translate-x-full opacity-0 pointer-events-auto min-w-[300px]`;
-                toast.innerHTML = `
-                    <i data-lucide="${icon}" class="${iconColor} w-6 h-6 shrink-0"></i>
-                    <p class="font-bold text-sm text-slate-800 dark:text-white">${message}</p>
-                `;
+                window.closeBranchModal = function () {
+                    const modal = document.getElementById('branchModal');
+                    const backdrop = document.getElementById('branchModalBackdrop');
+                    const panel = document.getElementById('branchModalPanel');
 
-                container.appendChild(toast);
-                lucide.createIcons();
+                    backdrop.classList.add('opacity-0');
+                    panel.classList.remove('scale-100', 'opacity-100');
+                    panel.classList.add('scale-95', 'opacity-0');
 
-                requestAnimationFrame(() => {
-                    toast.classList.remove('translate-x-full', 'opacity-0');
-                });
+                    setTimeout(() => {
+                        modal.classList.add('hidden');
+                    }, 300);
+                };
 
-                setTimeout(() => {
-                    toast.classList.add('translate-x-full', 'opacity-0');
-                    setTimeout(() => toast.remove(), 300);
-                }, 3000);
-            }
+                // CRUD Functions (exposed to window for onclick)
+                window.editBranch = function (id) {
+                    const branch = branchData.find(b => b.id === id);
+                    if (branch) {
+                        document.getElementById('branchModalTitle').innerText = 'Edit Data Cabang';
+                        document.getElementById('branchSubmitText').innerText = 'Update Data';
+                        document.getElementById('branchId').value = branch.id;
+                        document.getElementById('branchName').value = branch.name;
+                        document.getElementById('branchCode').value = branch.code;
+                        document.getElementById('branchPhone').value = branch.phone || '';
+                        document.getElementById('branchAddress').value = branch.address || '';
+                        window.openBranchModal(true);
+                    }
+                };
 
-            // Confirm Modal Functions
-            function showConfirmModal(title, text, callback) {
-                confirmCallback = callback;
-                const modal = document.getElementById('confirmModal');
-                const backdrop = document.getElementById('confirmBackdrop');
-                const panel = document.getElementById('confirmPanel');
+                let deleteId = null;
+                window.deleteBranch = function (id) {
+                    deleteId = id;
+                    showConfirmModal('Hapus Cabang?', 'Data yang dihapus tidak dapat dikembalikan.', () => {
+                        fetch(`${baseUrl}/branches/${deleteId}`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                _method: 'DELETE'
+                            })
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    branchData = branchData.filter(b => b.id !== deleteId);
+                                    table.clear().rows.add(branchData).draw();
+                                    showToast('Cabang berhasil dihapus!');
+                                } else {
+                                    showToast(data.message || 'Gagal menghapus data', 'error');
+                                }
+                            })
+                            .catch(error => {
+                                showToast('Terjadi kesalahan!', 'error');
+                            });
+                    });
+                };
 
-                document.getElementById('confirmTitle').innerText = title;
-                document.getElementById('confirmText').innerText = text;
+                // Form Submit Handler
+                document.getElementById('branchForm').addEventListener('submit', function (e) {
+                    e.preventDefault();
 
-                modal.classList.remove('hidden');
-                setTimeout(() => {
-                    backdrop.classList.remove('opacity-0');
-                    panel.classList.remove('scale-95', 'opacity-0');
-                    panel.classList.add('scale-100', 'opacity-100');
-                }, 10);
-            }
+                    const id = document.getElementById('branchId').value;
+                    const isUpdate = !!id;
+                    const url = isUpdate ? `${baseUrl}/branches/${id}` : `${baseUrl}/branches`;
 
-            function closeConfirmModal() {
-                const modal = document.getElementById('confirmModal');
-                const backdrop = document.getElementById('confirmBackdrop');
-                const panel = document.getElementById('confirmPanel');
+                    const formData = {
+                        name: document.getElementById('branchName').value,
+                        code: document.getElementById('branchCode').value.toUpperCase(),
+                        phone: document.getElementById('branchPhone').value,
+                        address: document.getElementById('branchAddress').value,
+                    };
 
-                backdrop.classList.add('opacity-0');
-                panel.classList.remove('scale-100', 'opacity-100');
-                panel.classList.add('scale-95', 'opacity-0');
+                    if (isUpdate) {
+                        formData._method = 'PUT';
+                    }
 
-                setTimeout(() => {
-                    modal.classList.add('hidden');
-                    confirmCallback = null;
-                }, 300);
-            }
-
-            document.getElementById('confirmYesBtn').addEventListener('click', () => {
-                if (confirmCallback) confirmCallback();
-                closeConfirmModal();
-            });
-
-            // Modal Functions
-            function openBranchModal(isEdit = false) {
-                const modal = document.getElementById('branchModal');
-                const backdrop = document.getElementById('branchModalBackdrop');
-                const panel = document.getElementById('branchModalPanel');
-
-                modal.classList.remove('hidden');
-                setTimeout(() => {
-                    backdrop.classList.remove('opacity-0');
-                    panel.classList.remove('scale-95', 'opacity-0');
-                    panel.classList.add('scale-100', 'opacity-100');
-                }, 10);
-
-                if (!isEdit) {
-                    document.getElementById('branchModalTitle').innerText = 'Tambah Cabang Baru';
-                    document.getElementById('branchSubmitText').innerText = 'Simpan Data';
-                    document.getElementById('branchForm').reset();
-                    document.getElementById('branchId').value = '';
-                }
-
-                lucide.createIcons();
-            }
-
-            function closeBranchModal() {
-                const modal = document.getElementById('branchModal');
-                const backdrop = document.getElementById('branchModalBackdrop');
-                const panel = document.getElementById('branchModalPanel');
-
-                backdrop.classList.add('opacity-0');
-                panel.classList.remove('scale-100', 'opacity-100');
-                panel.classList.add('scale-95', 'opacity-0');
-
-                setTimeout(() => {
-                    modal.classList.add('hidden');
-                }, 300);
-            }
-
-            // CRUD Functions
-            function editBranch(id) {
-                const branch = branchData.find(b => b.id === id);
-                if (branch) {
-                    document.getElementById('branchModalTitle').innerText = 'Edit Data Cabang';
-                    document.getElementById('branchSubmitText').innerText = 'Update Data';
-                    document.getElementById('branchId').value = branch.id;
-                    document.getElementById('branchName').value = branch.name;
-                    document.getElementById('branchCode').value = branch.code;
-                    document.getElementById('branchPhone').value = branch.phone || '';
-                    document.getElementById('branchAddress').value = branch.address || '';
-                    openBranchModal(true);
-                }
-            }
-
-            let deleteId = null;
-            function deleteBranch(id) {
-                deleteId = id;
-                showConfirmModal('Hapus Cabang?', 'Data yang dihapus tidak dapat dikembalikan.', () => {
-                    // Send delete request using POST with _method
-                    fetch(`${baseUrl}/branches/${deleteId}`, {
+                    fetch(url, {
                         method: 'POST',
                         headers: {
                             'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
                             'Accept': 'application/json',
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({
-                            _method: 'DELETE'
-                        })
+                        body: JSON.stringify(formData)
                     })
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
-                                branchData = branchData.filter(b => b.id !== deleteId);
+                                if (isUpdate) {
+                                    const index = branchData.findIndex(b => b.id === parseInt(id));
+                                    if (index >= 0) {
+                                        branchData[index] = data.branch;
+                                    }
+                                    showToast('Cabang berhasil diperbarui!');
+                                } else {
+                                    branchData.push(data.branch);
+                                    showToast('Cabang berhasil ditambahkan!');
+                                }
                                 table.clear().rows.add(branchData).draw();
-                                showToast('Cabang berhasil dihapus!');
+                                window.closeBranchModal();
                             } else {
-                                showToast(data.message || 'Gagal menghapus data', 'error');
+                                let errorMsg = data.message || 'Gagal menyimpan data';
+                                if (data.errors) {
+                                    errorMsg = Object.values(data.errors).flat().join(', ');
+                                }
+                                showToast(errorMsg, 'error');
                             }
                         })
                         .catch(error => {
+                            console.error('Error:', error);
                             showToast('Terjadi kesalahan!', 'error');
                         });
                 });
-            }
-
-            // Form Submit Handler
-            document.getElementById('branchForm').addEventListener('submit', function (e) {
-                e.preventDefault();
-
-                const id = document.getElementById('branchId').value;
-                const isUpdate = !!id;
-                const url = isUpdate ? `${baseUrl}/branches/${id}` : `${baseUrl}/branches`;
-
-                const formData = {
-                    name: document.getElementById('branchName').value,
-                    code: document.getElementById('branchCode').value.toUpperCase(),
-                    phone: document.getElementById('branchPhone').value,
-                    address: document.getElementById('branchAddress').value,
-                };
-
-                // For update, use POST with _method=PUT (Laravel method spoofing)
-                if (isUpdate) {
-                    formData._method = 'PUT';
-                }
-
-                fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            if (isUpdate) {
-                                // Update existing
-                                const index = branchData.findIndex(b => b.id === parseInt(id));
-                                if (index >= 0) {
-                                    branchData[index] = data.branch;
-                                }
-                                showToast('Cabang berhasil diperbarui!');
-                            } else {
-                                // Add new
-                                branchData.push(data.branch);
-                                showToast('Cabang berhasil ditambahkan!');
-                            }
-                            table.clear().rows.add(branchData).draw();
-                            closeBranchModal();
-                        } else {
-                            // Handle validation errors
-                            let errorMsg = data.message || 'Gagal menyimpan data';
-                            if (data.errors) {
-                                errorMsg = Object.values(data.errors).flat().join(', ');
-                            }
-                            showToast(errorMsg, 'error');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        showToast('Terjadi kesalahan!', 'error');
-                    });
-            });
+            })();
         </script>
     @endpush
 </x-app-layout>
