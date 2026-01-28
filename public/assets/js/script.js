@@ -1,5 +1,4 @@
-// Initialize Icons
-lucide.createIcons();
+// Icons will be initialized in layout after DOM is ready
 
 // Dark Mode Logic
 function toggleDarkMode() {
@@ -58,8 +57,11 @@ function toggleSidebarMobile() {
 function toggleSubmenu(id) {
     const sidebar = document.getElementById('sidebar');
     const menu = document.getElementById(id);
+
+    if (!menu) return;
+
     const content = menu.querySelector('.submenu-content');
-    const btn = menu.querySelector('button .chevron-icon');
+    const chevron = menu.querySelector('.chevron-icon');
 
     // If sidebar is collapsed on desktop, let CSS handle hover
     if (sidebar && sidebar.classList.contains('sidebar-collapsed') && window.innerWidth >= 1024) {
@@ -70,7 +72,7 @@ function toggleSubmenu(id) {
     menu.classList.toggle('submenu-active');
 
     // Rotate chevron
-    if (btn) btn.classList.toggle('rotate-180');
+    if (chevron) chevron.classList.toggle('rotate-180');
 
     // Toggle visibility using max-height animation
     if (content) {
@@ -88,16 +90,23 @@ function toggleSubmenu(id) {
 function initSubmenus() {
     document.querySelectorAll('.submenu-container').forEach(menu => {
         const content = menu.querySelector('.submenu-content');
-        if (content && !content.classList.contains('submenu-closed')) {
-            // Check if any child link is active
-            const hasActiveChild = content.querySelector('a.text-blue-600, a.font-bold');
-            if (hasActiveChild) {
-                content.classList.add('submenu-open');
-                content.style.maxHeight = content.scrollHeight + 'px';
-                menu.classList.add('submenu-active');
-            } else {
-                content.style.maxHeight = '0';
-            }
+        const chevron = menu.querySelector('.chevron-icon');
+
+        if (!content) return;
+
+        // Check if submenu should be open (has active class or active child)
+        const isActive = menu.classList.contains('submenu-active');
+        const hasActiveChild = content.querySelector('a.text-blue-600, a.font-bold');
+
+        if (isActive || hasActiveChild) {
+            content.classList.add('submenu-open');
+            content.style.maxHeight = content.scrollHeight + 'px';
+            menu.classList.add('submenu-active');
+            if (chevron) chevron.classList.add('rotate-180');
+        } else {
+            content.classList.remove('submenu-open');
+            content.style.maxHeight = '0';
+            if (chevron) chevron.classList.remove('rotate-180');
         }
     });
 }
@@ -118,15 +127,28 @@ function toggleDropdown(id) {
 }
 
 // Close dropdowns on outside click
-window.onclick = function (event) {
+document.addEventListener('click', function (event) {
     const profileMenu = document.getElementById('profile-menu');
     const notificationMenu = document.getElementById('notification-menu');
 
-    if (!event.target.closest('#profile-menu') && !event.target.closest('#notification-menu') && !event.target.closest('button')) {
-        if (profileMenu) profileMenu.classList.add('hidden');
-        if (notificationMenu) notificationMenu.classList.add('hidden');
+    // Check if click is on dropdown toggle buttons
+    const isProfileToggle = event.target.closest('[onclick*="profile-menu"]');
+    const isNotificationToggle = event.target.closest('[onclick*="notification-menu"]');
+
+    // Close profile menu if clicked outside
+    if (profileMenu && !profileMenu.classList.contains('hidden')) {
+        if (!event.target.closest('#profile-menu') && !isProfileToggle) {
+            profileMenu.classList.add('hidden');
+        }
     }
-}
+
+    // Close notification menu if clicked outside
+    if (notificationMenu && !notificationMenu.classList.contains('hidden')) {
+        if (!event.target.closest('#notification-menu') && !isNotificationToggle) {
+            notificationMenu.classList.add('hidden');
+        }
+    }
+});
 
 // Section Change with Skeleton Loader
 function changeSection(id) {
@@ -260,11 +282,19 @@ function showConfirmModal(title, text, callback) {
     const modal = document.getElementById('confirmModal');
     const backdrop = document.getElementById('confirmBackdrop');
     const panel = document.getElementById('confirmPanel');
+    const confirmYesBtn = document.getElementById('confirmYesBtn');
 
     if (!modal || !backdrop || !panel) return;
 
     document.getElementById('confirmTitle').innerText = title;
     document.getElementById('confirmText').innerText = text;
+
+    // Setup confirm button handler
+    if (confirmYesBtn) {
+        confirmYesBtn.onclick = () => {
+            if (confirmCallback) confirmCallback();
+        };
+    }
 
     modal.classList.remove('hidden');
     setTimeout(() => {
@@ -272,6 +302,9 @@ function showConfirmModal(title, text, callback) {
         panel.classList.remove('scale-95', 'opacity-0');
         panel.classList.add('scale-100', 'opacity-100');
     }, 10);
+
+    // Re-init lucide icons
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function closeConfirmModal() {
@@ -289,6 +322,25 @@ function closeConfirmModal() {
         modal.classList.add('hidden');
         confirmCallback = null;
     }, 300);
+}
+
+// Alias for backwards compatibility
+function hideConfirmModal() {
+    closeConfirmModal();
+}
+
+// Button Loading State Helper
+function setButtonLoading(btn, spinner, text, isLoading, originalText) {
+    if (!btn) return;
+    if (isLoading) {
+        btn.disabled = true;
+        if (spinner) spinner.classList.remove('hidden');
+        if (text) text.textContent = 'Memproses...';
+    } else {
+        btn.disabled = false;
+        if (spinner) spinner.classList.add('hidden');
+        if (text) text.textContent = originalText;
+    }
 }
 
 // Generic Modal Open/Close
@@ -329,20 +381,16 @@ function closeModal(modalId) {
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize Lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
     // Initialize submenus
     initSubmenus();
 
     // Initialize charts if on dashboard
     if (typeof Chart !== 'undefined') {
         initCharts();
-    }
-
-    // Confirm modal button handler
-    const confirmBtn = document.getElementById('confirmYesBtn');
-    if (confirmBtn) {
-        confirmBtn.addEventListener('click', () => {
-            if (confirmCallback) confirmCallback();
-            closeConfirmModal();
-        });
     }
 });

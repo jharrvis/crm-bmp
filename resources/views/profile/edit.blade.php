@@ -42,6 +42,17 @@
                 </div>
 
                 <div>
+                    <label for="phone" class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nomor
+                        Handphone/WA</label>
+                    <input type="text" id="phone" name="phone" value="{{ old('phone', $user->phone) }}"
+                        autocomplete="tel" placeholder="08..."
+                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                    @error('phone')
+                        <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
                     <label for="email" class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Alamat
                         Email</label>
                     <input type="email" id="email" name="email" value="{{ old('email', $user->email) }}" required

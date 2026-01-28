@@ -60,12 +60,18 @@
             <button onclick="toggleDropdown('profile-menu')"
                 class="flex items-center gap-3 p-1 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
                 <div class="w-9 h-9 rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-600">
-                    <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=0D8ABC&color=fff"
-                        alt="Avatar">
+                    @if (Auth::user()->avatar)
+                        <img src="{{ asset('storage/' . Auth::user()->avatar) }}" alt="Avatar"
+                            class="w-full h-full object-cover">
+                    @else
+                        <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=0D8ABC&color=fff"
+                            alt="Avatar" class="w-full h-full object-cover">
+                    @endif
                 </div>
                 <div class="hidden md:block text-left pr-2">
                     <p class="text-xs font-bold text-slate-800 dark:text-slate-100 leading-none">
-                        {{ Auth::user()->name }}</p>
+                        {{ Auth::user()->name }}
+                    </p>
                     <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">{{ Auth::user()->email }}</p>
                 </div>
                 <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 hidden md:block"></i>
@@ -77,7 +83,8 @@
                 <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
                     <p class="text-[10px] font-bold text-slate-400 uppercase">Login Sebagai</p>
                     <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
-                        {{ Auth::user()->email }}</p>
+                        {{ Auth::user()->email }}
+                    </p>
                 </div>
                 <div class="p-2">
                     <a href="{{ route('profile.edit') }}"

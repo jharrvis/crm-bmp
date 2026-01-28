@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
+use Illuminate\Support\Facades\Storage;
 
 class EmployeeController extends Controller
 {
@@ -52,15 +53,24 @@ class EmployeeController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'avatar' => ['nullable', 'image', 'max:2048'], // Max 2MB
             'role' => ['required', 'string', 'exists:roles,name'],
             'branch_id' => ['nullable', 'exists:branches,id'],
             'division_id' => ['nullable', 'exists:divisions,id'],
         ]);
 
+        $avatarPath = null;
+        if ($request->hasFile('avatar')) {
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+        }
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'phone' => $request->phone,
+            'avatar' => $avatarPath,
             'branch_id' => $request->branch_id,
             'division_id' => $request->division_id,
         ]);
@@ -111,6 +121,8 @@ class EmployeeController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,' . $employee->id],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'avatar' => ['nullable', 'image', 'max:2048'],
             'role' => ['required', 'string', 'exists:roles,name'],
             'branch_id' => ['nullable', 'exists:branches,id'],
             'division_id' => ['nullable', 'exists:divisions,id'],
@@ -119,9 +131,18 @@ class EmployeeController extends Controller
         $data = [
             'name' => $request->name,
             'email' => $request->email,
+            'phone' => $request->phone,
             'branch_id' => $request->branch_id,
             'division_id' => $request->division_id,
         ];
+
+        if ($request->hasFile('avatar')) {
+            // Delete old avatar if exists
+            if ($employee->avatar) {
+                Storage::disk('public')->delete($employee->avatar);
+            }
+            $data['avatar'] = $request->file('avatar')->store('avatars', 'public');
+        }
 
         if ($request->filled('password')) {
             $request->validate([

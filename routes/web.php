@@ -21,6 +21,26 @@ Route::middleware('auth')->group(function () {
         Route::resource('branches', \App\Http\Controllers\BranchController::class);
         Route::resource('divisions', \App\Http\Controllers\DivisionController::class);
         Route::resource('employees', \App\Http\Controllers\EmployeeController::class);
+
+        // Master Data: Infrastructure
+        Route::resource('routers', \App\Http\Controllers\RouterController::class);
+        Route::resource('servers', \App\Http\Controllers\HostingServerController::class);
+    });
+
+    // Master Data: Products & Services (Owner, Admin, & Employee)
+    Route::middleware(['role:Owner|Admin|Employee'])->group(function () {
+        Route::resource('services', \App\Http\Controllers\ServiceController::class);
+        Route::resource('packages', \App\Http\Controllers\PackageController::class);
+
+        // Core Business: Client Management
+        Route::resource('clients', \App\Http\Controllers\ClientController::class);
+    });
+
+    // Role & Permission Management (Owner & Admin)
+    Route::middleware(['role:Owner|Admin'])->group(function () {
+        Route::resource('roles', \App\Http\Controllers\RoleController::class);
+        Route::post('roles/{role}/permissions', [\App\Http\Controllers\RoleController::class, 'syncPermissions'])
+            ->name('roles.permissions.sync');
     });
 });
 

@@ -24,6 +24,7 @@
                             class="text-slate-400 text-xs font-bold uppercase tracking-wider border-b border-slate-100 dark:border-slate-700">
                             <th class="p-4 pl-6">Nama</th>
                             <th class="p-4">Email</th>
+                            <th class="p-4">No. HP</th>
                             <th class="p-4">Role</th>
                             <th class="p-4">Cabang</th>
                             <th class="p-4">Divisi</th>
@@ -58,6 +59,22 @@
                     @csrf
                     <input type="hidden" id="employeeId" name="id">
                     <div class="p-6 space-y-4">
+                        <div class="flex justify-center mb-4">
+                            <div class="relative">
+                                <div
+                                    class="w-24 h-24 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center overflow-hidden border-2 border-slate-200 dark:border-slate-600">
+                                    <img id="employeeAvatarPreview" src="" alt="Preview"
+                                        class="w-full h-full object-cover hidden">
+                                    <span id="employeeAvatarInitials" class="text-3xl font-bold text-slate-400">?</span>
+                                </div>
+                                <label for="employeeAvatar"
+                                    class="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 shadow-lg transition-colors">
+                                    <i data-lucide="camera" class="w-4 h-4"></i>
+                                    <input type="file" id="employeeAvatar" name="avatar" class="hidden" accept="image/*"
+                                        onchange="previewAvatar(this)">
+                                </label>
+                            </div>
+                        </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nama
@@ -73,6 +90,14 @@
                                     class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                                     placeholder="email@example.com">
                             </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nomor
+                                Handphone/WA</label>
+                            <input type="text" id="employeePhone" name="phone"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                placeholder="08...">
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -169,6 +194,13 @@
                     </button>
                 </div>
                 <div class="p-6 space-y-5">
+                    <div class="flex justify-center">
+                        <div
+                            class="w-24 h-24 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center overflow-hidden border-2 border-slate-200 dark:border-slate-600">
+                            <img id="viewEmployeeAvatar" src="" alt="Avatar" class="w-full h-full object-cover hidden">
+                            <span id="viewEmployeeInitials" class="text-3xl font-bold text-slate-400">?</span>
+                        </div>
+                    </div>
                     <div>
                         <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Nama Lengkap</p>
                         <p class="text-lg font-semibold text-slate-800 dark:text-white" id="viewEmployeeName">-</p>
@@ -176,6 +208,10 @@
                     <div>
                         <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Email</p>
                         <p class="text-base text-slate-600 dark:text-slate-300" id="viewEmployeeEmail">-</p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">No. Handphone/WA</p>
+                        <p class="text-base text-slate-600 dark:text-slate-300" id="viewEmployeePhone">-</p>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
@@ -265,12 +301,26 @@
                             {
                                 data: 'name',
                                 className: 'p-4 pl-6',
-                                render: (data) => `<span class="font-bold text-slate-800 dark:text-white">${data}</span>`
+                                render: (data, type, row) => {
+                                    let avatarHtml = '';
+                                    if (row.avatar) {
+                                        avatarHtml = `<img src="${baseUrl}/storage/${row.avatar}" class="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-600">`;
+                                    } else {
+                                        const initials = data.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                                        avatarHtml = `<div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 flex items-center justify-center font-bold text-sm border border-blue-200 dark:border-blue-800">${initials}</div>`;
+                                    }
+                                    return `<div class="flex items-center gap-3">${avatarHtml}<span class="font-bold text-slate-800 dark:text-white">${data}</span></div>`;
+                                }
                             },
                             {
                                 data: 'email',
                                 className: 'p-4',
                                 render: (data) => `<span class="text-slate-500 dark:text-slate-400">${data}</span>`
+                            },
+                            {
+                                data: 'phone',
+                                className: 'p-4',
+                                render: (data) => `<span class="text-slate-500 dark:text-slate-400">${data || '-'}</span>`
                             },
                             {
                                 data: 'roles',
@@ -297,20 +347,20 @@
                                 orderable: false,
                                 render: function (data, type, row) {
                                     let buttons = `
-                                        <div class="flex items-center justify-center gap-2">
-                                            <button onclick="window.viewEmployee(${row.id})" class="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 rounded-lg transition-colors" title="Lihat">
-                                                <i data-lucide="eye" class="w-4 h-4"></i>
-                                            </button>
-                                            <button onclick="window.editEmployee(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
-                                                <i data-lucide="pencil" class="w-4 h-4"></i>
-                                            </button>
-                                    `;
+                                                    <div class="flex items-center justify-center gap-2">
+                                                        <button onclick="window.viewEmployee(${row.id})" class="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 rounded-lg transition-colors" title="Lihat">
+                                                            <i data-lucide="eye" class="w-4 h-4"></i>
+                                                        </button>
+                                                        <button onclick="window.editEmployee(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
+                                                            <i data-lucide="pencil" class="w-4 h-4"></i>
+                                                        </button>
+                                                `;
                                     if (row.id !== {{ auth()->id() }}) {
                                         buttons += `
-                                            <button onclick="window.deleteEmployee(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
-                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                            </button>
-                                        `;
+                                                        <button onclick="window.deleteEmployee(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
+                                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                        </button>
+                                                    `;
                                     }
                                     buttons += `</div>`;
                                     return buttons;
@@ -400,6 +450,11 @@
                         document.getElementById('employeeSubmitText').innerText = 'Simpan Data';
                         document.getElementById('employeeForm').reset();
                         document.getElementById('employeeId').value = '';
+                        
+                        // Reset Avatar
+                        document.getElementById('employeeAvatarPreview').classList.add('hidden');
+                        document.getElementById('employeeAvatarInitials').classList.remove('hidden');
+                        document.getElementById('employeeAvatarInitials').innerText = '?';
 
                         document.getElementById('passwordRequired').classList.remove('hidden');
                         document.getElementById('passwordConfirmRequired').classList.remove('hidden');
@@ -431,8 +486,20 @@
                     currentViewEmployeeId = id;
                     const employee = employeeData.find(e => e.id === id);
                     if (employee) {
+                        if (employee.avatar) {
+                            document.getElementById('viewEmployeeAvatar').src = `${baseUrl}/storage/${employee.avatar}`;
+                            document.getElementById('viewEmployeeAvatar').classList.remove('hidden');
+                            document.getElementById('viewEmployeeInitials').classList.add('hidden');
+                        } else {
+                            document.getElementById('viewEmployeeAvatar').classList.add('hidden');
+                            document.getElementById('viewEmployeeInitials').classList.remove('hidden');
+                            const initials = employee.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                            document.getElementById('viewEmployeeInitials').innerText = initials;
+                        }
+
                         document.getElementById('viewEmployeeName').innerText = employee.name;
                         document.getElementById('viewEmployeeEmail').innerText = employee.email;
+                        document.getElementById('viewEmployeePhone').innerText = employee.phone || '-';
                         document.getElementById('viewEmployeeRole').innerText = employee.roles.length ? employee.roles[0].name : '-';
                         document.getElementById('viewEmployeeBranch').innerText = employee.branch ? employee.branch.name : '-';
                         document.getElementById('viewEmployeeDivision').innerText = employee.division ? employee.division.name : '-';
@@ -470,9 +537,22 @@
                         document.getElementById('employeeId').value = employee.id;
                         document.getElementById('employeeName').value = employee.name;
                         document.getElementById('employeeEmail').value = employee.email;
+                        document.getElementById('employeePhone').value = employee.phone || '';
                         document.getElementById('employeeRole').value = employee.roles.length ? employee.roles[0].name : '';
                         document.getElementById('employeeBranch').value = employee.branch_id || '';
                         document.getElementById('employeeDivision').value = employee.division_id || '';
+                        
+                        // Set Avatar
+                        if (employee.avatar) {
+                            document.getElementById('employeeAvatarPreview').src = `${baseUrl}/storage/${employee.avatar}`;
+                            document.getElementById('employeeAvatarPreview').classList.remove('hidden');
+                            document.getElementById('employeeAvatarInitials').classList.add('hidden');
+                        } else {
+                            document.getElementById('employeeAvatarPreview').classList.add('hidden');
+                            document.getElementById('employeeAvatarInitials').classList.remove('hidden');
+                            const initials = employee.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                            document.getElementById('employeeAvatarInitials').innerText = initials;
+                        }
 
                         document.getElementById('employeePassword').value = '';
                         document.getElementById('employeePasswordConfirmation').value = '';
@@ -523,30 +603,46 @@
                     const text = document.getElementById('employeeSubmitText');
                     const originalText = isUpdate ? 'Update Data' : 'Simpan Data';
 
+
+
+                    if (document.getElementById('employeePassword').value && document.getElementById('employeePassword').value !== document.getElementById('employeePasswordConfirmation').value) {
+                        showToast('Password konfirmasi tidak cocok!', 'error');
+                        return;
+                    }
+
                     setButtonLoading(btn, spinner, text, true, originalText);
 
-                    const formData = {
-                        name: document.getElementById('employeeName').value,
-                        email: document.getElementById('employeeEmail').value,
-                        role: document.getElementById('employeeRole').value,
-                        branch_id: document.getElementById('employeeBranch').value,
-                        division_id: document.getElementById('employeeDivision').value,
-                    };
+                    const formData = new FormData();
+                    formData.append('name', document.getElementById('employeeName').value);
+                    formData.append('email', document.getElementById('employeeEmail').value);
+                    formData.append('phone', document.getElementById('employeePhone').value);
+                    formData.append('role', document.getElementById('employeeRole').value);
+                    formData.append('branch_id', document.getElementById('employeeBranch').value);
+                    formData.append('division_id', document.getElementById('employeeDivision').value);
+
+                    const avatarFile = document.getElementById('employeeAvatar').files[0];
+                    if (avatarFile) {
+                        formData.append('avatar', avatarFile);
+                    }
 
                     const password = document.getElementById('employeePassword').value;
                     const passwordConfirm = document.getElementById('employeePasswordConfirmation').value;
 
                     if (password) {
-                        formData.password = password;
-                        formData.password_confirmation = passwordConfirm;
+                        formData.append('password', password);
+                        formData.append('password_confirmation', passwordConfirm);
                     }
 
-                    if (isUpdate) formData._method = 'PUT';
+                    if (isUpdate) formData.append('_method', 'PUT');
 
                     fetch(url, {
                         method: 'POST',
-                        headers: { 'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value, 'Accept': 'application/json', 'Content-Type': 'application/json' },
-                        body: JSON.stringify(formData)
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                            'Accept': 'application/json'
+                            // Content-Type must NOT be set when sending FormData
+                        },
+                        body: formData
                     })
                         .then(r => r.json())
                         .then(data => {
@@ -570,6 +666,20 @@
                         })
                         .catch(error => { setButtonLoading(btn, spinner, text, false, originalText); console.error(error); showToast('Terjadi kesalahan!', 'error'); });
                 });
+                
+                // Helper for avatar preview
+                window.previewAvatar = function(input) {
+                    if (input.files && input.files[0]) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            document.getElementById('employeeAvatarPreview').src = e.target.result;
+                            document.getElementById('employeeAvatarPreview').classList.remove('hidden');
+                            document.getElementById('employeeAvatarInitials').classList.add('hidden');
+                        }
+                        reader.readAsDataURL(input.files[0]);
+                    }
+                };
+
             })();
         </script>
     @endpush

@@ -1,0 +1,176 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+
+class RoleController extends Controller
+{
+    /**
+     * Display a listing of roles.
+     */
+    public function index()
+    {
+        $roles = Role::withCount('users', 'permissions')
+            ->orderBy('is_system', 'desc')
+            ->orderBy('name')
+            ->get();
+
+        return view('roles.index', compact('roles'));
+    }
+
+    /**
+     * Show the form for creating a new role.
+     */
+    public function create()
+    {
+        $roles = Role::all();
+        return view('roles.create', compact('roles'));
+    }
+
+    /**
+     * Store a newly created role.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:roles,name',
+            'description' => 'nullable|string|max:255',
+            'copy_from' => 'nullable|exists:roles,id',
+        ]);
+
+        $role = Role::create([
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'guard_name' => 'web',
+        ]);
+
+        // Copy permissions from existing role if specified
+        if (!empty($validated['copy_from'])) {
+            $sourceRole = Role::find($validated['copy_from']);
+            $role->syncPermissions($sourceRole->permissions);
+        }
+
+        return redirect()->route('roles.edit', $role)
+            ->with('success', 'Role berhasil dibuat. Silakan atur permissions.');
+    }
+
+    /**
+     * Display the specified role.
+     */
+    public function show(Role $role)
+    {
+        $role->loadCount('users', 'permissions');
+        $permissions = Permission::all()->groupBy(function ($permission) {
+            return explode('.', $permission->name)[0];
+        });
+        $rolePermissions = $role->permissions->pluck('name')->toArray();
+
+        return view('roles.show', compact('role', 'permissions', 'rolePermissions'));
+    }
+
+    /**
+     * Show the form for editing the specified role.
+     */
+    public function edit(Role $role)
+    {
+        $role->loadCount('users', 'permissions');
+
+        // Group permissions by module
+        $permissions = Permission::all()->groupBy(function ($permission) {
+            return explode('.', $permission->name)[0];
+        });
+
+        $rolePermissions = $role->permissions->pluck('name')->toArray();
+
+        // Define module groups for better UI organization
+        $moduleGroups = [
+            'Master Data' => ['branches', 'divisions', 'employees', 'roles'],
+            'Infrastruktur' => ['routers', 'servers', 'services', 'packages', 'towers', 'odps'],
+            'Bisnis' => ['clients', 'subscriptions', 'invoices', 'payments'],
+            'Support' => ['tickets', 'work_orders'],
+            'Pengaturan' => ['settings', 'logs'],
+        ];
+
+        return view('roles.edit', compact('role', 'permissions', 'rolePermissions', 'moduleGroups'));
+    }
+
+    /**
+     * Update the specified role.
+     */
+    public function update(Request $request, Role $role)
+    {
+        // Prevent editing system role names
+        if ($role->is_system && $request->name !== $role->name) {
+            return back()->with('error', 'Nama role bawaan sistem tidak dapat diubah.');
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:roles,name,' . $role->id,
+            'description' => 'nullable|string|max:255',
+            'permissions' => 'array',
+            'permissions.*' => 'exists:permissions,name',
+        ]);
+
+        $role->update([
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+        ]);
+
+        // Sync permissions
+        $role->syncPermissions($validated['permissions'] ?? []);
+
+        return redirect()->route('roles.index')
+            ->with('success', 'Role dan permissions berhasil diperbarui.');
+    }
+
+    /**
+     * Sync permissions via AJAX.
+     */
+    public function syncPermissions(Request $request, Role $role)
+    {
+        $validated = $request->validate([
+            'permissions' => 'array',
+            'permissions.*' => 'exists:permissions,name',
+        ]);
+
+        $role->syncPermissions($validated['permissions'] ?? []);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Permissions berhasil diperbarui.',
+            'count' => count($validated['permissions'] ?? []),
+        ]);
+    }
+
+    /**
+     * Remove the specified role.
+     */
+    public function destroy(Role $role)
+    {
+        // Prevent deleting system roles
+        if ($role->is_system) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Role bawaan sistem tidak dapat dihapus.',
+            ], 403);
+        }
+
+        // Check if role has users
+        if ($role->users()->count() > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Role masih digunakan oleh ' . $role->users()->count() . ' user.',
+            ], 400);
+        }
+
+        $role->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Role berhasil dihapus.',
+        ]);
+    }
+}
