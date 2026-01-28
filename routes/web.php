@@ -35,6 +35,10 @@ Route::middleware('auth')->group(function () {
         // Core Business: Client Management
         Route::resource('clients', \App\Http\Controllers\ClientController::class);
         Route::resource('subscriptions', \App\Http\Controllers\SubscriptionController::class);
+
+        // Billing
+        Route::post('invoices/generate', [\App\Http\Controllers\InvoiceController::class, 'generate'])->name('invoices.generate');
+        Route::resource('invoices', \App\Http\Controllers\InvoiceController::class);
     });
 
     // Role & Permission Management (Owner & Admin)
