@@ -15,13 +15,21 @@ class EmployeeController extends Controller
     /**
      * Display a listing of the resource.
      */
+    /**
+     * Display a listing of the resource.
+     */
     public function index()
     {
         $employees = User::role(['Owner', 'Admin', 'Employee'])
             ->with(['branch', 'division', 'roles'])
             ->latest()
             ->get();
-        return view('employees.index', compact('employees'));
+
+        $branches = Branch::all();
+        $divisions = Division::all();
+        $roles = Role::whereIn('name', ['Owner', 'Admin', 'Employee'])->get();
+
+        return view('employees.index', compact('employees', 'branches', 'divisions', 'roles'));
     }
 
     /**
@@ -59,6 +67,15 @@ class EmployeeController extends Controller
 
         $user->assignRole($request->role);
 
+        if ($request->wantsJson()) {
+            $user->load(['branch', 'division', 'roles']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Karyawan berhasil ditambahkan.',
+                'employee' => $user
+            ]);
+        }
+
         return redirect()->route('employees.index')
             ->with('success', 'Karyawan berhasil ditambahkan.');
     }
@@ -66,8 +83,12 @@ class EmployeeController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(User $employee)
+    public function show(Request $request, User $employee)
     {
+        if ($request->wantsJson() || $request->ajax()) {
+            $employee->load(['branch', 'division', 'roles']);
+            return response()->json($employee);
+        }
         return view('employees.show', compact('employee'));
     }
 
@@ -112,6 +133,15 @@ class EmployeeController extends Controller
         $employee->update($data);
         $employee->syncRoles([$request->role]);
 
+        if ($request->wantsJson()) {
+            $employee->load(['branch', 'division', 'roles']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Data karyawan berhasil diperbarui.',
+                'employee' => $employee
+            ]);
+        }
+
         return redirect()->route('employees.index')
             ->with('success', 'Data karyawan berhasil diperbarui.');
     }
@@ -119,13 +149,27 @@ class EmployeeController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(User $employee)
+    public function destroy(Request $request, User $employee)
     {
         if ($employee->id === auth()->id()) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak dapat menghapus akun sendiri.'
+                ], 403);
+            }
             return back()->with('error', 'Anda tidak dapat menghapus akun sendiri.');
         }
 
         $employee->delete();
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Karyawan berhasil dihapus.'
+            ]);
+        }
+
         return redirect()->route('employees.index')
             ->with('success', 'Karyawan berhasil dihapus.');
     }

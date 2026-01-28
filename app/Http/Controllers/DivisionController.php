@@ -27,6 +27,9 @@ class DivisionController extends Controller
     /**
      * Store a newly created resource in storage.
      */
+    /**
+     * Store a newly created resource in storage.
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -34,7 +37,15 @@ class DivisionController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        Division::create($request->all());
+        $division = Division::create($request->all());
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Divisi berhasil ditambahkan.',
+                'division' => $division
+            ]);
+        }
 
         return redirect()->route('divisions.index')
             ->with('success', 'Divisi berhasil ditambahkan.');
@@ -43,8 +54,12 @@ class DivisionController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Division $division)
+    public function show(Request $request, Division $division)
     {
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json($division);
+        }
+
         return view('divisions.show', compact('division'));
     }
 
@@ -68,6 +83,14 @@ class DivisionController extends Controller
 
         $division->update($request->all());
 
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Divisi berhasil diperbarui.',
+                'division' => $division
+            ]);
+        }
+
         return redirect()->route('divisions.index')
             ->with('success', 'Divisi berhasil diperbarui.');
     }
@@ -75,9 +98,19 @@ class DivisionController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Division $division)
+    public function destroy(Request $request, Division $division)
     {
+        // Optional: Check if division has related users (if applicable)
+        // if ($division->users()->count() > 0) { ... }
+
         $division->delete();
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Divisi berhasil dihapus.'
+            ]);
+        }
 
         return redirect()->route('divisions.index')
             ->with('success', 'Divisi berhasil dihapus.');
