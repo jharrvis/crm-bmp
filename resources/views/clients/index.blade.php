@@ -283,9 +283,9 @@
                                 data: 'name',
                                 className: 'p-4',
                                 render: (data, type, row) => `
-                                            <div class="font-bold text-slate-800 dark:text-white">${data}</div>
-                                            <div class="text-xs text-slate-500">${row.primary_contact ? row.primary_contact.phone : '-'}</div>
-                                        `
+                                                <div class="font-bold text-slate-800 dark:text-white">${data}</div>
+                                                <div class="text-xs text-slate-500">${row.primary_contact ? row.primary_contact.phone : '-'}</div>
+                                            `
                             },
                             {
                                 data: 'branch',
@@ -322,18 +322,18 @@
                                 orderable: false,
                                 render: function (data, type, row) {
                                     return `
-                                                <div class="flex items-center justify-center gap-2">
-                                                    <button onclick="window.viewData(${row.id})" class="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 rounded-lg transition-colors" title="Lihat Detail">
-                                                        <i data-lucide="eye" class="w-4 h-4"></i>
-                                                    </button>
-                                                    <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
-                                                        <i data-lucide="pencil" class="w-4 h-4"></i>
-                                                    </button>
-                                                    <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
-                                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                                    </button>
-                                                </div>
-                                            `;
+                                                    <div class="flex items-center justify-center gap-2">
+                                                        <button onclick="window.viewData(${row.id})" class="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 rounded-lg transition-colors" title="Lihat Detail">
+                                                            <i data-lucide="eye" class="w-4 h-4"></i>
+                                                        </button>
+                                                        <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
+                                                            <i data-lucide="pencil" class="w-4 h-4"></i>
+                                                        </button>
+                                                        <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
+                                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                        </button>
+                                                    </div>
+                                                `;
                                 }
                             }
                         ],
@@ -520,7 +520,10 @@
 
                     // Format contacts array from temp object
                     if (object._contacts_temp) {
-                        object.contacts = Object.values(object._contacts_temp);
+                        object.contacts = Object.values(object._contacts_temp).filter(c => {
+                            // Only include contact if Name OR Phone is filled
+                            return (c.name && c.name.trim() !== '') || (c.phone && c.phone.trim() !== '');
+                        });
                         delete object._contacts_temp;
                     }
 

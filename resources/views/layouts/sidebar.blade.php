@@ -5,13 +5,73 @@
         <span class="font-medium text-sm menu-text transition-opacity duration-200">Dashboard Utama</span>
     </a>
 
+    {{-- CORE BUSINESS GROUP (Admin & Employee) --}}
     @role('Owner|Admin|Employee')
     <div class="pt-4 pb-2 menu-text">
-        <p class="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Master Data</p>
+        <p class="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Operasional</p>
+    </div>
+
+    <!-- Data Pelanggan -->
+    <a href="{{ route('clients.index') }}"
+        class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all group whitespace-nowrap {{ request()->routeIs('clients.*') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
+        <i data-lucide="users" class="w-5 h-5 shrink-0 transition-colors"></i>
+        <span class="font-medium text-sm menu-text transition-opacity duration-200">Data Pelanggan</span>
+    </a>
+
+    <!-- Layanan Aktif (Subscriptions) -->
+    <a href="{{ route('subscriptions.index') }}"
+        class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all group whitespace-nowrap {{ request()->routeIs('subscriptions.*') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
+        <i data-lucide="zap" class="w-5 h-5 shrink-0 transition-colors"></i>
+        <span class="font-medium text-sm menu-text transition-opacity duration-200">Layanan Aktif</span>
+    </a>
+
+    <!-- Tagihan (Invoices) -->
+    <a href="{{ route('invoices.index') }}"
+        class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all group whitespace-nowrap {{ request()->routeIs('invoices.*') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
+        <i data-lucide="receipt" class="w-5 h-5 shrink-0 transition-colors"></i>
+        <span class="font-medium text-sm menu-text transition-opacity duration-200">Tagihan</span>
+    </a>
+
+    <!-- Produk & Layanan -->
+    <div class="pt-4 pb-2 menu-text">
+        <p class="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Produk & Layanan</p>
+    </div>
+
+    <!-- Submenu: Produk & Paket -->
+    @php
+        $isProductActive = request()->routeIs('services.*') || request()->routeIs('packages.*');
+    @endphp
+    <div class="submenu-container {{ $isProductActive ? 'submenu-active' : '' }}" id="menu-produk"
+        data-menu-title="Produk">
+        <button onclick="toggleSubmenu('menu-produk')"
+            class="w-full flex items-center justify-between px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all whitespace-nowrap group {{ $isProductActive ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
+            <div class="flex items-center gap-3">
+                <i data-lucide="box" class="w-5 h-5 shrink-0 transition-colors"></i>
+                <span class="font-medium text-sm menu-text">Katalog Layanan</span>
+            </div>
+            <i data-lucide="chevron-down"
+                class="chevron-icon w-4 h-4 transition-transform duration-200 {{ $isProductActive ? 'rotate-180' : '' }}"></i>
+        </button>
+        <div class="submenu-content flex flex-col pl-12 lg:group-hover:pl-2 space-y-1 mt-1 overflow-hidden transition-all duration-300 {{ $isProductActive ? 'submenu-open' : '' }}"
+            style="{{ $isProductActive ? 'max-height: 500px;' : 'max-height: 0;' }}">
+            <a href="{{ route('services.index') }}"
+                class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('services.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
+                Daftar Layanan
+            </a>
+            <a href="{{ route('packages.index') }}"
+                class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('packages.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
+                Daftar Paket
+            </a>
+        </div>
     </div>
     @endrole
 
+    {{-- MASTER DATA GROUP (Owner & Admin) --}}
     @role('Owner|Admin')
+    <div class="pt-4 pb-2 menu-text">
+        <p class="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Master Data</p>
+    </div>
+
     <!-- Submenu: Organisasi -->
     @php
         $isOrgActive = request()->routeIs('branches.*') || request()->routeIs('divisions.*') || request()->routeIs('employees.*');
@@ -71,40 +131,8 @@
             </a>
         </div>
     </div>
-    @endrole
 
-    @role('Owner|Admin|Employee')
-    <!-- Submenu: Produk & Packet -->
-    @php
-        $isProductActive = request()->routeIs('services.*') || request()->routeIs('packages.*');
-    @endphp
-    <div class="submenu-container {{ $isProductActive ? 'submenu-active' : '' }}" id="menu-produk"
-        data-menu-title="Produk">
-        <button onclick="toggleSubmenu('menu-produk')"
-            class="w-full flex items-center justify-between px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all whitespace-nowrap group {{ $isProductActive ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
-            <div class="flex items-center gap-3">
-                <i data-lucide="box" class="w-5 h-5 shrink-0 transition-colors"></i>
-                <span class="font-medium text-sm menu-text">Produk & Paket</span>
-            </div>
-            <i data-lucide="chevron-down"
-                class="chevron-icon w-4 h-4 transition-transform duration-200 {{ $isProductActive ? 'rotate-180' : '' }}"></i>
-        </button>
-        <div class="submenu-content flex flex-col pl-12 lg:group-hover:pl-2 space-y-1 mt-1 overflow-hidden transition-all duration-300 {{ $isProductActive ? 'submenu-open' : '' }}"
-            style="{{ $isProductActive ? 'max-height: 500px;' : 'max-height: 0;' }}">
-            <a href="{{ route('services.index') }}"
-                class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('services.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
-                Daftar Layanan
-            </a>
-            <a href="{{ route('packages.index') }}"
-                class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('packages.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
-                Daftar Paket
-            </a>
-        </div>
-    </div>
-    @endrole
-
-    {{-- Role Management (Owner & Admin) --}}
-    @role('Owner|Admin')
+    <!-- Manajemen Role -->
     <a href="{{ route('roles.index') }}"
         class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all group whitespace-nowrap {{ request()->routeIs('roles.*') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
         <i data-lucide="shield" class="w-5 h-5 shrink-0 transition-colors"></i>
@@ -112,84 +140,8 @@
     </a>
     @endrole
 
-    @role('Owner|Admin|Employee')
-    <!-- Submenu: Layanan -->
-    <div class="submenu-container" id="menu-layanan" data-menu-title="Layanan & NOC">
-        <button onclick="toggleSubmenu('menu-layanan')"
-            class="w-full flex items-center justify-between px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all whitespace-nowrap group">
-            <div class="flex items-center gap-3">
-                <i data-lucide="globe" class="w-5 h-5 shrink-0 transition-colors"></i>
-                <span class="font-medium text-sm menu-text">Layanan & NOC</span>
-            </div>
-            <i data-lucide="chevron-down" class="chevron-icon w-4 h-4 transition-transform duration-200"></i>
-        </button>
-        <div class="submenu-content flex flex-col pl-12 lg:group-hover:pl-2 space-y-1 mt-1 overflow-hidden transition-all duration-300"
-            style="max-height: 0;">
-            <a href="#"
-                class="text-sm py-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50">Monitoring
-                OLT</a>
-            <a href="#"
-                class="text-sm py-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50">Manajemen
-                ODP</a>
-            <a href="#"
-                class="text-sm py-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50">Bandwidth
-                Usage</a>
-        </div>
-    </div>
-
-    <!-- Menu: Pelanggan -->
-    <a href="{{ route('clients.index') }}"
-        class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all group whitespace-nowrap {{ request()->routeIs('clients.*') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
-        <i data-lucide="users" class="w-5 h-5 shrink-0 transition-colors"></i>
-        <span class="font-medium text-sm menu-text transition-opacity duration-200">Data Pelanggan</span>
-    </a>
-
-    <!-- Menu: Langganan -->
-    <a href="{{ route('subscriptions.index') }}"
-        class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all group whitespace-nowrap {{ request()->routeIs('subscriptions.*') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
-        <i data-lucide="zap" class="w-5 h-5 shrink-0 transition-colors"></i>
-        <span class="font-medium text-sm menu-text transition-opacity duration-200">Layanan Aktif</span>
-    </a>
-
-    <!-- Menu: Tagihan (Invoices) -->
-    <a href="{{ route('invoices.index') }}"
-        class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all group whitespace-nowrap {{ request()->routeIs('invoices.*') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
-        <i data-lucide="receipt" class="w-5 h-5 shrink-0 transition-colors"></i>
-        <span class="font-medium text-sm menu-text transition-opacity duration-200">Tagihan</span>
-    </a>
-
-    <a href="#"
-        class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all group whitespace-nowrap">
-        <i data-lucide="ticket" class="w-5 h-5 shrink-0 transition-colors"></i>
-        <span class="font-medium text-sm menu-text">Troubleshoot</span>
-        <span
-            class="badge ml-auto bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-[10px] font-bold px-2 py-0.5 rounded-full">12</span>
-    </a>
-
-    <div class="pt-6 pb-2 menu-text">
-        <p class="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Finance & Billing</p>
-    </div>
-
-    <a href="#"
-        class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all group whitespace-nowrap">
-        <i data-lucide="receipt" class="w-5 h-5 shrink-0 transition-colors"></i>
-        <span class="font-medium text-sm menu-text">Invoicing</span>
-    </a>
-    @endrole
-
+    {{-- CLIENT GROUP (Future Phase) --}}
     @role('Client')
-    <div class="pt-6 pb-2 menu-text">
-        <p class="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Menu Pelanggan</p>
-    </div>
-    <a href="#"
-        class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all group whitespace-nowrap">
-        <i data-lucide="package" class="w-5 h-5 shrink-0 transition-colors"></i>
-        <span class="font-medium text-sm menu-text">Langganan Saya</span>
-    </a>
-    <a href="#"
-        class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all group whitespace-nowrap">
-        <i data-lucide="credit-card" class="w-5 h-5 shrink-0 transition-colors"></i>
-        <span class="font-medium text-sm menu-text">Tagihan & Bayar</span>
-    </a>
+    <!-- Placeholder for client menu -->
     @endrole
 </nav>
