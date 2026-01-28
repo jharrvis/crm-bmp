@@ -103,6 +103,38 @@ class SubscriptionController extends Controller
                     'signal_rx' => $request->signal_rx,
                 ]);
             } elseif ($serviceType === 'hosting') {
+                // Call HestiaCP API
+                $server = HostingServer::findOrFail($request->hosting_server_id);
+                $hestia = new \App\Services\HestiaCPService($server);
+
+                // Create User
+                // Use default package 'default' or mapping from our package? 
+                // For now use 'default' or maybe custom logic.
+                // Assuming package name in Hestia matches our CRM package name could be a strategy, 
+                // or just use 'default'. Let's use 'default' for stability first.
+                $userPass = $request->password;
+                $createRes = $hestia->createUser(
+                    $request->username,
+                    $userPass,
+                    $client->email ?? 'admin@example.com',
+                    $client->name,
+                    'default'
+                );
+
+                if ($createRes['success']) {
+                    // Create Domain
+                    if ($request->domain) {
+                        $hestia->createWebDomain($request->username, $request->domain);
+                    }
+                } else {
+                    // Log error but continue saving local? Or throw?
+                    // Better to throw so transaction determines fate.
+                    // But maybe user already exists?
+                    // Let's log warning and continue, marking status as pending/error?
+                    \Illuminate\Support\Facades\Log::warning("Hestia User Creation Failed: " . $createRes['message']);
+                    // Optional: $subscription->update(['notes' => $subscription->notes . " [Hestia Error: " . $createRes['message'] . "]"]);
+                }
+
                 SubscriptionHosting::create([
                     'subscription_id' => $subscription->id,
                     'hosting_server_id' => $request->hosting_server_id,
@@ -196,6 +228,29 @@ class SubscriptionController extends Controller
                     ]
                 );
             } elseif ($serviceType === 'hosting') {
+                $hosting = $subscription->hosting;
+                $server = HostingServer::findOrFail($request->hosting_server_id); // Assuming server might change? Probably not often.
+                $hestia = new \App\Services\HestiaCPService($server);
+
+                // Check for Status Change
+                if ($subscription->wasChanged('status')) {
+                    $newStatus = $request->status;
+                    if ($newStatus === 'suspended') {
+                        $hestia->suspendUser($hosting->username);
+                    } elseif ($newStatus === 'active') { // And previous was suspended?
+                        $hestia->unsuspendUser($hosting->username);
+                    } elseif ($newStatus === 'terminated') {
+                        // Optional: $hestia->deleteUser($hosting->username);
+                        // Usually we keep terminated for a while, or maybe suspend first.
+                        $hestia->suspendUser($hosting->username);
+                    }
+                }
+
+                // Check if password changed
+                if ($request->password) {
+                    $hestia->changePassword($hosting->username, $request->password);
+                }
+
                 $subscription->hosting()->updateOrCreate(
                     ['subscription_id' => $subscription->id],
                     [

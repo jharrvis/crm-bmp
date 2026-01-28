@@ -251,8 +251,42 @@
     <x-confirm-modal />
 
     @push('scripts')
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
         <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
         <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+
+        <style>
+            /* Select2 Custom Styling to match Tailwind */
+            .select2-container .select2-selection--single {
+                height: 46px !important;
+                border-radius: 0.75rem !important;
+                /* xl */
+                border-color: #e2e8f0 !important;
+                padding-top: 8px !important;
+                padding-left: 12px !important;
+            }
+
+            .dark .select2-container .select2-selection--single {
+                background-color: #334155 !important;
+                /* slate-700/50 approx */
+                border-color: #475569 !important;
+                color: white !important;
+            }
+
+            .dark .select2-container--default .select2-selection--single .select2-selection__rendered {
+                color: white !important;
+            }
+
+            /* Fix z-index for modal */
+            .select2-container--open {
+                z-index: 9999999 !important;
+            }
+
+            .select2-dropdown {
+                z-index: 9999999 !important;
+            }
+        </style>
 
         <script>
             (function () {
@@ -261,6 +295,14 @@
                 let table;
 
                 $(document).ready(function () {
+                    // Initialize Select2
+                    $('#client_id').select2({
+                        dropdownParent: $('#formModalPanel'), // Important for Modal focus
+                        placeholder: '-- Pilih Pelanggan --',
+                        allowClear: true,
+                        width: '100%'
+                    });
+
                     // Initialize DataTable
                     table = $('#dataTable').DataTable({
                         data: tableData,
@@ -274,19 +316,19 @@
                                 data: 'client',
                                 className: 'p-4',
                                 render: (data) => data ? `
-                                        <div class="font-bold text-slate-800 dark:text-white">${data.name}</div>
-                                        <div class="text-xs text-slate-500 font-mono">${data.client_code}</div>
-                                    ` : '-'
+                                            <div class="font-bold text-slate-800 dark:text-white">${data.name}</div>
+                                            <div class="text-xs text-slate-500 font-mono">${data.client_code}</div>
+                                        ` : '-'
                             },
                             {
                                 data: 'package',
                                 className: 'p-4',
                                 render: (data) => data ? `
-                                        <div class="flex items-center gap-2">
-                                            <div class="font-medium text-slate-700 dark:text-slate-300">${data.name}</div>
-                                        </div>
-                                        <div class="text-xs text-slate-500">${data.service ? data.service.name : '-'}</div>
-                                    ` : '-'
+                                            <div class="flex items-center gap-2">
+                                                <div class="font-medium text-slate-700 dark:text-slate-300">${data.name}</div>
+                                            </div>
+                                            <div class="text-xs text-slate-500">${data.service ? data.service.name : '-'}</div>
+                                        ` : '-'
                             },
                             {
                                 data: 'installed_at',
@@ -318,15 +360,15 @@
                                 orderable: false,
                                 render: function (data, type, row) {
                                     return `
-                                            <div class="flex items-center justify-center gap-2">
-                                                <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
-                                                    <i data-lucide="pencil" class="w-4 h-4"></i>
-                                                </button>
-                                                <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
-                                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                                </button>
-                                            </div>
-                                        `;
+                                                <div class="flex items-center justify-center gap-2">
+                                                    <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
+                                                        <i data-lucide="pencil" class="w-4 h-4"></i>
+                                                    </button>
+                                                    <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
+                                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                    </button>
+                                                </div>
+                                            `;
                                 }
                             }
                         ],
