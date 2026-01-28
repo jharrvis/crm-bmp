@@ -36,7 +36,7 @@ class DivisionSeeder extends Seeder
         ];
 
         foreach ($divisions as $division) {
-            Division::create($division);
+            Division::updateOrCreate(['name' => $division['name']], $division);
         }
     }
 }

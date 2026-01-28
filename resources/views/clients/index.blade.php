@@ -283,9 +283,9 @@
                                 data: 'name',
                                 className: 'p-4',
                                 render: (data, type, row) => `
-                                        <div class="font-bold text-slate-800 dark:text-white">${data}</div>
-                                        <div class="text-xs text-slate-500">${row.primary_contact ? row.primary_contact.phone : '-'}</div>
-                                    `
+                                            <div class="font-bold text-slate-800 dark:text-white">${data}</div>
+                                            <div class="text-xs text-slate-500">${row.primary_contact ? row.primary_contact.phone : '-'}</div>
+                                        `
                             },
                             {
                                 data: 'branch',
@@ -322,15 +322,18 @@
                                 orderable: false,
                                 render: function (data, type, row) {
                                     return `
-                                            <div class="flex items-center justify-center gap-2">
-                                                <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
-                                                    <i data-lucide="pencil" class="w-4 h-4"></i>
-                                                </button>
-                                                <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
-                                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                                </button>
-                                            </div>
-                                        `;
+                                                <div class="flex items-center justify-center gap-2">
+                                                    <button onclick="window.viewData(${row.id})" class="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 rounded-lg transition-colors" title="Lihat Detail">
+                                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                                    </button>
+                                                    <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
+                                                        <i data-lucide="pencil" class="w-4 h-4"></i>
+                                                    </button>
+                                                    <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
+                                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                    </button>
+                                                </div>
+                                            `;
                                 }
                             }
                         ],
@@ -405,10 +408,12 @@
                 }
 
                 // Modal Functions
-                window.openModal = function (isEdit = false) {
+                window.openModal = function (mode = 'add') { // mode: 'add', 'edit', 'view'
                     const modal = document.getElementById('formModal');
                     const backdrop = document.getElementById('formModalBackdrop');
                     const panel = document.getElementById('formModalPanel');
+                    const form = document.getElementById('dataForm');
+                    const submitBtn = document.getElementById('submitBtn');
 
                     modal.classList.remove('hidden');
                     setTimeout(() => {
@@ -417,10 +422,29 @@
                         panel.classList.add('scale-100', 'opacity-100');
                     }, 10);
 
-                    if (!isEdit) {
+                    // Enable/Disable form based on mode
+                    const inputs = form.querySelectorAll('input, select, textarea, button[type="button"]');
+                    if (mode === 'view') {
+                        inputs.forEach(el => {
+                            if (!el.closest('.shrink-0')) { // Don't disable modal close click
+                                el.disabled = true;
+                            }
+                        });
+                        submitBtn.classList.add('hidden');
+                        // Specialized check for 'Tambah Kontak Lain' which is a button
+                        document.querySelector('button[onclick="addContactRow()"]').classList.add('hidden');
+                        // Also hide trash buttons in contact rows
+                        document.querySelectorAll('.contact-row button').forEach(b => b.classList.add('hidden'));
+                    } else {
+                        inputs.forEach(el => el.disabled = false);
+                        submitBtn.classList.remove('hidden');
+                        document.querySelector('button[onclick="addContactRow()"]').classList.remove('hidden');
+                    }
+
+                    if (mode === 'add') {
                         document.getElementById('modalTitle').innerText = 'Tambah Pelanggan Baru';
                         document.getElementById('submitText').innerText = 'Simpan Data';
-                        document.getElementById('dataForm').reset();
+                        form.reset();
                         document.getElementById('dataId').value = '';
 
                         // Reset Contacts: Add one empty row
@@ -536,42 +560,53 @@
                         });
                 });
 
+                // View Data
+                window.viewData = function (id) {
+                    const item = tableData.find(d => d.id === id);
+                    if (item) {
+                        fillFormWithData(item);
+                        document.getElementById('modalTitle').innerText = 'Detail Pelanggan';
+                        window.openModal('view');
+                    }
+                };
+
+                // Helper to fill form
+                function fillFormWithData(item) {
+                    document.getElementById('dataId').value = item.id;
+                    document.getElementById('branch_id').value = item.branch_id;
+                    document.getElementById('name').value = item.name;
+                    document.getElementById('type').value = item.type;
+                    document.getElementById('identity_number').value = item.identity_number || '';
+                    document.getElementById('address').value = item.address || '';
+                    document.getElementById('city').value = item.city || '';
+                    document.getElementById('postal_code').value = item.postal_code || '';
+                    document.getElementById('latitude').value = item.latitude || '';
+                    document.getElementById('longitude').value = item.longitude || '';
+                    document.getElementById('status').value = item.status;
+                    document.getElementById('notes').value = item.notes || '';
+
+                    // Fill Contacts
+                    document.getElementById('contacts-container').innerHTML = '';
+                    contactIndex = 0;
+                    if (item.contacts && item.contacts.length > 0) {
+                        const sortedContacts = [...item.contacts].sort((a, b) => b.is_primary - a.is_primary);
+                        sortedContacts.forEach(contact => {
+                            addContactRow(contact);
+                        });
+                    } else {
+                        addContactRow();
+                    }
+                    switchTab('main');
+                }
+
                 // Edit Data
                 window.editData = function (id) {
                     const item = tableData.find(d => d.id === id);
                     if (item) {
+                        fillFormWithData(item);
                         document.getElementById('modalTitle').innerText = 'Edit Pelanggan';
                         document.getElementById('submitText').innerText = 'Update Data';
-                        document.getElementById('dataId').value = item.id;
-
-                        // Fill Form
-                        document.getElementById('branch_id').value = item.branch_id;
-                        document.getElementById('name').value = item.name;
-                        document.getElementById('type').value = item.type;
-                        document.getElementById('identity_number').value = item.identity_number || '';
-                        document.getElementById('address').value = item.address || '';
-                        document.getElementById('city').value = item.city || '';
-                        document.getElementById('postal_code').value = item.postal_code || '';
-                        document.getElementById('latitude').value = item.latitude || '';
-                        document.getElementById('longitude').value = item.longitude || '';
-                        document.getElementById('status').value = item.status;
-                        document.getElementById('notes').value = item.notes || '';
-
-                        // Fill Contacts
-                        document.getElementById('contacts-container').innerHTML = '';
-                        contactIndex = 0;
-                        if (item.contacts && item.contacts.length > 0) {
-                            // Sort so primary is first
-                            const sortedContacts = [...item.contacts].sort((a, b) => b.is_primary - a.is_primary);
-                            sortedContacts.forEach(contact => {
-                                addContactRow(contact);
-                            });
-                        } else {
-                            addContactRow();
-                        }
-
-                        switchTab('main');
-                        window.openModal(true);
+                        window.openModal('edit');
                     }
                 };
 

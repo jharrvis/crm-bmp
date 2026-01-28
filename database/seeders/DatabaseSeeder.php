@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             BranchSeeder::class,
             DivisionSeeder::class,
+            SalatigaClientSeeder::class,
         ]);
     }
 }

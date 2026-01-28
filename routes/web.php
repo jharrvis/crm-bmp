@@ -34,6 +34,7 @@ Route::middleware('auth')->group(function () {
 
         // Core Business: Client Management
         Route::resource('clients', \App\Http\Controllers\ClientController::class);
+        Route::resource('subscriptions', \App\Http\Controllers\SubscriptionController::class);
     });
 
     // Role & Permission Management (Owner & Admin)

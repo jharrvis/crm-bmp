@@ -19,41 +19,49 @@ class UserSeeder extends Seeder
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // Create Roles
-        $roleOwner = Role::create(['name' => 'Owner']);
-        $roleAdmin = Role::create(['name' => 'Admin']);
-        $roleEmployee = Role::create(['name' => 'Employee']);
-        $roleClient = Role::create(['name' => 'Client']);
+        $roleOwner = Role::firstOrCreate(['name' => 'Owner']);
+        $roleAdmin = Role::firstOrCreate(['name' => 'Admin']);
+        $roleEmployee = Role::firstOrCreate(['name' => 'Employee']);
+        $roleClient = Role::firstOrCreate(['name' => 'Client']);
 
         // Create Owner User
-        $owner = User::create([
-            'name' => 'Bapak Owner',
-            'email' => 'owner@bmpnet.id',
-            'password' => Hash::make('password'),
-        ]);
+        $owner = User::updateOrCreate(
+            ['email' => 'owner@bmpnet.id'],
+            [
+                'name' => 'Bapak Owner',
+                'password' => Hash::make('password'),
+            ]
+        );
         $owner->assignRole($roleOwner);
 
         // Create Admin User
-        $admin = User::create([
-            'name' => 'Admin Pusat',
-            'email' => 'admin@bmpnet.id',
-            'password' => Hash::make('password'),
-        ]);
+        $admin = User::updateOrCreate(
+            ['email' => 'admin@bmpnet.id'],
+            [
+                'name' => 'Admin Pusat',
+                'password' => Hash::make('password'),
+            ]
+        );
         $admin->assignRole($roleAdmin);
 
         // Create Employee User
-        $employee = User::create([
-            'name' => 'Teknisi 1',
-            'email' => 'teknisi@bmpnet.id',
-            'password' => Hash::make('password'),
-        ]);
+        $employee = User::updateOrCreate(
+            ['email' => 'teknisi@bmpnet.id'],
+            [
+                'name' => 'Teknisi 1',
+                'password' => Hash::make('password'),
+            ]
+        );
         $employee->assignRole($roleEmployee);
 
         // Create Client User
-        $client = User::create([
-            'name' => 'Pelanggan A',
-            'email' => 'client@gmail.com',
-            'password' => Hash::make('password'),
-        ]);
+        $client = User::updateOrCreate(
+            ['email' => 'client@gmail.com'],
+            [
+                'name' => 'Pelanggan A',
+                'password' => Hash::make('password'),
+            ]
+        );
         $client->assignRole($roleClient);
     }
 }
