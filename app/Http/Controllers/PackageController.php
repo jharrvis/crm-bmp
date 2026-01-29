@@ -122,9 +122,10 @@ class PackageController extends Controller
      */
     public function syncPackages()
     {
-        $servers = \App\Models\HostingServer::where('is_active', true)->where('type', 'web_hosting')->get();
+        // Fix: Type is 'hestiacp' based on UI select options, not 'web_hosting'
+        $servers = \App\Models\HostingServer::where('is_active', true)->where('type', 'hestiacp')->get();
         if ($servers->isEmpty()) {
-            return response()->json(['success' => false, 'message' => 'Tidak ada server hosting aktif.'], 404);
+            return response()->json(['success' => false, 'message' => 'Tidak ada server hosting (HestiaCP) aktif. Pastikan Tipe server adalah "hestiacp".'], 404);
         }
 
         $syncedCount = 0;
