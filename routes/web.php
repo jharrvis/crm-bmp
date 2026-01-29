@@ -34,7 +34,9 @@ Route::middleware('auth')->group(function () {
         Route::resource('packages', \App\Http\Controllers\PackageController::class);
 
         // Core Business: Client Management
+        // Core Business: Client Management
         Route::resource('clients', \App\Http\Controllers\ClientController::class);
+        Route::resource('clients.contacts', \App\Http\Controllers\ClientContactController::class)->only(['store', 'update', 'destroy']);
         Route::resource('subscriptions', \App\Http\Controllers\SubscriptionController::class);
 
         // Billing

@@ -112,7 +112,11 @@ class ClientController extends Controller
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json($client->load('branch', 'contacts'));
         }
-        return redirect()->route('clients.index');
+
+        $client->load(['branch', 'contacts', 'subscriptions.package.service']);
+        $packages = \App\Models\Package::where('is_active', true)->get(); // For "Add Service" modal if needed here
+
+        return view('clients.show', compact('client', 'packages'));
     }
 
     public function edit(Client $client)
@@ -160,19 +164,25 @@ class ClientController extends Controller
             // Better: Since form sends all current contacts, we can delete those not in list, update those with ID, create new.
             // But modal UI implementation for "Update" typically needs to send IDs.
             // For MVP Phase 3 -> Let's do simple: Delete all and recreate.
-            $client->contacts()->delete();
+            // Sync Contacts only if provided in request
+            if ($request->has('contacts')) {
+                // Determine if we are replacing all or just updating specific ones. 
+                // Given the current logic is delete-all-and-recreate, let's keep it but only if 'contacts' key exists.
+                // This allows atomic updates to other fields without wiping contacts.
+                $client->contacts()->delete();
 
-            if (!empty($request->contacts)) {
-                foreach ($request->contacts as $index => $contactData) {
-                    ClientContact::create([
-                        'client_id' => $client->id,
-                        'name' => $contactData['name'],
-                        'phone' => $contactData['phone'],
-                        'email' => $contactData['email'] ?? null,
-                        'position' => $contactData['position'] ?? null,
-                        'whatsapp' => $contactData['whatsapp'] ?? null,
-                        'is_primary' => $index === 0
-                    ]);
+                if (!empty($request->contacts)) {
+                    foreach ($request->contacts as $index => $contactData) {
+                        ClientContact::create([
+                            'client_id' => $client->id,
+                            'name' => $contactData['name'],
+                            'phone' => $contactData['phone'],
+                            'email' => $contactData['email'] ?? null,
+                            'position' => $contactData['position'] ?? null,
+                            'whatsapp' => $contactData['whatsapp'] ?? null,
+                            'is_primary' => $index === 0
+                        ]);
+                    }
                 }
             }
 

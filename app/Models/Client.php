@@ -45,4 +45,9 @@ class Client extends Model
     {
         return $this->hasOne(ClientContact::class)->where('is_primary', true);
     }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
+    }
 }
