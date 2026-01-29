@@ -81,6 +81,7 @@
                                     <option value="hosting">Web Hosting</option>
                                     <option value="vps">VPS / Cloud</option>
                                     <option value="colocation">Colocation</option>
+                                    <option value="domain">Domain Registration</option>
                                     <option value="other">Lainnya</option>
                                 </select>
                             </div>
@@ -154,6 +155,7 @@
                                     if (data === 'connectivity') label = 'Connectivity';
                                     else if (data === 'hosting') label = 'Web Hosting';
                                     else if (data === 'vps') label = 'VPS / Cloud';
+                                    else if (data === 'domain') label = 'Domain Registration';
                                     return `<span class="text-slate-600 dark:text-slate-400 capitalize">${label}</span>`;
                                 }
                             },
@@ -170,15 +172,15 @@
                                 orderable: false,
                                 render: function (data, type, row) {
                                     return `
-                                        <div class="flex items-center justify-center gap-2">
-                                            <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
-                                                <i data-lucide="pencil" class="w-4 h-4"></i>
-                                            </button>
-                                            <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
-                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                            </button>
-                                        </div>
-                                    `;
+                                                <div class="flex items-center justify-center gap-2">
+                                                    <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
+                                                        <i data-lucide="pencil" class="w-4 h-4"></i>
+                                                    </button>
+                                                    <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
+                                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                    </button>
+                                                </div>
+                                            `;
                                 }
                             }
                         ],

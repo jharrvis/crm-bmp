@@ -59,7 +59,7 @@
                 </div>
 
                 <!-- Modal Body (Scrollable) -->
-                <div class="flex-1 overflow-y-auto custom-scrollbar p-6">
+                <div id="modalScrollableBody" class="flex-1 overflow-y-auto custom-scrollbar p-6">
                     <form id="dataForm" class="space-y-6">
                         @csrf
                         <input type="hidden" id="dataId" name="id">
@@ -180,7 +180,7 @@
                             <!-- Hosting Fields -->
                             <div id="fields-hosting" class="hidden space-y-4">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
+                                    <div id="div-hosting-server">
                                         <label
                                             class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Hosting
                                             Server</label>
@@ -251,139 +251,89 @@
     <x-confirm-modal />
 
     @push('scripts')
-        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
         <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
         <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 
         <style>
-            /* Select2 Container - Full Width */
-            .select2-container {
-                width: 100% !important;
+            /* Choices.js Custom Styling - Matches Tailwind Design */
+            .choices {
+                margin-bottom: 0 !important;
             }
 
-            /* Select2 Selection Box - Match Tailwind Input */
-            .select2-container .select2-selection--single {
-                height: 46px !important;
-                display: flex !important;
-                align-items: center !important;
+            .choices__inner {
+                min-height: 46px !important;
                 border-radius: 0.75rem !important;
                 border: 1px solid #e2e8f0 !important;
                 background-color: #f8fafc !important;
-                padding: 0 0.75rem !important;
+                padding: 0.625rem 0.75rem !important;
+                font-size: 0.875rem !important;
                 transition: all 0.15s ease-in-out !important;
             }
 
-            .select2-container--default .select2-selection--single:focus,
-            .select2-container--default.select2-container--open .select2-selection--single {
+            .choices__inner:focus,
+            .choices.is-focused .choices__inner {
                 border-color: #3b82f6 !important;
                 box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
                 outline: none !important;
             }
 
-            /* Rendered Text */
-            .select2-container--default .select2-selection--single .select2-selection__rendered {
-                color: #1e293b !important;
-                line-height: 46px !important;
-                padding-left: 0 !important;
-                font-size: 0.875rem !important;
+            .choices__list--single {
+                padding: 0 !important;
             }
 
-            .select2-container--default .select2-selection--single .select2-selection__placeholder {
+            .choices__placeholder {
                 color: #94a3b8 !important;
-            }
-
-            /* Arrow */
-            .select2-container--default .select2-selection--single .select2-selection__arrow {
-                height: 46px !important;
-                right: 8px !important;
-            }
-
-            /* Clear Button */
-            .select2-container--default .select2-selection--single .select2-selection__clear {
-                margin-right: 8px !important;
-                font-size: 1.2rem !important;
+                opacity: 1 !important;
             }
 
             /* Dropdown */
-            .select2-dropdown {
+            .choices__list--dropdown {
                 border: 1px solid #e2e8f0 !important;
                 border-radius: 0.75rem !important;
                 box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
                 margin-top: 4px !important;
-                overflow: hidden !important;
+                z-index: 9999 !important;
             }
 
-            /* Search Box */
-            .select2-container--default .select2-search--dropdown .select2-search__field {
-                border: 1px solid #e2e8f0 !important;
-                border-radius: 0.5rem !important;
-                padding: 0.5rem 0.75rem !important;
-                font-size: 0.875rem !important;
-                margin: 0.5rem !important;
-                width: calc(100% - 1rem) !important;
-            }
-
-            .select2-container--default .select2-search--dropdown .select2-search__field:focus {
-                border-color: #3b82f6 !important;
-                outline: none !important;
-                box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
-            }
-
-            /* Results */
-            .select2-results__option {
+            .choices__list--dropdown .choices__item {
                 padding: 0.625rem 0.875rem !important;
                 font-size: 0.875rem !important;
                 color: #334155 !important;
             }
 
-            .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            .choices__list--dropdown .choices__item--selectable.is-highlighted {
                 background-color: #3b82f6 !important;
                 color: white !important;
             }
 
-            .select2-container--default .select2-results__option--selected {
-                background-color: #eff6ff !important;
-                color: #1e40af !important;
+            /* Search Input */
+            .choices__input {
+                background-color: transparent !important;
+                font-size: 0.875rem !important;
+                margin-bottom: 0 !important;
+                padding: 0 !important;
             }
 
             /* Dark Mode */
-            .dark .select2-container .select2-selection--single {
+            .dark .choices__inner {
                 background-color: rgba(51, 65, 85, 0.5) !important;
                 border-color: #475569 !important;
-            }
-
-            .dark .select2-container--default .select2-selection--single .select2-selection__rendered {
                 color: #f1f5f9 !important;
             }
 
-            .dark .select2-dropdown {
+            .dark .choices__list--dropdown {
                 background-color: #1e293b !important;
                 border-color: #475569 !important;
             }
 
-            .dark .select2-container--default .select2-search--dropdown .select2-search__field {
-                background-color: #334155 !important;
-                border-color: #475569 !important;
-                color: white !important;
-            }
-
-            .dark .select2-results__option {
+            .dark .choices__list--dropdown .choices__item {
                 color: #e2e8f0 !important;
             }
 
-            .dark .select2-container--default .select2-results__option--selected {
-                background-color: rgba(59, 130, 246, 0.2) !important;
-                color: #93c5fd !important;
-            }
-
-            /* Fix z-index for modal */
-            .select2-container--open {
-                z-index: 9999999 !important;
-            }
-
-            .select2-dropdown {
-                z-index: 9999999 !important;
+            .dark .choices__list--dropdown .choices__item--selectable.is-highlighted {
+                background-color: #3b82f6 !important;
             }
         </style>
 
@@ -392,14 +342,17 @@
                 const baseUrl = '{{ url('/') }}';
                 let tableData = @json($subscriptions);
                 let table;
+                let clientChoice; // Declare in outer scope
 
                 $(document).ready(function () {
-                    // Initialize Select2
-                    $('#client_id').select2({
-                        dropdownParent: $('#formModalPanel'), // Important for Modal focus
-                        placeholder: '-- Pilih Pelanggan --',
-                        allowClear: true,
-                        width: '100%'
+                    // Initialize Choices.js (works perfectly in modals)
+                    clientChoice = new Choices('#client_id', {
+                        searchEnabled: true,
+                        searchPlaceholderValue: 'Cari pelanggan...',
+                        placeholder: true,
+                        placeholderValue: '-- Pilih Pelanggan --',
+                        removeItemButton: true,
+                        shouldSort: false
                     });
 
                     // Initialize DataTable
@@ -415,19 +368,19 @@
                                 data: 'client',
                                 className: 'p-4',
                                 render: (data) => data ? `
-                                            <div class="font-bold text-slate-800 dark:text-white">${data.name}</div>
-                                            <div class="text-xs text-slate-500 font-mono">${data.client_code}</div>
-                                        ` : '-'
+                                                                                        <div class="font-bold text-slate-800 dark:text-white">${data.name}</div>
+                                                                                        <div class="text-xs text-slate-500 font-mono">${data.client_code}</div>
+                                                                                    ` : '-'
                             },
                             {
                                 data: 'package',
                                 className: 'p-4',
                                 render: (data) => data ? `
-                                            <div class="flex items-center gap-2">
-                                                <div class="font-medium text-slate-700 dark:text-slate-300">${data.name}</div>
-                                            </div>
-                                            <div class="text-xs text-slate-500">${data.service ? data.service.name : '-'}</div>
-                                        ` : '-'
+                                                                                        <div class="flex items-center gap-2">
+                                                                                            <div class="font-medium text-slate-700 dark:text-slate-300">${data.name}</div>
+                                                                                        </div>
+                                                                                        <div class="text-xs text-slate-500">${data.service ? data.service.name : '-'}</div>
+                                                                                    ` : '-'
                             },
                             {
                                 data: 'installed_at',
@@ -459,15 +412,15 @@
                                 orderable: false,
                                 render: function (data, type, row) {
                                     return `
-                                                <div class="flex items-center justify-center gap-2">
-                                                    <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
-                                                        <i data-lucide="pencil" class="w-4 h-4"></i>
-                                                    </button>
-                                                    <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
-                                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                                    </button>
-                                                </div>
-                                            `;
+                                                                                            <div class="flex items-center justify-center gap-2">
+                                                                                                <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
+                                                                                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                                                                                </button>
+                                                                                                <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
+                                                                                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                                                                </button>
+                                                                                            </div>
+                                                                                        `;
                                 }
                             }
                         ],
@@ -503,8 +456,15 @@
                         detailsSection.classList.remove('hidden');
                         if (type === 'connectivity') {
                             fieldsConn.classList.remove('hidden');
-                        } else if (type === 'hosting') {
+                        } else if (type === 'hosting' || type === 'domain') {
                             fieldsHost.classList.remove('hidden');
+                            // Hide 'Hosting Server' for domain registration
+                            const divServer = document.getElementById('div-hosting-server');
+                            if (type === 'domain') {
+                                divServer.classList.add('hidden');
+                            } else {
+                                divServer.classList.remove('hidden');
+                            }
                         }
                     }
                 }
@@ -520,6 +480,11 @@
                         backdrop.classList.remove('opacity-0');
                         panel.classList.remove('scale-95', 'opacity-0');
                         panel.classList.add('scale-100', 'opacity-100');
+
+                        // Remove transform after animation to fix absolute positioning of Select2
+                        setTimeout(() => {
+                            panel.classList.remove('scale-100');
+                        }, 350);
                     }, 10);
 
                     if (!isEdit) {
@@ -528,6 +493,11 @@
                         document.getElementById('dataForm').reset();
                         document.getElementById('dataId').value = '';
                         document.getElementById('installed_at').valueAsDate = new Date();
+
+                        // Reset Choices.js
+                        if (clientChoice) {
+                            clientChoice.setChoiceByValue('');
+                        }
 
                         // Reset fields view
                         handlePackageChange();
@@ -619,7 +589,7 @@
                             document.getElementById('dataId').value = data.id;
 
                             // Fill Form Values
-                            document.getElementById('client_id').value = data.client_id;
+                            clientChoice.setChoiceByValue(data.client_id.toString());
                             document.getElementById('package_id').value = data.package_id;
                             document.getElementById('installed_at').value = data.installed_at ? data.installed_at.split('T')[0] : '';
                             document.getElementById('status').value = data.status;
