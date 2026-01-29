@@ -25,6 +25,7 @@ Route::middleware('auth')->group(function () {
         // Master Data: Infrastructure
         Route::resource('routers', \App\Http\Controllers\RouterController::class);
         Route::resource('servers', \App\Http\Controllers\HostingServerController::class);
+        Route::resource('vendors', \App\Http\Controllers\VendorController::class);
     });
 
     // Master Data: Products & Services (Owner, Admin, & Employee)
