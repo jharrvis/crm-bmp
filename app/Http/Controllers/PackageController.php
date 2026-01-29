@@ -117,4 +117,71 @@ class PackageController extends Controller
 
         return redirect()->route('packages.index')->with('success', 'Paket berhasil dihapus.');
     }
+    /**
+     * Sync packages from HestiaCP Servers
+     */
+    public function syncPackages()
+    {
+        $servers = \App\Models\HostingServer::where('is_active', true)->where('type', 'web_hosting')->get();
+        if ($servers->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'Tidak ada server hosting aktif.'], 404);
+        }
+
+        $syncedCount = 0;
+        $errors = [];
+
+        // Ensure "Hosting" service category exists
+        $service = Service::firstOrCreate(
+            ['code' => 'HST-01', 'type' => 'hosting'],
+            ['name' => 'Web Hosting', 'description' => 'Layanan Web Hosting HestiaCP', 'is_active' => true]
+        );
+
+        foreach ($servers as $server) {
+            $hestia = new \App\Services\HestiaCPService($server);
+            $result = $hestia->listPackages();
+
+            if (!$result['success']) {
+                $errors[] = "Server {$server->name}: " . ($result['message'] ?? 'Unknown error');
+                continue;
+            }
+
+            // Hestia returns JSON string in 'data' key? Or direct array if parsed?
+            // HestiaCPService returns 'data' as the body string.
+            $data = json_decode($result['data'], true);
+
+            if (!is_array($data)) {
+                $errors[] = "Server {$server->name}: Invalid JSON format";
+                continue;
+            }
+
+            foreach ($data as $pkgName => $pkgDetails) {
+                // Update or Create Package
+                // Mapping:
+                // name -> pkgName
+                // bandwidth -> bandwidth_up/down (Hestia uses 'bandwidth' total)
+                // quota -> quota (disk quota)
+
+                Package::updateOrCreate(
+                    [
+                        'name' => $pkgName,
+                        'service_id' => $service->id
+                    ],
+                    [
+                        'quota' => $pkgDetails['DISK_QUOTA'] ?? '0',
+                        'bandwidth_down' => $pkgDetails['BANDWIDTH'] ?? '0', // Using generic bandwidth for both?
+                        'description' => "Synced from {$server->name}. Web Domains: {$pkgDetails['WEB_DOMAINS']}, E-mails: {$pkgDetails['MAIL_ACCOUNTS']}",
+                        'price' => 0, // Hestia doesn't store price, keeping/defaulting to 0 for manual update
+                        'is_active' => true
+                    ]
+                );
+                $syncedCount++;
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "Sync complete. {$syncedCount} packages processed.",
+            'errors' => $errors
+        ]);
+    }
 }

@@ -10,11 +10,26 @@
                     <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Daftar harga dan spesifikasi paket
                         layanan.</p>
                 </div>
-                <button onclick="window.openModal()"
-                    class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-blue-200 dark:shadow-none transition-all">
-                    <i data-lucide="plus" class="w-5 h-5"></i>
-                    <span>Tambah Paket</span>
-                </button>
+                <div class="flex items-center gap-3">
+                    <button id="syncBtn" onclick="window.syncData()"
+                        class="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-300 px-5 py-2.5 rounded-xl font-bold transition-all">
+                        <svg id="syncSpinner" class="animate-spin h-5 w-5 hidden" xmlns="http://www.w3.org/2000/svg"
+                            fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                            </circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
+                        </svg>
+                        <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                        <span id="syncText">Sync HestiaCP</span>
+                    </button>
+                    <button onclick="window.openModal()"
+                        class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-blue-200 dark:shadow-none transition-all">
+                        <i data-lucide="plus" class="w-5 h-5"></i>
+                        <span>Tambah Paket</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Table -->
@@ -201,15 +216,15 @@
                                 orderable: false,
                                 render: function (data, type, row) {
                                     return `
-                                        <div class="flex items-center justify-center gap-2">
-                                            <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
-                                                <i data-lucide="pencil" class="w-4 h-4"></i>
-                                            </button>
-                                            <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
-                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                            </button>
-                                        </div>
-                                    `;
+                                                <div class="flex items-center justify-center gap-2">
+                                                    <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
+                                                        <i data-lucide="pencil" class="w-4 h-4"></i>
+                                                    </button>
+                                                    <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
+                                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                    </button>
+                                                </div>
+                                            `;
                                 }
                             }
                         ],
@@ -323,6 +338,7 @@
                 // Form Submit
                 document.getElementById('dataForm').addEventListener('submit', function (e) {
                     e.preventDefault();
+                    // ... (existing submit logic remains the same, assuming it's correctly closed in original) ...
                     const id = document.getElementById('dataId').value;
                     const isUpdate = !!id;
                     const url = isUpdate ? `${baseUrl}/packages/${id}` : `${baseUrl}/packages`;
@@ -353,7 +369,6 @@
                         .then(res => {
                             setButtonLoading(btn, spinner, text, false, originalText);
                             if (res.success) {
-                                // Must reload service relationship manually or just push response which has it
                                 if (isUpdate) {
                                     const index = tableData.findIndex(d => d.id === parseInt(id));
                                     if (index >= 0) tableData[index] = res.package;
@@ -376,6 +391,43 @@
                             showToast('Terjadi kesalahan!', 'error');
                         });
                 });
+
+                // Sync Function
+                window.syncData = function () {
+                    const btn = document.getElementById('syncBtn');
+                    const spinner = document.getElementById('syncSpinner');
+                    const text = document.getElementById('syncText');
+
+                    setButtonLoading(btn, spinner, text, true, 'Sync HestiaCP');
+
+                    fetch(`${baseUrl}/packages/sync`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                        .then(r => r.json())
+                        .then(res => {
+                            setButtonLoading(btn, spinner, text, false, 'Sync HestiaCP');
+                            if (res.success) {
+                                showToast(res.message);
+                                setTimeout(() => location.reload(), 1500); // Reload to get fresh data including relations
+                            } else {
+                                showToast(res.message || 'Gagal melakukan sinkronisasi', 'error');
+                                if (res.errors && res.errors.length > 0) {
+                                    console.error(res.errors);
+                                    showToast('Cek console untuk detail error', 'error');
+                                }
+                            }
+                        })
+                        .catch(err => {
+                            setButtonLoading(btn, spinner, text, false, 'Sync HestiaCP');
+                            console.error(err);
+                            showToast('Terjadi kesalahan koneksi', 'error');
+                        });
+                };
             })();
         </script>
     @endpush

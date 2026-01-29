@@ -139,4 +139,15 @@ class HestiaCPService
             'arg2' => $password,
         ]);
     }
+
+    /**
+     * List Packages
+     * v-list-packages json
+     */
+    public function listPackages()
+    {
+        return $this->request('v-list-packages', [
+            'arg1' => 'json'
+        ]);
+    }
 }
