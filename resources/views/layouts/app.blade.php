@@ -7,6 +7,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'BMPnet CRM') }}</title>
 
+    @stack('vite')
+
     <!-- Scripts & Styles -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -32,8 +34,6 @@
 
     <!-- Vite (Optional if strictly using Tailwind CDN, but good to keep for future) -->
     {{-- @vite(['resources/css/app.css', 'resources/js/app.js']) --}}
-
-    @stack('vite')
 </head>
 
 <body
