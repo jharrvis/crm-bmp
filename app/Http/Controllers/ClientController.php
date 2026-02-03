@@ -9,16 +9,38 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
+use Yajra\DataTables\Facades\DataTables;
+
 class ClientController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $clients = Client::with('branch', 'primaryContact')->latest()->get();
+        if ($request->ajax()) {
+            $query = Client::with(['branch', 'primaryContact'])->select('clients.*');
+
+            if ($request->has('branch_id') && $request->branch_id) {
+                $query->where('branch_id', $request->branch_id);
+            }
+
+            if ($request->has('status') && $request->status) {
+                $query->where('status', $request->status);
+            }
+
+            return DataTables::of($query)
+                ->addColumn('branch_name', function ($row) {
+                    return $row->branch ? $row->branch->name : '-';
+                })
+                ->addColumn('primary_contact_phone', function ($row) {
+                    return $row->primaryContact ? $row->primaryContact->phone : '-';
+                })
+                ->make(true);
+        }
+
         $branches = Branch::all();
-        return view('clients.index', compact('clients', 'branches'));
+        return view('clients.index', compact('branches'));
     }
 
     public function create()

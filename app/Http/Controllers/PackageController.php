@@ -11,11 +11,24 @@ class PackageController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $packages = Package::with('service')->latest()->get();
-        $services = Service::where('is_active', true)->get();
-        return view('packages.index', compact('packages', 'services'));
+        $type = $request->query('type');
+
+        $packagesQuery = Package::with('service')->latest();
+        $servicesQuery = Service::where('is_active', true);
+
+        if ($type) {
+            $packagesQuery->whereHas('service', function ($q) use ($type) {
+                $q->where('type', $type);
+            });
+            $servicesQuery->where('type', $type);
+        }
+
+        $packages = $packagesQuery->get();
+        $services = $servicesQuery->get();
+
+        return view('packages.index', compact('packages', 'services', 'type'));
     }
 
     public function create()
@@ -32,6 +45,7 @@ class PackageController extends Controller
             'service_id' => 'required|exists:services,id',
             'name' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
+            'unit' => 'nullable|string|max:50', // Added unit validation
             'bandwidth_down' => 'nullable|string',
             'bandwidth_up' => 'nullable|string',
             'quota' => 'nullable|string',
@@ -48,7 +62,7 @@ class PackageController extends Controller
             ]);
         }
 
-        return redirect()->route('packages.index')->with('success', 'Paket berhasil ditambahkan.');
+        return redirect()->back()->with('success', 'Paket berhasil ditambahkan.');
     }
 
     /**

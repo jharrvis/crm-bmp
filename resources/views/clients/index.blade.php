@@ -17,23 +17,8 @@
             </div>
 
             <!-- Filters -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <!-- Filter Branch -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Filter Cabang</label>
-                    <div class="relative">
-                        <select id="filter_branch"
-                            class="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none text-slate-700 dark:text-slate-200">
-                            <option value="">Semua Cabang</option>
-                            @foreach($branches as $branch)
-                                <option value="{{ $branch->id }}">{{ $branch->name }}</option>
-                            @endforeach
-                        </select>
-                        <i data-lucide="building-2" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
-                        <i data-lucide="chevron-down"
-                            class="w-4 h-4 absolute right-3 top-2.5 text-slate-400 pointer-events-none"></i>
-                    </div>
-                </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+
 
                 <!-- Filter Status -->
                 <div>
@@ -303,39 +288,48 @@
         <script>
             (function () {
                 const baseUrl = '{{ url('/') }}';
-                let tableData = @json($clients);
-                let table;
-                let contactIndex = 0;
-
                 // Initialize DataTable
                 table = $('#dataTable').DataTable({
-                    data: tableData,
+                    processing: true,
+                    serverSide: true,
+                    ajax: {
+                        url: '{{ route('clients.index') }}',
+                        data: function (d) {
+                            d.branch_id = '{{ request('branch_id') }}';
+                            d.status = $('#filter_status').val();
+                        }
+                    },
                     columns: [
                         {
                             data: 'client_code',
+                            name: 'client_code',
                             className: 'p-4 pl-6',
                             render: (data) => `<span class="font-mono text-sm font-bold text-slate-600 dark:text-slate-300">${data}</span>`
                         },
                         {
                             data: 'name',
+                            name: 'name',
                             className: 'p-4',
                             render: (data, type, row) => `
-                                                            <div class="font-bold text-slate-800 dark:text-white">${data}</div>
-                                                            <div class="text-xs text-slate-500">${row.primary_contact ? row.primary_contact.phone : '-'}</div>
-                                                        `
+                                <div class="font-bold text-slate-800 dark:text-white">${data}</div>
+                                <div class="text-xs text-slate-500">${row.primary_contact_phone || '-'}</div>
+                            `
                         },
                         {
-                            data: 'branch',
+                            data: 'branch_name', // Computed column
+                            name: 'branch.name', // Searchable by relationship
                             className: 'p-4',
-                            render: (data) => data ? `<span class="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300">${data.name}</span>` : '-'
+                            render: (data) => data !== '-' ? `<span class="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300">${data}</span>` : '-'
                         },
                         {
                             data: 'type',
+                            name: 'type',
                             className: 'p-4',
                             render: (data) => data === 'business' ? 'Bisnis' : 'Personal'
                         },
                         {
                             data: 'status',
+                            name: 'status',
                             className: 'p-4',
                             render: function (data) {
                                 const styles = {
@@ -357,20 +351,21 @@
                             data: null,
                             className: "p-4 pr-6 text-center",
                             orderable: false,
+                            searchable: false,
                             render: function (data, type, row) {
                                 return `
-                                                                <div class="flex items-center justify-center gap-2">
-                                                                    <a href="${baseUrl}/clients/${row.id}" class="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 rounded-lg transition-colors" title="Lihat Detail">
-                                                                        <i data-lucide="eye" class="w-4 h-4"></i>
-                                                                    </a>
-                                                                    <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
-                                                                        <i data-lucide="pencil" class="w-4 h-4"></i>
-                                                                    </button>
-                                                                    <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
-                                                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                                                    </button>
-                                                                </div>
-                                                            `;
+                                    <div class="flex items-center justify-center gap-2">
+                                        <a href="${baseUrl}/clients/${row.id}" class="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 rounded-lg transition-colors" title="Lihat Detail">
+                                            <i data-lucide="eye" class="w-4 h-4"></i>
+                                        </a>
+                                        <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
+                                            <i data-lucide="pencil" class="w-4 h-4"></i>
+                                        </button>
+                                        <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                `;
                             }
                         }
                     ],
@@ -380,26 +375,15 @@
                         searchPlaceholder: "Cari pelanggan...",
                         lengthMenu: "Tampilkan _MENU_",
                         info: "_START_ - _END_ dari _TOTAL_",
-                        paginate: { first: "«", last: "»", next: "›", previous: "‹" }
+                        paginate: { first: "«", last: "»", next: "›", previous: "‹" },
+                        processing: "Memuat data..."
                     },
                     drawCallback: function () { lucide.createIcons(); },
                     createdRow: function (row) { $(row).addClass('hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors'); }
                 });
 
-                // Custom DataTables Filter
-                $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
-                    const filterBranch = $('#filter_branch').val();
-                    const filterStatus = $('#filter_status').val();
-                    const rowData = table.row(dataIndex).data();
-
-                    if (filterBranch && rowData.branch_id != filterBranch) return false;
-                    if (filterStatus && rowData.status != filterStatus) return false;
-
-                    return true;
-                });
-
                 // Filter Event Listeners
-                $('#filter_branch, #filter_status').on('change', function () {
+                $('#filter_status').on('change', function () {
                     table.draw();
                 });
 

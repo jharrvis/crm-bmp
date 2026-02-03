@@ -1,4 +1,22 @@
 <x-app-layout>
+    @php
+        $pageTitle = 'Manajemen Paket';
+        $pageDesc = 'Daftar harga dan spesifikasi paket layanan.';
+        if (isset($type) && $type === 'connectivity') {
+            $pageTitle = 'Paket Internet / Konektivitas';
+            $pageDesc = 'Daftar paket internet dan bandwidth.';
+        } elseif (isset($type) && $type === 'hosting') {
+            $pageTitle = 'Paket Web Hosting';
+            $pageDesc = 'Daftar paket hosting interaktif.';
+        } elseif (isset($type) && $type === 'domain') {
+            $pageTitle = 'Paket Domain';
+            $pageDesc = 'Daftar harga registrasi domain.';
+        } elseif (isset($type) && $type === 'custom') {
+            $pageTitle = 'Layanan Custom';
+            $pageDesc = 'Daftar produk dan layanan custom (Satuan/Proyek).';
+        }
+    @endphp
+
     <div class="space-y-6">
         <div
             class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6 md:p-8">
@@ -6,24 +24,26 @@
             <!-- Toolbar -->
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <div>
-                    <h3 class="text-xl font-bold text-slate-800 dark:text-white">Manajemen Paket</h3>
-                    <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Daftar harga dan spesifikasi paket
-                        layanan.</p>
+                    <h3 class="text-xl font-bold text-slate-800 dark:text-white">{{ $pageTitle }}</h3>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">{{ $pageDesc }}</p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button id="syncBtn" onclick="window.syncData()"
-                        class="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-300 px-5 py-2.5 rounded-xl font-bold transition-all">
-                        <svg id="syncSpinner" class="animate-spin h-5 w-5 hidden" xmlns="http://www.w3.org/2000/svg"
-                            fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
-                            </circle>
-                            <path class="opacity-75" fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                            </path>
-                        </svg>
-                        <i data-lucide="refresh-cw" class="w-5 h-5"></i>
-                        <span id="syncText">Sync HestiaCP</span>
-                    </button>
+                    @if(isset($type) && $type === 'hosting' || !isset($type))
+                        <button id="syncBtn" onclick="window.syncData()"
+                            class="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-300 px-5 py-2.5 rounded-xl font-bold transition-all">
+                            <svg id="syncSpinner" class="animate-spin h-5 w-5 hidden" xmlns="http://www.w3.org/2000/svg"
+                                fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                                </circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                </path>
+                            </svg>
+                            <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                            <span id="syncText">Sync HestiaCP</span>
+                        </button>
+                    @endif
+
                     <button onclick="window.openModal()"
                         class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-blue-200 dark:shadow-none transition-all">
                         <i data-lucide="plus" class="w-5 h-5"></i>
@@ -41,7 +61,7 @@
                             <th class="p-4 pl-6">Layanan</th>
                             <th class="p-4">Nama Paket</th>
                             <th class="p-4">Harga</th>
-                            <th class="p-4">Bandwidth / Spesifikasi</th>
+                            <th class="p-4">Spesifikasi / Satuan</th>
                             <th class="p-4">Status</th>
                             <th class="p-4 pr-6 text-center">Aksi</th>
                         </tr>
@@ -75,11 +95,11 @@
                         <div>
                             <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Kategori
                                 Layanan <span class="text-red-500">*</span></label>
-                            <select id="service_id" name="service_id" required
+                            <select id="service_id" name="service_id" required onchange="handleServiceChange()"
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
                                 <option value="">Pilih Layanan</option>
                                 @foreach($services as $service)
-                                    <option value="{{ $service->id }}">{{ $service->name }}
+                                    <option value="{{ $service->id }}" data-type="{{ $service->type }}">{{ $service->name }}
                                         ({{ strtoupper($service->type) }})</option>
                                 @endforeach
                             </select>
@@ -98,7 +118,11 @@
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                                 placeholder="Contoh: 150000">
                         </div>
-                        <div class="grid grid-cols-2 gap-4">
+
+                        <!-- Dynamic Fields -->
+
+                        <!-- Internet Fields -->
+                        <div id="fields-connectivity" class="grid grid-cols-2 gap-4 hidden">
                             <div>
                                 <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Download
                                     (Max)</label>
@@ -114,13 +138,39 @@
                                     placeholder="5M">
                             </div>
                         </div>
-                        <div>
+
+                        <!-- Storage/Quota Fields (Hosting/Internet) -->
+                        <div id="fields-quota" class="hidden">
                             <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Quota / FUP /
                                 Storage</label>
                             <input type="text" id="quota" name="quota"
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                placeholder="Unlimited">
+                                placeholder="Unlimited / 10GB">
                         </div>
+
+                        <!-- Unit Field (Custom) -->
+                        <div id="fields-custom" class="hidden">
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Satuan
+                                (Unit)</label>
+                            <select id="unit" name="unit"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                                <option value="">-- Pilih Satuan --</option>
+                                <option value="pcs">Pcs (Satuan)</option>
+                                <option value="unit">Unit</option>
+                                <option value="set">Set</option>
+                                <option value="box">Box</option>
+                                <option value="pack">Pack</option>
+                                <option value="jam">Jam (Durasi)</option>
+                                <option value="bulan">Bulan</option>
+                                <option value="tahun">Tahun</option>
+                                <option value="titik">Titik (CCTV/Jaringan)</option>
+                                <option value="meter">Meter (Kabel)</option>
+                                <option value="roll">Roll</option>
+                                <option value="project">Project / Borongan</option>
+                                <option value="layanan">Layanan / Jasa</option>
+                            </select>
+                        </div>
+
                         <div>
                             <label
                                 class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Deskripsi</label>
@@ -173,6 +223,31 @@
                     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(n);
                 };
 
+                // Handle Service Type Change
+                window.handleServiceChange = function () {
+                    const select = document.getElementById('service_id');
+                    const selectedOption = select.options[select.selectedIndex];
+                    const type = selectedOption.getAttribute('data-type');
+
+                    const fieldsConn = document.getElementById('fields-connectivity');
+                    const fieldsQuota = document.getElementById('fields-quota');
+                    const fieldsCustom = document.getElementById('fields-custom');
+
+                    // Reset
+                    fieldsConn.classList.add('hidden');
+                    fieldsQuota.classList.add('hidden');
+                    fieldsCustom.classList.add('hidden');
+
+                    if (type === 'connectivity') {
+                        fieldsConn.classList.remove('hidden');
+                        fieldsQuota.classList.remove('hidden'); // FUP
+                    } else if (type === 'hosting' || type === 'vps') {
+                        fieldsQuota.classList.remove('hidden'); // Storage
+                    } else if (type === 'custom') {
+                        fieldsCustom.classList.remove('hidden');
+                    }
+                }
+
                 $(document).ready(function () {
                     table = $('#dataTable').DataTable({
                         data: tableData,
@@ -180,7 +255,7 @@
                             {
                                 data: 'service',
                                 className: 'p-4 pl-6',
-                                render: (data) => data ? `<span class="uppercase font-bold text-xs text-slate-500 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded">${data.code}</span>` : '-'
+                                render: (data) => data ? `<span class="uppercase font-bold text-xs text-slate-500 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded">${data.code || data.name}</span>` : '-'
                             },
                             {
                                 data: 'name',
@@ -196,10 +271,17 @@
                                 data: null,
                                 className: 'p-4',
                                 render: (data, type, row) => {
+                                    const serviceType = row.service ? row.service.type : '';
+                                    if (serviceType === 'custom' && row.unit) {
+                                        return `<span class="text-sm font-medium text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded capitalize">${row.unit}</span>`;
+                                    }
+
                                     let spec = [];
                                     if (row.bandwidth_down) spec.push('↓ ' + row.bandwidth_down);
                                     if (row.bandwidth_up) spec.push('↑ ' + row.bandwidth_up);
                                     if (row.quota) spec.push('Qt: ' + row.quota);
+
+                                    if (spec.length === 0) return '-';
                                     return `<span class="text-sm text-slate-600 dark:text-slate-400">${spec.join(' | ')}</span>`;
                                 }
                             },
@@ -216,15 +298,15 @@
                                 orderable: false,
                                 render: function (data, type, row) {
                                     return `
-                                                <div class="flex items-center justify-center gap-2">
-                                                    <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
-                                                        <i data-lucide="pencil" class="w-4 h-4"></i>
-                                                    </button>
-                                                    <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
-                                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                                    </button>
-                                                </div>
-                                            `;
+                                                    <div class="flex items-center justify-center gap-2">
+                                                        <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
+                                                            <i data-lucide="pencil" class="w-4 h-4"></i>
+                                                        </button>
+                                                        <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
+                                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                        </button>
+                                                    </div>
+                                                `;
                                 }
                             }
                         ],
@@ -261,6 +343,19 @@
                         document.getElementById('submitText').innerText = 'Simpan Data';
                         document.getElementById('dataForm').reset();
                         document.getElementById('dataId').value = '';
+
+                        // Auto-select first service if exists, and trigger change
+                        const serviceSelect = document.getElementById('service_id');
+                        // Helper to find index of option with data-type matching global type
+                        // Note: $type is from PHP, injected into blade. We can use a global js variable if needed, 
+                        // or just rely on the fact that the services options are filtered by controller if specific type is requested.
+                        // But wait, the controller filters $services based on type, so the dropdown will only contain valid services.
+                        // So we can just select the first one.
+
+                        if (serviceSelect.options.length > 1) {
+                            serviceSelect.selectedIndex = 1;
+                        }
+                        handleServiceChange();
                     }
                     lucide.createIcons();
                 };
@@ -284,14 +379,20 @@
                         document.getElementById('submitText').innerText = 'Update Data';
                         document.getElementById('dataId').value = item.id;
 
-                        document.getElementById('service_id').value = item.service_id;
+                        const serviceSelect = document.getElementById('service_id');
+                        serviceSelect.value = item.service_id;
+
                         document.getElementById('name').value = item.name;
                         document.getElementById('price').value = parseInt(item.price);
                         document.getElementById('bandwidth_down').value = item.bandwidth_down || '';
                         document.getElementById('bandwidth_up').value = item.bandwidth_up || '';
                         document.getElementById('quota').value = item.quota || '';
+                        document.getElementById('unit').value = item.unit || '';
                         document.getElementById('description').value = item.description || '';
                         document.getElementById('is_active').checked = item.is_active;
+
+                        // Trigger dynamic fields visibility
+                        handleServiceChange();
 
                         window.openModal(true);
                     }
@@ -338,7 +439,8 @@
                 // Form Submit
                 document.getElementById('dataForm').addEventListener('submit', function (e) {
                     e.preventDefault();
-                    // ... (existing submit logic remains the same, assuming it's correctly closed in original) ...
+                    // ... (existing submit logic remains the same) ...
+                    // Basic client-side validation for service type
                     const id = document.getElementById('dataId').value;
                     const isUpdate = !!id;
                     const url = isUpdate ? `${baseUrl}/packages/${id}` : `${baseUrl}/packages`;
@@ -392,9 +494,11 @@
                         });
                 });
 
-                // Sync Function
+                // Sync Function (Only runs if button exists)
                 window.syncData = function () {
                     const btn = document.getElementById('syncBtn');
+                    if (!btn) return;
+
                     const spinner = document.getElementById('syncSpinner');
                     const text = document.getElementById('syncText');
 
@@ -413,13 +517,9 @@
                             setButtonLoading(btn, spinner, text, false, 'Sync HestiaCP');
                             if (res.success) {
                                 showToast(res.message);
-                                setTimeout(() => location.reload(), 1500); // Reload to get fresh data including relations
+                                setTimeout(() => location.reload(), 1500);
                             } else {
                                 showToast(res.message || 'Gagal melakukan sinkronisasi', 'error');
-                                if (res.errors && res.errors.length > 0) {
-                                    console.error(res.errors);
-                                    showToast('Cek console untuk detail error', 'error');
-                                }
                             }
                         })
                         .catch(err => {

@@ -12,11 +12,38 @@
     </div>
 
     <!-- Data Pelanggan -->
-    <a href="{{ route('clients.index') }}"
-        class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all group whitespace-nowrap {{ request()->routeIs('clients.*') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
-        <i data-lucide="users" class="w-5 h-5 shrink-0 transition-colors"></i>
-        <span class="font-medium text-sm menu-text transition-opacity duration-200">Data Pelanggan</span>
-    </a>
+    @php
+        $isClientActive = request()->routeIs('clients.*');
+    @endphp
+    <div class="submenu-container {{ $isClientActive ? 'submenu-active' : '' }}" id="menu-pelanggan"
+        data-menu-title="Pelanggan">
+        <button onclick="toggleSubmenu('menu-pelanggan')"
+            class="w-full flex items-center justify-between px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all whitespace-nowrap group {{ $isClientActive ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
+            <div class="flex items-center gap-3">
+                <i data-lucide="users" class="w-5 h-5 shrink-0 transition-colors"></i>
+                <span class="font-medium text-sm menu-text">Data Pelanggan</span>
+            </div>
+            <i data-lucide="chevron-down"
+                class="chevron-icon w-4 h-4 transition-transform duration-200 {{ $isClientActive ? 'rotate-180' : '' }}"></i>
+        </button>
+        <div class="submenu-content flex flex-col pl-12 lg:group-hover:pl-2 space-y-1 mt-1 overflow-hidden transition-all duration-300 {{ $isClientActive ? 'submenu-open' : '' }}"
+            style="{{ $isClientActive ? 'max-height: 500px;' : 'max-height: 0;' }}">
+
+            <a href="{{ route('clients.index') }}"
+                class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('clients.index') && !request()->query('branch_id') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
+                Semua Pelanggan
+            </a>
+
+            @if(isset($global_branches))
+                @foreach($global_branches as $branch)
+                    <a href="{{ route('clients.index', ['branch_id' => $branch->id]) }}"
+                        class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->query('branch_id') == $branch->id ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
+                        {{ $branch->name }}
+                    </a>
+                @endforeach
+            @endif
+        </div>
+    </div>
 
     <!-- Layanan Aktif (Subscriptions) -->
     <a href="{{ route('subscriptions.index') }}"
@@ -56,11 +83,29 @@
             style="{{ $isProductActive ? 'max-height: 500px;' : 'max-height: 0;' }}">
             <a href="{{ route('services.index') }}"
                 class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('services.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
-                Daftar Layanan
+                Master Layanan
             </a>
-            <a href="{{ route('packages.index') }}"
-                class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('packages.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
-                Daftar Paket
+
+            <!-- Manajemen Paket Sub-group -->
+            <div class="pt-2 pb-1">
+                <p class="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Paket Layanan</p>
+            </div>
+
+            <a href="{{ route('packages.index', ['type' => 'connectivity']) }}"
+                class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->query('type') == 'connectivity' ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
+                Internet / Konektivitas
+            </a>
+            <a href="{{ route('packages.index', ['type' => 'hosting']) }}"
+                class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->query('type') == 'hosting' ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
+                Web Hosting
+            </a>
+            <a href="{{ route('packages.index', ['type' => 'domain']) }}"
+                class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->query('type') == 'domain' ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
+                Domain Registration
+            </a>
+            <a href="{{ route('packages.index', ['type' => 'custom']) }}"
+                class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->query('type') == 'custom' ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
+                Layanan Custom
             </a>
         </div>
     </div>
