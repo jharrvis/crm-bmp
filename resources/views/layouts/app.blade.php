@@ -32,6 +32,8 @@
 
     <!-- Vite (Optional if strictly using Tailwind CDN, but good to keep for future) -->
     {{-- @vite(['resources/css/app.css', 'resources/js/app.js']) --}}
+
+    @stack('vite')
 </head>
 
 <body
@@ -75,7 +77,8 @@
                         </div>
                         <div>
                             <p class="text-[10px] font-bold text-slate-400 uppercase leading-none">
-                                {{ Auth::user()->roles->first()->name ?? 'Guest' }}</p>
+                                {{ Auth::user()->roles->first()->name ?? 'Guest' }}
+                            </p>
                             <span
                                 class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ Auth::user()->name ?? 'User' }}</span>
                         </div>

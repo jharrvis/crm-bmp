@@ -580,7 +580,7 @@
     </script>
 
     @if($subscription->connectivity)
-        @push('scripts')
+        @push('vite')
             @vite(['resources/js/topology/index.jsx'])
         @endpush
     @endif
