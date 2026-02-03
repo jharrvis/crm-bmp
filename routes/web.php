@@ -40,6 +40,17 @@ Route::middleware('auth')->group(function () {
         Route::resource('clients.contacts', \App\Http\Controllers\ClientContactController::class)->only(['store', 'update', 'destroy']);
         Route::resource('subscriptions', \App\Http\Controllers\SubscriptionController::class);
 
+        // Network Topology Editor
+        Route::prefix('subscriptions/{subscription}/topology')->name('subscriptions.topology.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\TopologyController::class, 'show'])->name('show');
+            Route::post('/', [\App\Http\Controllers\TopologyController::class, 'store'])->name('store');
+            Route::get('/history', [\App\Http\Controllers\TopologyController::class, 'history'])->name('history');
+            Route::post('/restore/{historyId}', [\App\Http\Controllers\TopologyController::class, 'restore'])->name('restore');
+            Route::post('/save-template', [\App\Http\Controllers\TopologyController::class, 'saveAsTemplate'])->name('save-template');
+        });
+        Route::get('topology-templates', [\App\Http\Controllers\TopologyController::class, 'templates'])->name('topology.templates');
+        Route::delete('topology-templates/{template}', [\App\Http\Controllers\TopologyController::class, 'deleteTemplate'])->name('topology.templates.delete');
+
         // Billing
         Route::post('invoices/generate', [\App\Http\Controllers\InvoiceController::class, 'generate'])->name('invoices.generate');
         Route::resource('invoices', \App\Http\Controllers\InvoiceController::class);

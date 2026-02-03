@@ -151,6 +151,25 @@
                     </div>
                 @endif
 
+                {{-- Network Topology Editor (only for connectivity services) --}}
+                @if($subscription->connectivity)
+                    <div
+                        class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+                        <h4 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <i data-lucide="git-branch" class="w-4 h-4"></i>
+                            Topologi Jaringan
+                        </h4>
+                        
+                        {{-- React Flow will mount here --}}
+                        <div 
+                            id="topology-editor-root"
+                            data-subscription-id="{{ $subscription->id }}"
+                            data-api-base-url="{{ url('/') }}"
+                            data-can-edit="{{ auth()->user()->division && strtoupper(auth()->user()->division->name) === 'NOC' || auth()->user()->hasRole('admin') || auth()->user()->hasRole('Owner') ? 'true' : 'false' }}"
+                        ></div>
+                    </div>
+                @endif
+
                 @if($subscription->hosting)
                     <div
                         class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6">
@@ -559,4 +578,10 @@
             if (e.key === 'Escape') closeClientModal();
         });
     </script>
+
+    @if($subscription->connectivity)
+        @push('scripts')
+            @vite(['resources/js/topology/index.jsx'])
+        @endpush
+    @endif
 </x-app-layout>
