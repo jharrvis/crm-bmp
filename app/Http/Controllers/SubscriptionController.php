@@ -18,9 +18,17 @@ class SubscriptionController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $subscriptions = Subscription::with(['client', 'package.service'])->latest()->get();
+        $query = Subscription::with(['client', 'package.service'])->latest();
+
+        if ($request->has('service_id') && $request->service_id) {
+            $query->whereHas('package', function ($q) use ($request) {
+                $q->where('service_id', $request->service_id);
+            });
+        }
+
+        $subscriptions = $query->get();
         // Pre-fetch data for modals
         $clients = Client::orderBy('name')->get();
         $packages = Package::with('service')->where('is_active', true)->get();

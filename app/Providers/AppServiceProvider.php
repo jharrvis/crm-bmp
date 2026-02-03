@@ -32,5 +32,14 @@ class AppServiceProvider extends ServiceProvider
                 // Prevent crash during migration if table exists but empty or other issue
             }
         }
+
+        // Share services globally for sidebar
+        if (\Illuminate\Support\Facades\Schema::hasTable('services')) {
+            try {
+                \Illuminate\Support\Facades\View::share('global_services', \App\Models\Service::where('is_active', true)->get());
+            } catch (\Exception $e) {
+                // Prevent crash
+            }
+        }
     }
 }

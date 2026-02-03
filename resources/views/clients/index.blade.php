@@ -577,15 +577,8 @@
                         .then(res => {
                             setButtonLoading(btn, spinner, text, false, originalText);
                             if (res.success) {
-                                if (isUpdate) {
-                                    const index = tableData.findIndex(d => d.id === parseInt(id));
-                                    if (index >= 0) tableData[index] = res.client;
-                                    showToast('Data pelanggan berhasil diperbarui!');
-                                } else {
-                                    tableData.push(res.client);
-                                    showToast('Pelanggan berhasil ditambahkan!');
-                                }
-                                table.clear().rows.add(tableData).draw();
+                                showToast(isUpdate ? 'Data pelanggan berhasil diperbarui!' : 'Pelanggan berhasil ditambahkan!');
+                                table.ajax.reload(null, false);
                                 window.closeModal();
                             } else {
                                 let errorMsg = res.message || 'Gagal menyimpan data';
@@ -602,12 +595,22 @@
 
                 // View Data
                 window.viewData = function (id) {
-                    const item = tableData.find(d => d.id === id);
-                    if (item) {
+                    fetch(`${baseUrl}/clients/${id}`, {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(r => r.json())
+                    .then(item => {
                         fillFormWithData(item);
                         document.getElementById('modalTitle').innerText = 'Detail Pelanggan';
                         window.openModal('view');
-                    }
+                    })
+                    .catch(e => {
+                        console.error(e);
+                        showToast('Gagal memuat data pelanggan', 'error');
+                    });
                 };
 
                 // Helper to fill form
@@ -641,13 +644,23 @@
 
                 // Edit Data
                 window.editData = function (id) {
-                    const item = tableData.find(d => d.id === id);
-                    if (item) {
+                    fetch(`${baseUrl}/clients/${id}`, {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(r => r.json())
+                    .then(item => {
                         fillFormWithData(item);
                         document.getElementById('modalTitle').innerText = 'Edit Pelanggan';
                         document.getElementById('submitText').innerText = 'Update Data';
                         window.openModal('edit');
-                    }
+                    })
+                    .catch(e => {
+                        console.error(e);
+                        showToast('Gagal memuat data pelanggan', 'error');
+                    });
                 };
 
                 // Delete Data
@@ -674,8 +687,7 @@
                                 setButtonLoading(btn, spinner, text, false, 'Ya, Hapus!');
                                 hideConfirmModal();
                                 if (data.success) {
-                                    tableData = tableData.filter(d => d.id !== deleteId);
-                                    table.clear().rows.add(tableData).draw();
+                                    table.ajax.reload(null, false); // Reload table, keep paging
                                     showToast('Pelanggan berhasil dihapus!');
                                 } else {
                                     showToast(data.message || 'Gagal menghapus data', 'error');

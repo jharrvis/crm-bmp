@@ -45,12 +45,39 @@
         </div>
     </div>
 
-    <!-- Layanan Aktif (Subscriptions) -->
-    <a href="{{ route('subscriptions.index') }}"
-        class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all group whitespace-nowrap {{ request()->routeIs('subscriptions.*') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
-        <i data-lucide="zap" class="w-5 h-5 shrink-0 transition-colors"></i>
-        <span class="font-medium text-sm menu-text transition-opacity duration-200">Layanan Aktif</span>
-    </a>
+    <!-- Layanan Pelanggan (Subscriptions) -->
+    @php
+        $isSubActive = request()->routeIs('subscriptions.*');
+    @endphp
+    <div class="submenu-container {{ $isSubActive ? 'submenu-active' : '' }}" id="menu-layanan"
+        data-menu-title="Layanan">
+        <button onclick="toggleSubmenu('menu-layanan')"
+            class="w-full flex items-center justify-between px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all whitespace-nowrap group {{ $isSubActive ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
+            <div class="flex items-center gap-3">
+                <i data-lucide="zap" class="w-5 h-5 shrink-0 transition-colors"></i>
+                <span class="font-medium text-sm menu-text">Layanan Pelanggan</span>
+            </div>
+            <i data-lucide="chevron-down"
+                class="chevron-icon w-4 h-4 transition-transform duration-200 {{ $isSubActive ? 'rotate-180' : '' }}"></i>
+        </button>
+        <div class="submenu-content flex flex-col pl-12 lg:group-hover:pl-2 space-y-1 mt-1 overflow-hidden transition-all duration-300 {{ $isSubActive ? 'submenu-open' : '' }}"
+            style="{{ $isSubActive ? 'max-height: 500px;' : 'max-height: 0;' }}">
+
+            <a href="{{ route('subscriptions.index') }}"
+                class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('subscriptions.index') && !request()->query('service_id') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
+                Semua Layanan
+            </a>
+
+            @if(isset($global_services))
+                @foreach($global_services as $service)
+                    <a href="{{ route('subscriptions.index', ['service_id' => $service->id]) }}"
+                        class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->query('service_id') == $service->id ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
+                        {{ $service->name }}
+                    </a>
+                @endforeach
+            @endif
+        </div>
+    </div>
 
     <!-- Tagihan (Invoices) -->
     <a href="{{ route('invoices.index') }}"
