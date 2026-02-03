@@ -185,18 +185,14 @@ class SubscriptionController extends Controller
      */
     public function show(Subscription $subscription)
     {
-        // Load appropriate relationship based on service type
-        $package = $subscription->package;
-        if ($package && $package->service && $package->service->type === 'connectivity') {
-            $subscription->load('connectivity');
-        } else {
-            $subscription->load('hosting');
-        }
+        // Load all relationships
+        $subscription->load(['client', 'package.service', 'connectivity', 'hosting', 'domain']);
 
         if (request()->wantsJson() || request()->ajax()) {
-            return response()->json($subscription->load('package.service', 'connectivity', 'hosting'));
+            return response()->json($subscription);
         }
-        return redirect()->route('subscriptions.index');
+
+        return view('subscriptions.show', compact('subscription'));
     }
 
     /**

@@ -424,19 +424,19 @@
                                 data: 'client',
                                 className: 'p-4',
                                 render: (data) => data ? `
-                                                                                            <div class="font-bold text-slate-800 dark:text-white">${data.name}</div>
-                                                                                            <div class="text-xs text-slate-500 font-mono">${data.client_code}</div>
-                                                                                        ` : '-'
+                                                                                                <div class="font-bold text-slate-800 dark:text-white">${data.name}</div>
+                                                                                                <div class="text-xs text-slate-500 font-mono">${data.client_code}</div>
+                                                                                            ` : '-'
                             },
                             {
                                 data: 'package',
                                 className: 'p-4',
                                 render: (data) => data ? `
-                                                                                            <div class="flex items-center gap-2">
-                                                                                                <div class="font-medium text-slate-700 dark:text-slate-300">${data.name}</div>
-                                                                                            </div>
-                                                                                            <div class="text-xs text-slate-500">${data.service ? data.service.name : '-'}</div>
-                                                                                        ` : '-'
+                                                                                                <div class="flex items-center gap-2">
+                                                                                                    <div class="font-medium text-slate-700 dark:text-slate-300">${data.name}</div>
+                                                                                                </div>
+                                                                                                <div class="text-xs text-slate-500">${data.service ? data.service.name : '-'}</div>
+                                                                                            ` : '-'
                             },
                             {
                                 data: 'installed_at',
@@ -468,15 +468,18 @@
                                 orderable: false,
                                 render: function (data, type, row) {
                                     return `
-                                                                                                <div class="flex items-center justify-center gap-2">
-                                                                                                    <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
-                                                                                                        <i data-lucide="pencil" class="w-4 h-4"></i>
-                                                                                                    </button>
-                                                                                                    <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
-                                                                                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                                                                                    </button>
-                                                                                                </div>
-                                                                                            `;
+                                                                                                    <div class="flex items-center justify-center gap-2">
+                                                                                                        <a href="${baseUrl}/subscriptions/${row.id}" class="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 rounded-lg transition-colors" title="Lihat Detail">
+                                                                                                            <i data-lucide="eye" class="w-4 h-4"></i>
+                                                                                                        </a>
+                                                                                                        <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
+                                                                                                            <i data-lucide="pencil" class="w-4 h-4"></i>
+                                                                                                        </button>
+                                                                                                        <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
+                                                                                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                                                                        </button>
+                                                                                                    </div>
+                                                                                                `;
                                 }
                             }
                         ],
