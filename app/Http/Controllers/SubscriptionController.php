@@ -93,6 +93,10 @@ class SubscriptionController extends Controller
                 'billing_cycle_day' => $billingDay,
                 'next_billing_date' => $nextBilling,
                 'price_at_subscription' => $package->price, // Lock price
+                'custom_price' => $request->custom_price,
+                'billing_period_months' => $request->billing_period_months ?? 1,
+                'discount_percent' => $request->discount_percent,
+                'discount_notes' => $request->discount_notes,
                 'notes' => $request->notes
             ]);
 
@@ -216,6 +220,10 @@ class SubscriptionController extends Controller
                 'status' => $request->status,
                 'installed_at' => $request->installed_at,
                 // Recalculate billing dates if needed? 
+                'custom_price' => $request->custom_price,
+                'billing_period_months' => $request->billing_period_months ?? 1,
+                'discount_percent' => $request->discount_percent,
+                'discount_notes' => $request->discount_notes,
                 'notes' => $request->notes
             ]);
 

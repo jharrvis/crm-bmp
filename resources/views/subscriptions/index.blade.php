@@ -114,6 +114,62 @@
                             </div>
                         </div>
 
+                        <!-- Pricing & Billing Section -->
+                        <div class="border-t border-slate-200 dark:border-slate-700 pt-6 mt-2">
+                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">Harga & Billing
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Harga
+                                        Paket</label>
+                                    <div id="package_price_display"
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-100 dark:bg-slate-600 text-slate-600 dark:text-slate-300 font-mono">
+                                        Rp 0
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Harga
+                                        Khusus (Deal)
+                                        <span class="text-xs text-slate-400 font-normal">(opsional)</span></label>
+                                    <input type="number" id="custom_price" name="custom_price" step="0.01"
+                                        placeholder="Kosongkan jika pakai harga paket"
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Siklus
+                                        Tagihan</label>
+                                    <select id="billing_period_months" name="billing_period_months"
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                        <option value="1">Bulanan (1 Bulan)</option>
+                                        <option value="3">Triwulan (3 Bulan)</option>
+                                        <option value="6">Semester (6 Bulan)</option>
+                                        <option value="12">Tahunan (12 Bulan)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                                <div>
+                                    <label
+                                        class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Diskon
+                                        (%)
+                                        <span class="text-xs text-slate-400 font-normal">(opsional)</span></label>
+                                    <input type="number" id="discount_percent" name="discount_percent" step="0.01"
+                                        min="0" max="100" placeholder="0"
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Alasan
+                                        Diskon
+                                        <span class="text-xs text-slate-400 font-normal">(opsional)</span></label>
+                                    <input type="text" id="discount_notes" name="discount_notes"
+                                        placeholder="Misal: Kontrak 1 tahun, diskon 10%"
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Technical Details Section -->
                         <div id="technical-details"
                             class="border-t border-slate-200 dark:border-slate-700 pt-6 mt-2 hidden">
@@ -368,19 +424,19 @@
                                 data: 'client',
                                 className: 'p-4',
                                 render: (data) => data ? `
-                                                                                        <div class="font-bold text-slate-800 dark:text-white">${data.name}</div>
-                                                                                        <div class="text-xs text-slate-500 font-mono">${data.client_code}</div>
-                                                                                    ` : '-'
+                                                                                            <div class="font-bold text-slate-800 dark:text-white">${data.name}</div>
+                                                                                            <div class="text-xs text-slate-500 font-mono">${data.client_code}</div>
+                                                                                        ` : '-'
                             },
                             {
                                 data: 'package',
                                 className: 'p-4',
                                 render: (data) => data ? `
-                                                                                        <div class="flex items-center gap-2">
-                                                                                            <div class="font-medium text-slate-700 dark:text-slate-300">${data.name}</div>
-                                                                                        </div>
-                                                                                        <div class="text-xs text-slate-500">${data.service ? data.service.name : '-'}</div>
-                                                                                    ` : '-'
+                                                                                            <div class="flex items-center gap-2">
+                                                                                                <div class="font-medium text-slate-700 dark:text-slate-300">${data.name}</div>
+                                                                                            </div>
+                                                                                            <div class="text-xs text-slate-500">${data.service ? data.service.name : '-'}</div>
+                                                                                        ` : '-'
                             },
                             {
                                 data: 'installed_at',
@@ -412,15 +468,15 @@
                                 orderable: false,
                                 render: function (data, type, row) {
                                     return `
-                                                                                            <div class="flex items-center justify-center gap-2">
-                                                                                                <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
-                                                                                                    <i data-lucide="pencil" class="w-4 h-4"></i>
-                                                                                                </button>
-                                                                                                <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
-                                                                                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                                                                                </button>
-                                                                                            </div>
-                                                                                        `;
+                                                                                                <div class="flex items-center justify-center gap-2">
+                                                                                                    <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
+                                                                                                        <i data-lucide="pencil" class="w-4 h-4"></i>
+                                                                                                    </button>
+                                                                                                    <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
+                                                                                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                                                                    </button>
+                                                                                                </div>
+                                                                                            `;
                                 }
                             }
                         ],
@@ -442,6 +498,13 @@
                     const select = document.getElementById('package_id');
                     const option = select.options[select.selectedIndex];
                     const type = option.getAttribute('data-type');
+                    const price = option.getAttribute('data-price') || 0;
+
+                    // Update package price display
+                    const priceDisplay = document.getElementById('package_price_display');
+                    if (priceDisplay) {
+                        priceDisplay.textContent = 'Rp ' + Number(price).toLocaleString('id-ID');
+                    }
 
                     const detailsSection = document.getElementById('technical-details');
                     const fieldsConn = document.getElementById('fields-connectivity');
@@ -594,6 +657,12 @@
                             document.getElementById('installed_at').value = data.installed_at ? data.installed_at.split('T')[0] : '';
                             document.getElementById('status').value = data.status;
                             document.getElementById('notes').value = data.notes || '';
+
+                            // Fill Pricing Fields
+                            document.getElementById('custom_price').value = data.custom_price || '';
+                            document.getElementById('billing_period_months').value = data.billing_period_months || 1;
+                            document.getElementById('discount_percent').value = data.discount_percent || '';
+                            document.getElementById('discount_notes').value = data.discount_notes || '';
 
                             // Trigger Change to show fields
                             handlePackageChange();
