@@ -338,10 +338,10 @@
                                                 </span>
                                             </td>
                                             <td class="p-4 text-center">
-                                                <a href="{{ route('subscriptions.index') }}#sub-{{ $sub->id }}"
+                                                <a href="{{ route('subscriptions.show', $sub->id) }}"
                                                     class="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg inline-flex items-center gap-1 text-sm font-bold transition-colors"
-                                                    title="View & Edit Subscription">
-                                                    <i data-lucide="external-link" class="w-4 h-4"></i>
+                                                    title="Lihat Detail Layanan">
+                                                    <i data-lucide="eye" class="w-4 h-4"></i>
                                                 </a>
                                             </td>
                                         </tr>
