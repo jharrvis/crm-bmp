@@ -31,6 +31,7 @@ const defaultEdgeOptions = {
 
 const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
     const reactFlowWrapper = useRef(null);
+    const containerRef = useRef(null);
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [reactFlowInstance, setReactFlowInstance] = useState(null);
@@ -42,6 +43,10 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
     const [version, setVersion] = useState(0);
     const [lastSaved, setLastSaved] = useState(null);
 
+    // New states for enhanced features
+    const [isLocked, setIsLocked] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
     // CSRF token for Laravel
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
@@ -49,6 +54,56 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
     useEffect(() => {
         loadTopology();
     }, [subscriptionId]);
+
+    // Fullscreen change listener
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    }, []);
+
+    // Keyboard shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            // Ctrl+S to save
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                if (hasChanges && canEdit) saveTopology();
+            }
+            // Ctrl+L to toggle lock
+            if (e.ctrlKey && e.key === 'l') {
+                e.preventDefault();
+                setIsLocked(prev => !prev);
+            }
+            // F11 or Ctrl+Shift+F for fullscreen
+            if (e.key === 'F11' || (e.ctrlKey && e.shiftKey && e.key === 'F')) {
+                e.preventDefault();
+                toggleFullscreen();
+            }
+            // Escape to exit fullscreen
+            if (e.key === 'Escape' && isFullscreen) {
+                exitFullscreen();
+            }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [hasChanges, canEdit, isFullscreen]);
+
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            containerRef.current?.requestFullscreen?.();
+        } else {
+            document.exitFullscreen?.();
+        }
+    };
+
+    const exitFullscreen = () => {
+        if (document.fullscreenElement) {
+            document.exitFullscreen?.();
+        }
+    };
 
     const loadTopology = async () => {
         setIsLoading(true);
@@ -128,10 +183,11 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
 
     const onConnect = useCallback(
         (params) => {
+            if (isLocked) return;
             setEdges((eds) => addEdge({ ...params, ...defaultEdgeOptions }, eds));
             setHasChanges(true);
         },
-        [setEdges]
+        [setEdges, isLocked]
     );
 
     const onDragOver = useCallback((event) => {
@@ -143,7 +199,7 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
         (event) => {
             event.preventDefault();
 
-            if (!canEdit) return;
+            if (!canEdit || isLocked) return;
 
             const type = event.dataTransfer.getData('application/reactflow');
             const deviceData = JSON.parse(event.dataTransfer.getData('application/deviceData') || '{}');
@@ -171,7 +227,7 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
             setNodes((nds) => nds.concat(newNode));
             setHasChanges(true);
         },
-        [reactFlowInstance, canEdit, setNodes]
+        [reactFlowInstance, canEdit, setNodes, isLocked]
     );
 
     const onNodeClick = useCallback((event, node) => {
@@ -196,6 +252,8 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
                 })
             );
             setHasChanges(true);
+            // Update selected node reference
+            setSelectedNode(prev => prev && prev.id === nodeId ? { ...prev, data: { ...prev.data, ...newData } } : prev);
         },
         [setNodes]
     );
@@ -212,7 +270,7 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
 
     const applyTemplate = useCallback(
         (templateData) => {
-            if (!canEdit) return;
+            if (!canEdit || isLocked) return;
 
             const { nodes: templateNodes, edges: templateEdges } = templateData;
 
@@ -246,17 +304,17 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
             setEdges((eds) => [...eds, ...newEdges]);
             setHasChanges(true);
         },
-        [nodes, canEdit, setNodes, setEdges]
+        [nodes, canEdit, setNodes, setEdges, isLocked]
     );
 
     const clearCanvas = useCallback(() => {
-        if (!canEdit) return;
+        if (!canEdit || isLocked) return;
         if (confirm('Hapus semua elemen? Tindakan ini tidak dapat dibatalkan.')) {
             setNodes([]);
             setEdges([]);
             setHasChanges(true);
         }
-    }, [canEdit, setNodes, setEdges]);
+    }, [canEdit, setNodes, setEdges, isLocked]);
 
     const restoreVersion = useCallback(
         async (historyId) => {
@@ -305,9 +363,13 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
     }
 
     return (
-        <div className="flex h-[600px] bg-slate-50 dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700">
+        <div
+            ref={containerRef}
+            className={`flex bg-slate-50 dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 ${isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'h-full'}`}
+            style={{ minHeight: isFullscreen ? '100vh' : '600px' }}
+        >
             {/* Left Sidebar - Device Palette */}
-            {canEdit && <DevicePalette />}
+            {canEdit && !isLocked && <DevicePalette />}
 
             {/* Main Canvas */}
             <div className="flex-1 relative" ref={reactFlowWrapper}>
@@ -315,10 +377,12 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
                     nodes={nodes}
                     edges={edges}
                     onNodesChange={(changes) => {
+                        if (isLocked) return;
                         onNodesChange(changes);
                         if (changes.some((c) => c.type !== 'select')) setHasChanges(true);
                     }}
                     onEdgesChange={(changes) => {
+                        if (isLocked) return;
                         onEdgesChange(changes);
                         if (changes.some((c) => c.type !== 'select')) setHasChanges(true);
                     }}
@@ -333,7 +397,14 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
                     fitView
                     snapToGrid
                     snapGrid={[15, 15]}
-                    deleteKeyCode={canEdit ? ['Backspace', 'Delete'] : null}
+                    deleteKeyCode={canEdit && !isLocked ? ['Backspace', 'Delete'] : null}
+                    nodesDraggable={!isLocked}
+                    nodesConnectable={!isLocked}
+                    elementsSelectable={!isLocked}
+                    panOnDrag={!isLocked}
+                    zoomOnScroll={!isLocked}
+                    zoomOnPinch={!isLocked}
+                    zoomOnDoubleClick={!isLocked}
                     className="bg-white dark:bg-slate-800"
                 >
                     <Controls showInteractive={false} />
@@ -353,14 +424,31 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
                             version={version}
                             lastSaved={lastSaved}
                             onSave={saveTopology}
-                            onShowHistory={() => setShowHistory(true)}
+                            onShowHistory={() => setShowHistory(!showHistory)}
                             onClear={clearCanvas}
                             onApplyTemplate={applyTemplate}
                             subscriptionId={subscriptionId}
                             apiBaseUrl={apiBaseUrl}
                             csrfToken={csrfToken}
+                            isLocked={isLocked}
+                            onToggleLock={() => setIsLocked(!isLocked)}
+                            isFullscreen={isFullscreen}
+                            onToggleFullscreen={toggleFullscreen}
+                            showHistory={showHistory}
                         />
                     </Panel>
+
+                    {/* Lock Banner */}
+                    {isLocked && (
+                        <Panel position="top-left" className="mt-16">
+                            <div className="flex items-center gap-2 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-3 py-2 rounded-lg text-sm font-medium">
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                                Tampilan terkunci
+                            </div>
+                        </Panel>
+                    )}
 
                     {/* Empty State */}
                     {nodes.length === 0 && (
@@ -382,6 +470,13 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
                             </div>
                         </Panel>
                     )}
+
+                    {/* Keyboard Shortcuts Hint */}
+                    <Panel position="bottom-left" className="mb-8 ml-12">
+                        <div className="text-xs text-slate-400 space-y-1">
+                            <div>Ctrl+S: Simpan | Ctrl+L: Lock | F11: Fullscreen</div>
+                        </div>
+                    </Panel>
                 </ReactFlow>
             </div>
 
@@ -395,7 +490,7 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
                 />
             )}
 
-            {/* History Modal */}
+            {/* History Sidebar (slide from right) */}
             {showHistory && (
                 <HistoryPanel
                     subscriptionId={subscriptionId}
