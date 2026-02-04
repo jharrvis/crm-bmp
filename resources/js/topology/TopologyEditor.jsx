@@ -16,17 +16,24 @@ import DevicePalette from './components/DevicePalette';
 import Toolbar from './components/Toolbar';
 import HistoryPanel from './components/HistoryPanel';
 import PropertiesPanel from './components/PropertiesPanel';
+import SettingsPanel from './components/SettingsPanel';
 
 // Register custom node types
 const nodeTypes = {
     networkDevice: NetworkDeviceNode,
 };
 
-// Edge styles
-const defaultEdgeOptions = {
-    type: 'smoothstep',
-    animated: true,
-    style: { stroke: '#6366f1', strokeWidth: 2 },
+// Default settings
+const defaultSettings = {
+    edgeType: 'bezier',
+    edgeAnimated: true,
+    edgeColor: '#6366f1',
+    edgeWidth: 2,
+    snapToGrid: true,
+    gridSize: 15,
+    showMinimap: true,
+    showBackground: true,
+    backgroundGap: 15,
 };
 
 const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
@@ -39,20 +46,33 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
     const [version, setVersion] = useState(0);
     const [lastSaved, setLastSaved] = useState(null);
 
-    // New states for enhanced features
+    // Enhanced features states
     const [isLocked, setIsLocked] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [settings, setSettings] = useState(defaultSettings);
 
     // CSRF token for Laravel
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
+    // Dynamic edge options based on settings
+    const getEdgeOptions = useCallback(() => ({
+        type: settings.edgeType,
+        animated: settings.edgeAnimated,
+        style: {
+            stroke: settings.edgeColor,
+            strokeWidth: settings.edgeWidth
+        },
+    }), [settings]);
+
     // Load topology on mount
     useEffect(() => {
         loadTopology();
+        loadSettings();
     }, [subscriptionId]);
 
     // Fullscreen change listener
@@ -90,6 +110,45 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [hasChanges, canEdit, isFullscreen]);
+
+    // Load settings from localStorage
+    const loadSettings = () => {
+        try {
+            const saved = localStorage.getItem(`topology-settings-${subscriptionId}`);
+            if (saved) {
+                setSettings({ ...defaultSettings, ...JSON.parse(saved) });
+            }
+        } catch (e) {
+            console.error('Failed to load settings:', e);
+        }
+    };
+
+    // Save settings to localStorage
+    const saveSettings = (newSettings) => {
+        try {
+            localStorage.setItem(`topology-settings-${subscriptionId}`, JSON.stringify(newSettings));
+        } catch (e) {
+            console.error('Failed to save settings:', e);
+        }
+    };
+
+    const handleUpdateSettings = (newSettings) => {
+        setSettings(newSettings);
+        saveSettings(newSettings);
+
+        // Update existing edges with new style
+        setEdges(eds => eds.map(edge => ({
+            ...edge,
+            type: newSettings.edgeType,
+            animated: newSettings.edgeAnimated,
+            style: {
+                stroke: newSettings.edgeColor,
+                strokeWidth: newSettings.edgeWidth,
+            }
+        })));
+
+        setHasChanges(true);
+    };
 
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) {
@@ -173,7 +232,6 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
     };
 
     const showToast = (message, type = 'info') => {
-        // Use the global toast function if available
         if (window.showToast) {
             window.showToast(message, type);
         } else {
@@ -184,10 +242,11 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
     const onConnect = useCallback(
         (params) => {
             if (isLocked) return;
-            setEdges((eds) => addEdge({ ...params, ...defaultEdgeOptions }, eds));
+            const edgeOptions = getEdgeOptions();
+            setEdges((eds) => addEdge({ ...params, ...edgeOptions }, eds));
             setHasChanges(true);
         },
-        [setEdges, isLocked]
+        [setEdges, isLocked, getEdgeOptions]
     );
 
     const onDragOver = useCallback((event) => {
@@ -252,7 +311,6 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
                 })
             );
             setHasChanges(true);
-            // Update selected node reference
             setSelectedNode(prev => prev && prev.id === nodeId ? { ...prev, data: { ...prev.data, ...newData } } : prev);
         },
         [setNodes]
@@ -273,8 +331,8 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
             if (!canEdit || isLocked) return;
 
             const { nodes: templateNodes, edges: templateEdges } = templateData;
+            const edgeOptions = getEdgeOptions();
 
-            // Offset nodes to not overlap existing ones
             const offsetX = nodes.length > 0 ? Math.max(...nodes.map((n) => n.position.x)) + 200 : 0;
             const offsetY = 0;
 
@@ -287,7 +345,6 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
                 },
             }));
 
-            // Update edge references
             const idMap = {};
             templateNodes.forEach((node, index) => {
                 idMap[node.id] = newNodes[index].id;
@@ -295,6 +352,7 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
 
             const newEdges = templateEdges.map((edge, index) => ({
                 ...edge,
+                ...edgeOptions,
                 id: `${edge.id}-${Date.now()}-${index}`,
                 source: idMap[edge.source],
                 target: idMap[edge.target],
@@ -304,7 +362,7 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
             setEdges((eds) => [...eds, ...newEdges]);
             setHasChanges(true);
         },
-        [nodes, canEdit, setNodes, setEdges, isLocked]
+        [nodes, canEdit, setNodes, setEdges, isLocked, getEdgeOptions]
     );
 
     const clearCanvas = useCallback(() => {
@@ -393,10 +451,10 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
                     onNodeClick={onNodeClick}
                     onPaneClick={onPaneClick}
                     nodeTypes={nodeTypes}
-                    defaultEdgeOptions={defaultEdgeOptions}
+                    defaultEdgeOptions={getEdgeOptions()}
                     fitView
-                    snapToGrid
-                    snapGrid={[15, 15]}
+                    snapToGrid={settings.snapToGrid}
+                    snapGrid={[settings.gridSize, settings.gridSize]}
                     deleteKeyCode={canEdit && !isLocked ? ['Backspace', 'Delete'] : null}
                     nodesDraggable={!isLocked}
                     nodesConnectable={!isLocked}
@@ -408,12 +466,16 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
                     className="bg-white dark:bg-slate-800"
                 >
                     <Controls showInteractive={false} />
-                    <MiniMap
-                        nodeColor={(node) => node.data?.color || '#6366f1'}
-                        maskColor="rgba(0, 0, 0, 0.1)"
-                        className="!bg-slate-100 dark:!bg-slate-700"
-                    />
-                    <Background gap={15} size={1} color="#e2e8f0" />
+                    {settings.showMinimap && (
+                        <MiniMap
+                            nodeColor={(node) => node.data?.color || '#6366f1'}
+                            maskColor="rgba(0, 0, 0, 0.1)"
+                            className="!bg-slate-100 dark:!bg-slate-700"
+                        />
+                    )}
+                    {settings.showBackground && (
+                        <Background gap={settings.gridSize} size={1} color="#e2e8f0" />
+                    )}
 
                     {/* Top Toolbar */}
                     <Panel position="top-center">
@@ -425,6 +487,7 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
                             lastSaved={lastSaved}
                             onSave={saveTopology}
                             onShowHistory={() => setShowHistory(!showHistory)}
+                            onShowSettings={() => setShowSettings(true)}
                             onClear={clearCanvas}
                             onApplyTemplate={applyTemplate}
                             subscriptionId={subscriptionId}
@@ -490,7 +553,7 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
                 />
             )}
 
-            {/* History Sidebar (slide from right) */}
+            {/* History Sidebar */}
             {showHistory && (
                 <HistoryPanel
                     subscriptionId={subscriptionId}
@@ -499,6 +562,15 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
                     canEdit={canEdit}
                     onRestore={restoreVersion}
                     onClose={() => setShowHistory(false)}
+                />
+            )}
+
+            {/* Settings Modal */}
+            {showSettings && (
+                <SettingsPanel
+                    settings={settings}
+                    onUpdateSettings={handleUpdateSettings}
+                    onClose={() => setShowSettings(false)}
                 />
             )}
         </div>
