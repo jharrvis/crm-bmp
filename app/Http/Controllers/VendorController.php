@@ -25,7 +25,6 @@ class VendorController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'cid' => 'nullable|string|max:100', // Circuit ID
             'address' => 'nullable|string',
             'notes' => 'nullable|string',
             'contacts' => 'nullable|array',
@@ -39,7 +38,6 @@ class VendorController extends Controller
         try {
             $vendor = Vendor::create([
                 'name' => $request->name,
-                'cid' => $request->cid,
                 'address' => $request->address,
                 'notes' => $request->notes,
             ]);
@@ -94,7 +92,6 @@ class VendorController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'cid' => 'nullable|string|max:100',
             'contacts' => 'nullable|array',
             'contacts.*.name' => 'required_with:contacts|string|max:255',
         ]);
@@ -103,7 +100,6 @@ class VendorController extends Controller
         try {
             $vendor->update([
                 'name' => $request->name,
-                'cid' => $request->cid,
                 'address' => $request->address,
                 'notes' => $request->notes,
             ]);

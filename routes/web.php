@@ -26,6 +26,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('routers', \App\Http\Controllers\RouterController::class);
         Route::resource('servers', \App\Http\Controllers\HostingServerController::class);
         Route::resource('vendors', \App\Http\Controllers\VendorController::class);
+        Route::resource('metro-ethernets', \App\Http\Controllers\MetroEthernetController::class);
     });
 
     // Master Data: Products & Services (Owner, Admin, & Employee)

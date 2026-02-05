@@ -23,7 +23,6 @@
                     <thead>
                         <tr
                             class="text-slate-400 text-xs font-bold uppercase tracking-wider border-b border-slate-100 dark:border-slate-700">
-                            <th class="p-4 pl-6">CID (Circuit ID)</th>
                             <th class="p-4">Nama Vendor</th>
                             <th class="p-4">Alamat</th>
                             <th class="p-4">Kontak</th>
@@ -84,14 +83,6 @@
                                     <input type="text" id="name" name="name" required
                                         class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-slate-400"
                                         placeholder="Nama Vendor / ISP">
-                                </div>
-                                <div>
-                                    <label
-                                        class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Circuit
-                                        ID (CID)</label>
-                                    <input type="text" id="cid" name="cid"
-                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-slate-400"
-                                        placeholder="Contoh: CID-123456">
                                 </div>
                             </div>
 
@@ -201,22 +192,6 @@
                         data: tableData,
                         columns: [
                             {
-                                data: 'cid',
-                                className: 'p-4 pl-6',
-                                render: (data) => {
-                                    if (!data) return '-';
-                                    return `
-                                        <div class="flex items-center gap-2 group">
-                                            <span class="font-mono text-sm font-bold text-slate-600 dark:text-slate-300" id="cid-${data}">${data}</span>
-                                            <button onclick="copyToClipboard('${data}')" 
-                                                class="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-all text-slate-400 hover:text-blue-500" title="Copy CID">
-                                                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                                            </button>
-                                        </div>
-                                    `;
-                                }
-                            },
-                            {
                                 data: 'name',
                                 className: 'p-4',
                                 render: (data) => `<div class="font-bold text-slate-800 dark:text-slate-300">${data}</div>`
@@ -242,19 +217,19 @@
                                             }
 
                                             phoneDisplay = `
-                                                    <div class="flex items-center gap-1">
-                                                        <span class="text-xs text-slate-500">${contact.phone}</span>
-                                                        <a href="https://wa.me/${rawPhone}" target="_blank" class="text-green-500 hover:text-green-600" title="Chat WhatsApp">
-                                                            <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
-                                                        </a>
-                                                    </div>
-                                                `;
+                                                        <div class="flex items-center gap-1">
+                                                            <span class="text-xs text-slate-500">${contact.phone}</span>
+                                                            <a href="https://wa.me/${rawPhone}" target="_blank" class="text-green-500 hover:text-green-600" title="Chat WhatsApp">
+                                                                <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+                                                            </a>
+                                                        </div>
+                                                    `;
                                         }
 
                                         return `<div class="flex flex-col gap-1">
-                                                    <span class="text-sm font-bold text-slate-700 dark:text-slate-300">${contact.name}</span>
-                                                    ${phoneDisplay}
-                                                </div>`
+                                                        <span class="text-sm font-bold text-slate-700 dark:text-slate-300">${contact.name}</span>
+                                                        ${phoneDisplay}
+                                                    </div>`
                                             + (data.length > 1 ? `<span class="text-xs text-blue-500">+${data.length - 1} lainnya</span>` : '');
                                     }
                                     return '-';
@@ -266,18 +241,18 @@
                                 orderable: false,
                                 render: function (data, type, row) {
                                     return `
-                                                            <div class="flex items-center justify-center gap-2">
-                                                                <button onclick="window.viewData(${row.id})" class="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 rounded-lg transition-colors" title="Lihat Detail">
-                                                                    <i data-lucide="eye" class="w-4 h-4"></i>
-                                                                </button>
-                                                                <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
-                                                                    <i data-lucide="pencil" class="w-4 h-4"></i>
-                                                                </button>
-                                                                <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
-                                                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                                                </button>
-                                                            </div>
-                                                        `;
+                                                                <div class="flex items-center justify-center gap-2">
+                                                                    <button onclick="window.viewData(${row.id})" class="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 rounded-lg transition-colors" title="Lihat Detail">
+                                                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                                                    </button>
+                                                                    <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
+                                                                        <i data-lucide="pencil" class="w-4 h-4"></i>
+                                                                    </button>
+                                                                    <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
+                                                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                                    </button>
+                                                                </div>
+                                                            `;
                                 }
                             }
                         ],
@@ -294,35 +269,6 @@
                     });
                 });
 
-                window.copyToClipboard = function (text) {
-                    if (navigator.clipboard) {
-                        navigator.clipboard.writeText(text).then(() => {
-                            showToast('CID disalin!', 'success');
-                        }, (err) => {
-                            console.error('Could not copy text: ', err);
-                            fallbackCopyTextToClipboard(text);
-                        });
-                    } else {
-                        fallbackCopyTextToClipboard(text);
-                    }
-                }
-
-                function fallbackCopyTextToClipboard(text) {
-                    var textArea = document.createElement("textarea");
-                    textArea.value = text;
-                    document.body.appendChild(textArea);
-                    textArea.focus();
-                    textArea.select();
-                    try {
-                        var successful = document.execCommand('copy');
-                        if (successful) showToast('CID disalin!', 'success');
-                        else showToast('Gagal menyalin CID', 'error');
-                    } catch (err) {
-                        console.error('Fallback: Oops, unable to copy', err);
-                        showToast('Gagal menyalin CID', 'error');
-                    }
-                    document.body.removeChild(textArea);
-                }
 
                 // Tab Switcher
                 window.switchTab = function (tabName) {
@@ -535,7 +481,6 @@
                 function fillFormWithData(item) {
                     document.getElementById('dataId').value = item.id;
                     document.getElementById('name').value = item.name;
-                    document.getElementById('cid').value = item.cid || '';
                     document.getElementById('address').value = item.address || '';
                     document.getElementById('notes').value = item.notes || '';
 
@@ -600,7 +545,7 @@
                             });
                     });
                 };
-                document.getElementById('dataForm').addEventListener('input', function(e) {
+                document.getElementById('dataForm').addEventListener('input', function (e) {
                     if (e.target.name && e.target.name.includes('[phone]')) {
                         let input = e.target.value;
                         // Replace 08... with 628...
@@ -608,10 +553,10 @@
                             input = '628' + input.substring(2);
                         }
                         // Remove non-numeric characters (optional, based on preference, but good for standardization)
-                         input = input.replace(/[^0-9+]/g, '');
-                         
-                        if(input !== e.target.value) {
-                             e.target.value = input;
+                        input = input.replace(/[^0-9+]/g, '');
+
+                        if (input !== e.target.value) {
+                            e.target.value = input;
                         }
                     }
                 });
