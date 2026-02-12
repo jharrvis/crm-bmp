@@ -10,6 +10,7 @@ class MetroEthernet extends Model
     use HasFactory;
 
     protected $fillable = [
+        'service_id',
         'vendor_id',
         'cid',
         'ip_address',
@@ -19,5 +20,10 @@ class MetroEthernet extends Model
     public function vendor()
     {
         return $this->belongsTo(Vendor::class);
+    }
+
+    public function service()
+    {
+        return $this->belongsTo(Service::class);
     }
 }

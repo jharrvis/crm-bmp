@@ -86,39 +86,84 @@
                                 </select>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Metro Ethernet Section -->
+                    <div id="metro-section"
+                        class="hidden space-y-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+                        <h4 class="font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                            <i data-lucide="network" class="w-4 h-4 text-blue-500"></i>
+                            Detail Metro Ethernet
+                        </h4>
                         <div>
-                            <label
-                                class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Deskripsi</label>
-                            <textarea id="description" name="description" rows="3"
-                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"></textarea>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Vendor
+                                Backbone <span class="text-red-500">*</span></label>
+                            <select id="metro_vendor_id" name="metro_vendor_id"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                                <option value="">Pilih Vendor</option>
+                                @foreach($vendors as $vendor)
+                                    <option value="{{ $vendor->id }}">{{ $vendor->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <input type="checkbox" id="is_active" name="is_active" value="1" checked
-                                class="w-5 h-5 rounded border-slate-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-                            <label for="is_active"
-                                class="text-sm font-medium text-slate-700 dark:text-slate-300">Aktifkan Layanan
-                                ini</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">CID
+                                    (Circuit ID)</label>
+                                <input type="text" id="metro_cid" name="metro_cid"
+                                    class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                    placeholder="Contoh: CID-12345">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">IP
+                                    Address</label>
+                                <input type="text" id="metro_ip_address" name="metro_ip_address"
+                                    class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                    placeholder="192.168.x.x">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Kapasitas
+                                Bandwidth
+                                (Mbps) <span class="text-red-500">*</span></label>
+                            <input type="number" id="metro_bandwidth" name="metro_bandwidth" min="0"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                placeholder="Contoh: 100">
                         </div>
                     </div>
-                    <div class="p-6 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3">
-                        <button type="button" onclick="window.closeModal()"
-                            class="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Batal</button>
-                        <button type="submit" id="submitBtn"
-                            class="px-5 py-2.5 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200 dark:shadow-none transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                            <svg id="submitSpinner" class="animate-spin h-5 w-5 hidden"
-                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                    stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                </path>
-                            </svg>
-                            <span id="submitText">Simpan Data</span>
-                        </button>
+
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Deskripsi</label>
+                        <textarea id="description" name="description" rows="3"
+                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"></textarea>
                     </div>
-                </form>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="is_active" name="is_active" value="1" checked
+                            class="w-5 h-5 rounded border-slate-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                        <label for="is_active" class="text-sm font-medium text-slate-700 dark:text-slate-300">Aktifkan
+                            Layanan
+                            ini</label>
+                    </div>
             </div>
+            <div class="p-6 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3">
+                <button type="button" onclick="window.closeModal()"
+                    class="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Batal</button>
+                <button type="submit" id="submitBtn"
+                    class="px-5 py-2.5 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200 dark:shadow-none transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg id="submitSpinner" class="animate-spin h-5 w-5 hidden" xmlns="http://www.w3.org/2000/svg"
+                        fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                        </path>
+                    </svg>
+                    <span id="submitText">Simpan Data</span>
+                </button>
+            </div>
+            </form>
         </div>
+    </div>
     </div>
 
     <x-confirm-modal />
@@ -134,6 +179,21 @@
                 let table;
 
                 $(document).ready(function () {
+                    // Type Change Event
+                    $('#type').on('change', function () {
+                        const val = $(this).val();
+                        if (val === 'connectivity') {
+                            $('#metro-section').removeClass('hidden');
+                            $('#metro_vendor_id').attr('required', true);
+                            $('#metro_bandwidth').attr('required', true);
+                        } else {
+                            $('#metro-section').addClass('hidden');
+                            $('#metro_vendor_id').removeAttr('required');
+                            $('#metro_bandwidth').removeAttr('required');
+                        }
+                    });
+
+                    // Existing DataTable init code...
                     table = $('#dataTable').DataTable({
                         data: tableData,
                         columns: [
@@ -145,7 +205,13 @@
                             {
                                 data: 'name',
                                 className: 'p-4',
-                                render: (data) => `<span class="font-bold text-slate-700 dark:text-slate-200">${data}</span>`
+                                render: (data, type, row) => {
+                                    let html = `<div class="font-bold text-slate-700 dark:text-slate-200">${data}</div>`;
+                                    if (row.metro_ethernet) {
+                                        html += `<div class="text-xs text-slate-500 mt-1 flex items-center gap-1"><i data-lucide="network" class="w-3 h-3"></i> ${row.metro_ethernet.vendor.name} (${row.metro_ethernet.bandwidth} Mbps)</div>`;
+                                    }
+                                    return html;
+                                }
                             },
                             {
                                 data: 'type',
@@ -170,17 +236,18 @@
                                 data: null,
                                 className: "p-4 pr-6 text-center",
                                 orderable: false,
+                                searchable: false,
                                 render: function (data, type, row) {
                                     return `
-                                                <div class="flex items-center justify-center gap-2">
-                                                    <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
-                                                        <i data-lucide="pencil" class="w-4 h-4"></i>
-                                                    </button>
-                                                    <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
-                                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                                    </button>
-                                                </div>
-                                            `;
+                                                        <div class="flex items-center justify-center gap-2">
+                                                            <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
+                                                                <i data-lucide="pencil" class="w-4 h-4"></i>
+                                                            </button>
+                                                            <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
+                                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                            </button>
+                                                        </div>
+                                                    `;
                                 }
                             }
                         ],
@@ -217,6 +284,9 @@
                         document.getElementById('submitText').innerText = 'Simpan Data';
                         document.getElementById('dataForm').reset();
                         document.getElementById('dataId').value = '';
+                        // Trigger Event to reset validation and hide metro section
+                        $('#type').trigger('change');
+                        $('#metro-section').addClass('hidden'); // Ensure hidden by default for new
                     }
                     lucide.createIcons();
                 };
@@ -245,6 +315,35 @@
                         document.getElementById('type').value = item.type;
                         document.getElementById('description').value = item.description || '';
                         document.getElementById('is_active').checked = item.is_active;
+
+                        // Metro Data Pre-fill
+                        if (item.type === 'connectivity') {
+                            $('#metro-section').removeClass('hidden');
+                            $('#metro_vendor_id').attr('required', true);
+                            $('#metro_bandwidth').attr('required', true);
+
+                            if (item.metro_ethernet) {
+                                document.getElementById('metro_vendor_id').value = item.metro_ethernet.vendor_id;
+                                document.getElementById('metro_cid').value = item.metro_ethernet.cid || '';
+                                document.getElementById('metro_ip_address').value = item.metro_ethernet.ip_address || '';
+                                document.getElementById('metro_bandwidth').value = item.metro_ethernet.bandwidth || '';
+                            } else {
+                                // Clear if no details but type is connectivity
+                                document.getElementById('metro_vendor_id').value = '';
+                                document.getElementById('metro_cid').value = '';
+                                document.getElementById('metro_ip_address').value = '';
+                                document.getElementById('metro_bandwidth').value = '';
+                            }
+                        } else {
+                            $('#metro-section').addClass('hidden');
+                            $('#metro_vendor_id').removeAttr('required');
+                            $('#metro_bandwidth').removeAttr('required');
+                            // Clear data
+                            document.getElementById('metro_vendor_id').value = '';
+                            document.getElementById('metro_cid').value = '';
+                            document.getElementById('metro_ip_address').value = '';
+                            document.getElementById('metro_bandwidth').value = '';
+                        }
 
                         window.openModal(true);
                     }
@@ -307,6 +406,8 @@
                     const data = {};
                     formData.forEach((value, key) => data[key] = value);
                     data.is_active = document.getElementById('is_active').checked ? 1 : 0;
+                    // Log data for debugging
+                    console.log('Form Data:', data);
 
                     fetch(url, {
                         method: 'POST',
