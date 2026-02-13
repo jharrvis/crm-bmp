@@ -130,7 +130,6 @@ class SubscriptionController extends Controller
                             'cid' => $request->metro_cid,
                             'ip_address' => $request->metro_ip_address,
                             'bandwidth' => $request->metro_bandwidth,
-                            'service_id' => $package->service_id, // Link to service of package
                         ]);
                         $connData['metro_ethernet_id'] = $metro->id;
                     } else {
@@ -274,7 +273,6 @@ class SubscriptionController extends Controller
                             'cid' => $request->metro_cid,
                             'ip_address' => $request->metro_ip_address,
                             'bandwidth' => $request->metro_bandwidth,
-                            'service_id' => $package->service_id,
                         ]);
                         $connectivity->update(['metro_ethernet_id' => $metro->id]);
                     } elseif ($request->metro_option === 'existing') {
