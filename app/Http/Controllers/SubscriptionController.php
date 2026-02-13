@@ -111,7 +111,7 @@ class SubscriptionController extends Controller
 
             // Save Details
             if ($serviceType === 'connectivity') {
-                SubscriptionConnectivity::create([
+                $connData = [
                     'subscription_id' => $subscription->id,
                     'router_id' => $request->router_id,
                     'ip_address' => $request->ip_address,
@@ -267,8 +267,8 @@ class SubscriptionController extends Controller
 
                 // Handle Metro update/change
                 if ($request->filled('metro_option')) {
-                   $connectivity = $subscription->connectivity;
-                   if ($request->metro_option === 'new') {
+                    $connectivity = $subscription->connectivity;
+                    if ($request->metro_option === 'new') {
                         $metro = MetroEthernet::create([
                             'vendor_id' => $request->metro_vendor_id,
                             'cid' => $request->metro_cid,
@@ -277,9 +277,9 @@ class SubscriptionController extends Controller
                             'service_id' => $package->service_id,
                         ]);
                         $connectivity->update(['metro_ethernet_id' => $metro->id]);
-                   } elseif ($request->metro_option === 'existing') {
+                    } elseif ($request->metro_option === 'existing') {
                         $connectivity->update(['metro_ethernet_id' => $request->metro_ethernet_id]);
-                   }
+                    }
                 }
             } elseif ($serviceType === 'hosting') {
                 $hosting = $subscription->hosting;
