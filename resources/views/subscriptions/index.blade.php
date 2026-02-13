@@ -233,75 +233,125 @@
                                 </div>
                             </div>
 
-                            <!-- Hosting Fields -->
-                            <div id="fields-hosting" class="hidden space-y-4">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div id="div-hosting-server">
-                                        <label
-                                            class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Hosting
-                                            Server</label>
-                                        <select id="hosting_server_id" name="hosting_server_id"
-                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                                            <option value="">-- Pilih Server Hosting --</option>
-                                            @foreach($servers as $server)
-                                                <option value="{{ $server->id }}">{{ $server->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label
-                                            class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nama
-                                            Domain</label>
-                                        <input type="text" name="domain" id="domain" placeholder="example.com"
-                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                                    </div>
+                            <!-- Metro Ethernet Details -->
+                            <div class="relative py-4">
+                                <div class="absolute inset-0 flex items-center" aria-hidden="true">
+                                    <div class="w-full border-t border-slate-200 dark:border-slate-700"></div>
                                 </div>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label
-                                            class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Username
-                                            (Panel)</label>
-                                        <input type="text" name="username" id="username"
-                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                                    </div>
-                                    <div>
-                                        <label
-                                            class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Password</label>
-                                        <input type="password" name="password" id="password"
-                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                                    </div>
+                                <div class="relative flex justify-start">
+                                    <span
+                                        class="pr-3 bg-white dark:bg-slate-800 text-sm font-medium text-slate-500">Metro
+                                        Ethernet Details</span>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label
+                                        class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Vendor
+                                        Backbone</label>
+                                    <select id="metro_vendor_id" name="metro_vendor_id"
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                        <option value="">-- Pilih Vendor --</option>
+                                        @foreach($vendors as $vendor)
+                                            <option value="{{ $vendor->id }}">{{ $vendor->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">CID
+                                        (Circuit ID)</label>
+                                    <input type="text" id="metro_cid" name="metro_cid" placeholder="Contoh: CID-12345"
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">IP
+                                        Address (Metro)</label>
+                                    <input type="text" id="metro_ip_address" name="metro_ip_address"
+                                        placeholder="192.168.x.x"
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Bandwidth
+                                        (Mbps)</label>
+                                    <input type="number" id="metro_bandwidth" name="metro_bandwidth" min="0"
+                                        placeholder="Contoh: 100"
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
                                 </div>
                             </div>
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Catatan
-                                Tambahan</label>
-                            <input type="text" id="notes" name="notes"
-                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                        <!-- Hosting Fields -->
+                        <div id="fields-hosting" class="hidden space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div id="div-hosting-server">
+                                    <label
+                                        class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Hosting
+                                        Server</label>
+                                    <select id="hosting_server_id" name="hosting_server_id"
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                        <option value="">-- Pilih Server Hosting --</option>
+                                        @foreach($servers as $server)
+                                            <option value="{{ $server->id }}">{{ $server->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nama
+                                        Domain</label>
+                                    <input type="text" name="domain" id="domain" placeholder="example.com"
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label
+                                        class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Username
+                                        (Panel)</label>
+                                    <input type="text" name="username" id="username"
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Password</label>
+                                    <input type="password" name="password" id="password"
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                </div>
+                            </div>
                         </div>
-                    </form>
                 </div>
 
-                <!-- Modal Footer -->
-                <div class="p-6 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3 shrink-0">
-                    <button type="button" onclick="window.closeModal()"
-                        class="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Batal</button>
-                    <button type="button" onclick="submitForm()" id="submitBtn"
-                        class="px-5 py-2.5 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200 dark:shadow-none transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                        <svg id="submitSpinner" class="animate-spin h-5 w-5 hidden" xmlns="http://www.w3.org/2000/svg"
-                            fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
-                            </circle>
-                            <path class="opacity-75" fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                            </path>
-                        </svg>
-                        <span id="submitText">Simpan Layanan</span>
-                    </button>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Catatan
+                        Tambahan</label>
+                    <input type="text" id="notes" name="notes"
+                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
                 </div>
+                </form>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-6 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3 shrink-0">
+                <button type="button" onclick="window.closeModal()"
+                    class="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Batal</button>
+                <button type="button" onclick="submitForm()" id="submitBtn"
+                    class="px-5 py-2.5 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200 dark:shadow-none transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg id="submitSpinner" class="animate-spin h-5 w-5 hidden" xmlns="http://www.w3.org/2000/svg"
+                        fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                        </path>
+                    </svg>
+                    <span id="submitText">Simpan Layanan</span>
+                </button>
             </div>
         </div>
+    </div>
     </div>
 
     <x-confirm-modal />
@@ -424,19 +474,19 @@
                                 data: 'client',
                                 className: 'p-4',
                                 render: (data) => data ? `
-                                                                                                <div class="font-bold text-slate-800 dark:text-white">${data.name}</div>
-                                                                                                <div class="text-xs text-slate-500 font-mono">${data.client_code}</div>
-                                                                                            ` : '-'
+                                                                                                    <div class="font-bold text-slate-800 dark:text-white">${data.name}</div>
+                                                                                                    <div class="text-xs text-slate-500 font-mono">${data.client_code}</div>
+                                                                                                ` : '-'
                             },
                             {
                                 data: 'package',
                                 className: 'p-4',
                                 render: (data) => data ? `
-                                                                                                <div class="flex items-center gap-2">
-                                                                                                    <div class="font-medium text-slate-700 dark:text-slate-300">${data.name}</div>
-                                                                                                </div>
-                                                                                                <div class="text-xs text-slate-500">${data.service ? data.service.name : '-'}</div>
-                                                                                            ` : '-'
+                                                                                                    <div class="flex items-center gap-2">
+                                                                                                        <div class="font-medium text-slate-700 dark:text-slate-300">${data.name}</div>
+                                                                                                    </div>
+                                                                                                    <div class="text-xs text-slate-500">${data.service ? data.service.name : '-'}</div>
+                                                                                                ` : '-'
                             },
                             {
                                 data: 'installed_at',
@@ -468,18 +518,18 @@
                                 orderable: false,
                                 render: function (data, type, row) {
                                     return `
-                                                                                                    <div class="flex items-center justify-center gap-2">
-                                                                                                        <a href="${baseUrl}/subscriptions/${row.id}" class="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 rounded-lg transition-colors" title="Lihat Detail">
-                                                                                                            <i data-lucide="eye" class="w-4 h-4"></i>
-                                                                                                        </a>
-                                                                                                        <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
-                                                                                                            <i data-lucide="pencil" class="w-4 h-4"></i>
-                                                                                                        </button>
-                                                                                                        <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
-                                                                                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                                                                                        </button>
-                                                                                                    </div>
-                                                                                                `;
+                                                                                                        <div class="flex items-center justify-center gap-2">
+                                                                                                            <a href="${baseUrl}/subscriptions/${row.id}" class="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 rounded-lg transition-colors" title="Lihat Detail">
+                                                                                                                <i data-lucide="eye" class="w-4 h-4"></i>
+                                                                                                            </a>
+                                                                                                            <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
+                                                                                                                <i data-lucide="pencil" class="w-4 h-4"></i>
+                                                                                                            </button>
+                                                                                                            <button onclick="window.deleteData(${row.id})" class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors" title="Hapus">
+                                                                                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                                                                            </button>
+                                                                                                        </div>
+                                                                                                    `;
                                 }
                             }
                         ],
@@ -676,7 +726,14 @@
                                 document.getElementById('ip_address').value = data.connectivity.ip_address || '';
                                 document.getElementById('pppoe_user').value = data.connectivity.pppoe_user || '';
                                 document.getElementById('ont_sn').value = data.connectivity.ont_sn || '';
+                                document.getElementById('ont_sn').value = data.connectivity.ont_sn || '';
                                 document.getElementById('vlan_id').value = data.connectivity.vlan_id || '';
+
+                                // Metro Ethernet
+                                document.getElementById('metro_vendor_id').value = data.connectivity.vendor_id || '';
+                                document.getElementById('metro_cid').value = data.connectivity.metro_cid || '';
+                                document.getElementById('metro_ip_address').value = data.connectivity.metro_ip_address || '';
+                                document.getElementById('metro_bandwidth').value = data.connectivity.metro_bandwidth || '';
                             }
                             if (data.hosting) {
                                 document.getElementById('hosting_server_id').value = data.hosting.hosting_server_id || '';

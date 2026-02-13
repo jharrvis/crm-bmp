@@ -9,6 +9,7 @@ use App\Models\Router;
 use App\Models\HostingServer;
 use App\Models\SubscriptionConnectivity;
 use App\Models\SubscriptionHosting;
+use App\Models\Vendor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -34,8 +35,9 @@ class SubscriptionController extends Controller
         $packages = Package::with('service')->where('is_active', true)->get();
         $routers = Router::where('is_active', true)->get();
         $servers = HostingServer::where('is_active', true)->get();
+        $vendors = Vendor::all();
 
-        return view('subscriptions.index', compact('subscriptions', 'clients', 'packages', 'routers', 'servers'));
+        return view('subscriptions.index', compact('subscriptions', 'clients', 'packages', 'routers', 'servers', 'vendors'));
     }
 
     /**
@@ -61,6 +63,11 @@ class SubscriptionController extends Controller
                 'ip_address' => 'nullable|ipv4',
                 'pppoe_user' => 'nullable|string|max:100',
                 'ont_sn' => 'nullable|string|max:100',
+                // Metro Ethernet Validation
+                'metro_vendor_id' => 'nullable|exists:vendors,id',
+                'metro_cid' => 'nullable|string|max:100',
+                'metro_ip_address' => 'nullable|string|max:45',
+                'metro_bandwidth' => 'nullable|integer|min:0',
             ]);
         } elseif ($serviceType === 'hosting') {
             $request->validate([
@@ -113,6 +120,11 @@ class SubscriptionController extends Controller
                     'router_model' => $request->router_model,
                     'vlan_id' => $request->vlan_id,
                     'signal_rx' => $request->signal_rx,
+                    // Metro Ethernet
+                    'vendor_id' => $request->metro_vendor_id,
+                    'metro_cid' => $request->metro_cid,
+                    'metro_ip_address' => $request->metro_ip_address,
+                    'metro_bandwidth' => $request->metro_bandwidth,
                 ]);
             } elseif ($serviceType === 'hosting') {
                 // Call HestiaCP API
@@ -186,7 +198,7 @@ class SubscriptionController extends Controller
     public function show(Subscription $subscription)
     {
         // Load all relationships
-        $subscription->load(['client', 'package.service', 'connectivity', 'hosting', 'domain']);
+        $subscription->load(['client', 'package.service', 'connectivity.vendor', 'hosting', 'domain']);
 
         if (request()->wantsJson() || request()->ajax()) {
             return response()->json($subscription);
@@ -237,6 +249,11 @@ class SubscriptionController extends Controller
                         'router_model' => $request->router_model,
                         'vlan_id' => $request->vlan_id,
                         'signal_rx' => $request->signal_rx,
+                        // Metro Ethernet
+                        'vendor_id' => $request->metro_vendor_id,
+                        'metro_cid' => $request->metro_cid,
+                        'metro_ip_address' => $request->metro_ip_address,
+                        'metro_bandwidth' => $request->metro_bandwidth,
                     ]
                 );
             } elseif ($serviceType === 'hosting') {
