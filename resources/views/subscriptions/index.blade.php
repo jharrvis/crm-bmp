@@ -575,7 +575,6 @@
                     });
                 });
 
-                // Handle Package Change Logic
                 window.handlePackageChange = function () {
                     const packageSelect = document.getElementById('package_id');
                     const selectedOption = packageSelect.options[packageSelect.selectedIndex];
@@ -588,35 +587,29 @@
                         priceDisplay.textContent = 'Rp ' + Number(price).toLocaleString('id-ID');
                     }
 
-                    const connectivityFields = document.getElementById('connectivity-fields');
-                    const hostingFields = document.getElementById('hosting-fields');
-                    const detailsSection = document.getElementById('technical-details'); // Corrected ID
+                    const detailsSection = document.getElementById('technical-details');
                     const fieldsConn = document.getElementById('fields-connectivity');
                     const fieldsHost = document.getElementById('fields-hosting');
 
-                    connectivityFields.classList.add('hidden');
-                    hostingFields.classList.add('hidden');
-                    fieldsConn.classList.add('hidden');
-                    fieldsHost.classList.add('hidden');
-                    detailsSection.classList.add('hidden');
+                    if (fieldsConn) fieldsConn.classList.add('hidden');
+                    if (fieldsHost) fieldsHost.classList.add('hidden');
+                    if (detailsSection) detailsSection.classList.add('hidden');
 
                     if (serviceType) {
-                        detailsSection.classList.remove('hidden');
+                        if (detailsSection) detailsSection.classList.remove('hidden');
                         if (serviceType === 'connectivity') {
-                            connectivityFields.classList.remove('hidden');
-                            fieldsConn.classList.remove('hidden');
-                            // Ensure metro form is reset/hidden when switching to connectivity
-                            // document.getElementById('metro_option').value = ''; // Don't reset if editing
+                            if (fieldsConn) fieldsConn.classList.remove('hidden');
                             toggleMetroForm();
                         } else if (serviceType === 'hosting' || serviceType === 'domain') {
-                            hostingFields.classList.remove('hidden');
-                            fieldsHost.classList.remove('hidden');
+                            if (fieldsHost) fieldsHost.classList.remove('hidden');
                             // Hide 'Hosting Server' for domain registration
-                            const divServer = document.getElementById('div-hosting-server'); // Corrected ID
-                            if (serviceType === 'domain') {
-                                divServer.classList.add('hidden');
-                            } else {
-                                divServer.classList.remove('hidden');
+                            const divServer = document.getElementById('div-hosting-server');
+                            if (divServer) {
+                                if (serviceType === 'domain') {
+                                    divServer.classList.add('hidden');
+                                } else {
+                                    divServer.classList.remove('hidden');
+                                }
                             }
                         }
                     }
