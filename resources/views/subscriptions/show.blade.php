@@ -275,151 +275,189 @@
 
         <!-- Teknis Tab (Connectivity Details) -->
         @if($subscription->connectivity)
-            <div id="panelTeknis" class="tab-panel hidden">
-                <div
-                    class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6">
-                    <h4 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2">
-                        <i data-lucide="wifi" class="w-4 h-4"></i>
-                        Detail Koneksi Internet
-                    </h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
-                            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">IP Address</p>
-                            <p class="text-slate-800 dark:text-white font-mono text-lg">
-                                {{ $subscription->connectivity->ip_address ?? '-' }}
-                            </p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
-                            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">PPPoE Username</p>
-                            <p class="text-slate-800 dark:text-white font-mono text-lg">
-                                {{ $subscription->connectivity->pppoe_user ?? '-' }}
-                            </p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
-                            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Router</p>
-                            <p class="text-slate-800 dark:text-white font-medium text-lg">
-                                {{ $subscription->connectivity->router->name ?? '-' }}
-                            </p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
-                            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Modem SN (ONT)</p>
-                            <p class="text-slate-800 dark:text-white font-mono text-lg">
-                                {{ $subscription->connectivity->ont_sn ?? '-' }}
-                            </p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
-                            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">VLAN ID</p>
-                            <p class="text-slate-800 dark:text-white font-mono text-lg">
-                                {{ $subscription->connectivity->vlan_id ?? '-' }}
-                            </p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
-                            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Signal RX</p>
-                            <p class="text-slate-800 dark:text-white font-mono text-lg">
-                                {{ $subscription->connectivity->signal_rx ?? '-' }}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        @endif
-
-        <!-- Topologi Tab (Full Width Editor) -->
-        @if($subscription->connectivity)
-            <div id="panelTopologi" class="tab-panel hidden">
-                <div
-                    class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6">
-                    {{-- React Flow will mount here - FULL WIDTH --}}
-                    <div id="topology-editor-root" data-subscription-id="{{ $subscription->id }}"
-                        data-api-base-url="{{ url('/') }}" data-can-edit="true" style="height: 75vh; min-height: 600px;">
-                    </div>
-                </div>
-            </div>
-        @endif
-
-        <!-- Hosting Tab -->
-        @if($subscription->hosting)
-            <div id="panelHosting" class="tab-panel hidden">
-                <div
-                    class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6">
-                    <h4 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2">
-                        <i data-lucide="server" class="w-4 h-4"></i>
-                        Detail Hosting
-                    </h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
-                            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Domain</p>
-                            <p class="text-slate-800 dark:text-white font-mono text-lg">
-                                {{ $subscription->hosting->domain ?? '-' }}
-                            </p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
-                            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Username</p>
-                            <p class="text-slate-800 dark:text-white font-mono text-lg">
-                                {{ $subscription->hosting->username ?? '-' }}
-                            </p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
-                            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Server</p>
-                            <p class="text-slate-800 dark:text-white font-medium text-lg">
-                                {{ $subscription->hosting->hostingServer->name ?? '-' }}
-                            </p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
-                            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Disk Quota</p>
-                            <p class="text-slate-800 dark:text-white font-medium text-lg">
-                                {{ $subscription->hosting->disk_quota_gb ?? 0 }} GB
-                            </p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
-                            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Email Accounts</p>
-                            <p class="text-slate-800 dark:text-white font-medium text-lg">
-                                {{ $subscription->hosting->email_accounts ?? 0 }}
-                            </p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
-                            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Databases</p>
-                            <p class="text-slate-800 dark:text-white font-medium text-lg">
-                                {{ $subscription->hosting->databases ?? 0 }}
-                            </p>
+                <div id="panelTeknis" class="tab-panel hidden">
+                    <div
+                        class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+                        <h4 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2">
+                            <i data-lucide="wifi" class="w-4 h-4"></i>
+                            Detail Koneksi Internet
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                                <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">IP Address</p>
+                                <p class="text-slate-800 dark:text-white font-mono text-lg">
+                                    {{ $subscription->connectivity->ip_address ?? '-' }}
+                                </p>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                                <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">PPPoE Username</p>
+                                <p class="text-slate-800 dark:text-white font-mono text-lg">
+                                    {{ $subscription->connectivity->pppoe_user ?? '-' }}
+                                </p>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                                <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Router</p>
+                                <p class="text-slate-800 dark:text-white font-medium text-lg">
+                                    {{ $subscription->connectivity->router->name ?? '-' }}
+                                </p>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                                <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Modem SN (ONT)</p>
+                                <p class="text-slate-800 dark:text-white font-mono text-lg">
+                                    {{ $subscription->connectivity->ont_sn ?? '-' }}
+                                </p>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                                <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">VLAN ID</p>
+                                <p class="text-slate-800 dark:text-white font-mono text-lg">
+                                    {{ $subscription->connectivity->vlan_id ?? '-' }}
+                                </p>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                                <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Signal RX</p>
+                                <p class="text-slate-800 dark:text-white font-mono text-lg">
+                                    {{ $subscription->connectivity->signal_rx ?? '-' }}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         @endif
 
-        <!-- Domain Tab -->
-        @if($subscription->domain)
-            <div id="panelDomain" class="tab-panel hidden">
-                <div
-                    class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6">
-                    <h4 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2">
-                        <i data-lucide="globe" class="w-4 h-4"></i>
-                        Detail Domain
-                    </h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
-                            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Nama Domain</p>
-                            <p class="text-slate-800 dark:text-white font-mono text-lg">
-                                {{ $subscription->domain->domain_name ?? '-' }}
-                            </p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
-                            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Registrar</p>
-                            <p class="text-slate-800 dark:text-white font-medium text-lg">
-                                {{ $subscription->domain->registrar ?? '-' }}
-                            </p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
-                            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Tanggal Expired</p>
-                            <p class="text-slate-800 dark:text-white font-medium text-lg">
-                                {{ $subscription->domain->expires_at ? $subscription->domain->expires_at->format('d M Y') : '-' }}
-                            </p>
-                        </div>
+    <!-- Metro Ethernet Details (If Available) -->
+    @if($subscription->connectivity && $subscription->connectivity->metroEthernet)
+        <div
+            class="mt-6 bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2">
+                <i data-lucide="network" class="w-4 h-4 text-blue-500"></i>
+                Detail Metro Ethernet
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-800">
+                    <p class="text-xs font-bold text-blue-500 uppercase mb-1">Vendor Backbone</p>
+                    <p class="font-bold text-slate-800 dark:text-white text-lg">
+                        {{ $subscription->connectivity->metroEthernet->vendor->name ?? 'Unknown Vendor' }}
+                    </p>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                    <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Circuit ID (CID)</p>
+                    <p class="font-mono text-slate-800 dark:text-white text-lg">
+                        {{ $subscription->connectivity->metroEthernet->cid ?? '-' }}
+                    </p>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                    <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">IP Address (Metro)</p>
+                    <p class="font-mono text-slate-800 dark:text-white text-lg">
+                        {{ $subscription->connectivity->metroEthernet->ip_address ?? '-' }}
+                    </p>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                    <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Kapasitas Bandwidth</p>
+                    <p class="font-mono text-slate-800 dark:text-white text-lg">
+                        {{ $subscription->connectivity->metroEthernet->bandwidth ?? 0 }} Mbps
+                    </p>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Topologi Tab (Full Width Editor) -->
+    @if($subscription->connectivity)
+        <div id="panelTopologi" class="tab-panel hidden">
+            <div
+                class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+                {{-- React Flow will mount here - FULL WIDTH --}}
+                <div id="topology-editor-root" data-subscription-id="{{ $subscription->id }}"
+                    data-api-base-url="{{ url('/') }}" data-can-edit="true" style="height: 75vh; min-height: 600px;">
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Hosting Tab -->
+    @if($subscription->hosting)
+        <div id="panelHosting" class="tab-panel hidden">
+            <div
+                class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2">
+                    <i data-lucide="server" class="w-4 h-4"></i>
+                    Detail Hosting
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                        <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Domain</p>
+                        <p class="text-slate-800 dark:text-white font-mono text-lg">
+                            {{ $subscription->hosting->domain ?? '-' }}
+                        </p>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                        <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Username</p>
+                        <p class="text-slate-800 dark:text-white font-mono text-lg">
+                            {{ $subscription->hosting->username ?? '-' }}
+                        </p>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                        <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Server</p>
+                        <p class="text-slate-800 dark:text-white font-medium text-lg">
+                            {{ $subscription->hosting->hostingServer->name ?? '-' }}
+                        </p>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                        <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Disk Quota</p>
+                        <p class="text-slate-800 dark:text-white font-medium text-lg">
+                            {{ $subscription->hosting->disk_quota_gb ?? 0 }} GB
+                        </p>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                        <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Email Accounts</p>
+                        <p class="text-slate-800 dark:text-white font-medium text-lg">
+                            {{ $subscription->hosting->email_accounts ?? 0 }}
+                        </p>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                        <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Databases</p>
+                        <p class="text-slate-800 dark:text-white font-medium text-lg">
+                            {{ $subscription->hosting->databases ?? 0 }}
+                        </p>
                     </div>
                 </div>
             </div>
-        @endif
+        </div>
+    @endif
+
+    <!-- Domain Tab -->
+    @if($subscription->domain)
+        <div id="panelDomain" class="tab-panel hidden">
+            <div
+                class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2">
+                    <i data-lucide="globe" class="w-4 h-4"></i>
+                    Detail Domain
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                        <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Nama Domain</p>
+                        <p class="text-slate-800 dark:text-white font-mono text-lg">
+                            {{ $subscription->domain->domain_name ?? '-' }}
+                        </p>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                        <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Registrar</p>
+                        <p class="text-slate-800 dark:text-white font-medium text-lg">
+                            {{ $subscription->domain->registrar ?? '-' }}
+                        </p>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                        <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Tanggal Expired</p>
+                        <p class="text-slate-800 dark:text-white font-medium text-lg">
+                            {{ $subscription->domain->expires_at ? $subscription->domain->expires_at->format('d M Y') : '-' }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
     </div>
 
     <!-- Client Profile Modal -->
@@ -439,7 +477,8 @@
                         <div>
                             <span>{{ $subscription->client->name ?? '-' }}</span>
                             <p class="text-sm font-normal text-slate-500 font-mono">
-                                {{ $subscription->client->client_code ?? '-' }}</p>
+                                {{ $subscription->client->client_code ?? '-' }}
+                            </p>
                         </div>
                     </h3>
                     <button type="button" onclick="closeClientModal()"
@@ -484,62 +523,62 @@
                                 </p>
                             </div>
                             @if($subscription->client->type === 'company')
-                            <div>
-                                <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Nama PIC</p>
-                                <p class="text-slate-800 dark:text-white font-medium">
-                                    {{ $subscription->client->pic_name ?? '-' }}
-                                </p>
-                            </div>
+                                <div>
+                                    <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Nama PIC</p>
+                                    <p class="text-slate-800 dark:text-white font-medium">
+                                        {{ $subscription->client->pic_name ?? '-' }}
+                                    </p>
+                                </div>
                             @endif
                         </div>
                     </div>
 
-            <!-- Contacts Panel -->
-            <div id="clientPanelContacts" class="hidden">
-                <div class="space-y-4">
-                    @if($subscription->client->contacts && $subscription->client->contacts->count() > 0)
-                        @foreach($subscription->client->contacts as $contact)
-                            <div class="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
-                                <div
-                                    class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                                    <i data-lucide="user" class="w-5 h-5 text-blue-600 dark:text-blue-400"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <p class="font-bold text-slate-800 dark:text-white">{{ $contact->name }}</p>
-                                    <div class="flex items-center gap-4 text-sm text-slate-500">
-                                        @if($contact->phone)
-                                            <span class="flex items-center gap-1">
-                                                <i data-lucide="phone" class="w-3 h-3"></i>
-                                                {{ $contact->phone }}
-                                            </span>
-                                        @endif
-                                        @if($contact->email)
-                                            <span class="flex items-center gap-1">
-                                                <i data-lucide="mail" class="w-3 h-3"></i>
-                                                {{ $contact->email }}
-                                            </span>
-                                        @endif
+                    <!-- Contacts Panel -->
+                    <div id="clientPanelContacts" class="hidden">
+                        <div class="space-y-4">
+                            @if($subscription->client->contacts && $subscription->client->contacts->count() > 0)
+                                @foreach($subscription->client->contacts as $contact)
+                                    <div class="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
+                                        <div
+                                            class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                                            <i data-lucide="user" class="w-5 h-5 text-blue-600 dark:text-blue-400"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="font-bold text-slate-800 dark:text-white">{{ $contact->name }}</p>
+                                            <div class="flex items-center gap-4 text-sm text-slate-500">
+                                                @if($contact->phone)
+                                                    <span class="flex items-center gap-1">
+                                                        <i data-lucide="phone" class="w-3 h-3"></i>
+                                                        {{ $contact->phone }}
+                                                    </span>
+                                                @endif
+                                                @if($contact->email)
+                                                    <span class="flex items-center gap-1">
+                                                        <i data-lucide="mail" class="w-3 h-3"></i>
+                                                        {{ $contact->email }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                        @endforeach
-                    @else
-                        <p class="text-slate-500 text-center py-4">Tidak ada kontak tersimpan</p>
-                    @endif
+                                @endforeach
+                            @else
+                                <p class="text-slate-500 text-center py-4">Tidak ada kontak tersimpan</p>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="flex justify-end p-6 border-t border-slate-200 dark:border-slate-700">
+                    <a href="{{ route('clients.show', $subscription->client_id) }}"
+                        class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl font-bold transition-colors">
+                        <i data-lucide="external-link" class="w-4 h-4"></i>
+                        Lihat Lengkap
+                    </a>
                 </div>
             </div>
         </div>
-
-        <!-- Modal Footer -->
-        <div class="flex justify-end p-6 border-t border-slate-200 dark:border-slate-700">
-            <a href="{{ route('clients.show', $subscription->client_id) }}"
-                class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl font-bold transition-colors">
-                <i data-lucide="external-link" class="w-4 h-4"></i>
-                Lihat Lengkap
-            </a>
-        </div>
-    </div>
-    </div>
     </div>
 
     <script>

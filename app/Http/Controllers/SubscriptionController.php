@@ -210,7 +210,7 @@ class SubscriptionController extends Controller
     public function show(Subscription $subscription)
     {
         // Load all relationships
-        $subscription->load(['client', 'package.service', 'connectivity.metroEthernet.vendor', 'hosting', 'domain']);
+        $subscription->load(['client', 'package.service', 'connectivity.metroEthernet.vendor', 'hosting.hostingServer', 'domain']);
 
         if (request()->wantsJson() || request()->ajax()) {
             return response()->json($subscription);
