@@ -20,11 +20,8 @@ class SubscriptionConnectivity extends Model
         'router_model',
         'vlan_id',
         'signal_rx',
-        // Metro Ethernet Fields
-        'vendor_id',
-        'metro_cid',
-        'metro_ip_address',
-        'metro_bandwidth',
+        // Metro Ethernet
+        'metro_ethernet_id',
     ];
 
     public function subscription()
@@ -37,8 +34,8 @@ class SubscriptionConnectivity extends Model
         return $this->belongsTo(Router::class);
     }
 
-    public function vendor()
+    public function metroEthernet()
     {
-        return $this->belongsTo(Vendor::class);
+        return $this->belongsTo(MetroEthernet::class);
     }
 }

@@ -233,55 +233,84 @@
                                 </div>
                             </div>
 
-                            <!-- Metro Ethernet Details -->
-                            <div class="relative py-4">
-                                <div class="absolute inset-0 flex items-center" aria-hidden="true">
-                                    <div class="w-full border-t border-slate-200 dark:border-slate-700"></div>
+                                <!-- Metro Ethernet Details -->
+                                <div class="relative py-4">
+                                    <div class="absolute inset-0 flex items-center" aria-hidden="true">
+                                        <div class="w-full border-t border-slate-200 dark:border-slate-700"></div>
+                                    </div>
+                                    <div class="relative flex justify-start">
+                                        <span class="pr-3 bg-white dark:bg-slate-800 text-sm font-medium text-slate-500">Metro
+                                            Ethernet Details</span>
+                                    </div>
                                 </div>
-                                <div class="relative flex justify-start">
-                                    <span
-                                        class="pr-3 bg-white dark:bg-slate-800 text-sm font-medium text-slate-500">Metro
-                                        Ethernet Details</span>
-                                </div>
-                            </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label
-                                        class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Vendor
-                                        Backbone</label>
-                                    <select id="metro_vendor_id" name="metro_vendor_id"
+                                <div class="mb-6">
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Pilih Metro Ethernet</label>
+                                    <select id="metro_option" name="metro_option" onchange="toggleMetroForm()"
                                         class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                                        <option value="">-- Pilih Vendor --</option>
-                                        @foreach($vendors as $vendor)
-                                            <option value="{{ $vendor->id }}">{{ $vendor->name }}</option>
-                                        @endforeach
+                                        <option value="">-- Tidak Ada / Pilih Nanti --</option>
+                                        <option value="new" class="font-bold text-blue-600">+ Buat Baru</option>
+                                        <optgroup label="Tersedia">
+                                            @foreach($metroEthernets as $metro)
+                                                <option value="existing" data-id="{{ $metro->id }}">
+                                                    {{ $metro->vendor->name ?? 'Unknown' }} | CID: {{ $metro->cid }} | {{ $metro->bandwidth }} Mbps
+                                                </option>
+                                            @endforeach
+                                        </optgroup>
                                     </select>
+                                    <input type="hidden" name="metro_ethernet_id" id="metro_ethernet_id_input">
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">CID
-                                        (Circuit ID)</label>
-                                    <input type="text" id="metro_cid" name="metro_cid" placeholder="Contoh: CID-12345"
-                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+
+                                <div id="metro-new-form" class="hidden space-y-6 border-l-4 border-blue-500 pl-4">
+                                    <h5 class="text-sm font-bold text-blue-600">Buat Metro Ethernet Baru</h5>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label
+                                                class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Vendor
+                                                Backbone</label>
+                                            <select id="metro_vendor_id" name="metro_vendor_id"
+                                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                                <option value="">-- Pilih Vendor --</option>
+                                                <!-- Assuming $vendors is available, if not passed explicitly, maybe fetch via $metroEthernets relationship or pass it from controller -->
+                                                @if(isset($vendors))
+                                                    @foreach($vendors as $vendor)
+                                                        <option value="{{ $vendor->id }}">{{ $vendor->name }}</option>
+                                                    @endforeach
+                                                @else
+                                                     <!-- Fallback if vendors not passed directly, though better to pass it -->
+                                                     @php $uniqueVendors = $metroEthernets->pluck('vendor')->unique('id')->filter(); @endphp
+                                                     @foreach($uniqueVendors as $vendor)
+                                                        <option value="{{ $vendor->id }}">{{ $vendor->name }}</option>
+                                                     @endforeach
+                                                @endif
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">CID
+                                                (Circuit ID)</label>
+                                            <input type="text" id="metro_cid" name="metro_cid"
+                                                placeholder="Contoh: CID-12345"
+                                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">IP
+                                                Address (Metro)</label>
+                                            <input type="text" id="metro_ip_address" name="metro_ip_address"
+                                                placeholder="192.168.x.x"
+                                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                        </div>
+                                        <div>
+                                            <label
+                                                class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Bandwidth
+                                                (Mbps)</label>
+                                            <input type="number" id="metro_bandwidth" name="metro_bandwidth" min="0"
+                                                placeholder="Contoh: 100"
+                                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">IP
-                                        Address (Metro)</label>
-                                    <input type="text" id="metro_ip_address" name="metro_ip_address"
-                                        placeholder="192.168.x.x"
-                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                                </div>
-                                <div>
-                                    <label
-                                        class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Bandwidth
-                                        (Mbps)</label>
-                                    <input type="number" id="metro_bandwidth" name="metro_bandwidth" min="0"
-                                        placeholder="Contoh: 100"
-                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                                </div>
-                            </div>
                         </div>
 
                         <!-- Hosting Fields -->
@@ -548,42 +577,68 @@
 
                 // Handle Package Change Logic
                 window.handlePackageChange = function () {
-                    const select = document.getElementById('package_id');
-                    const option = select.options[select.selectedIndex];
-                    const type = option.getAttribute('data-type');
-                    const price = option.getAttribute('data-price') || 0;
+                    const packageSelect = document.getElementById('package_id');
+                    const selectedOption = packageSelect.options[packageSelect.selectedIndex];
+                    const serviceType = selectedOption ? selectedOption.getAttribute('data-type') : null;
 
                     // Update package price display
+                    const price = selectedOption ? (selectedOption.getAttribute('data-price') || 0) : 0;
                     const priceDisplay = document.getElementById('package_price_display');
                     if (priceDisplay) {
                         priceDisplay.textContent = 'Rp ' + Number(price).toLocaleString('id-ID');
                     }
 
-                    const detailsSection = document.getElementById('technical-details');
+                    const connectivityFields = document.getElementById('connectivity-fields');
+                    const hostingFields = document.getElementById('hosting-fields');
+                    const detailsSection = document.getElementById('technical-details'); // Corrected ID
                     const fieldsConn = document.getElementById('fields-connectivity');
                     const fieldsHost = document.getElementById('fields-hosting');
 
-                    // Reset visibility
-                    detailsSection.classList.add('hidden');
+                    connectivityFields.classList.add('hidden');
+                    hostingFields.classList.add('hidden');
                     fieldsConn.classList.add('hidden');
                     fieldsHost.classList.add('hidden');
+                    detailsSection.classList.add('hidden');
 
-                    if (type) {
+                    if (serviceType) {
                         detailsSection.classList.remove('hidden');
-                        if (type === 'connectivity') {
+                        if (serviceType === 'connectivity') {
+                            connectivityFields.classList.remove('hidden');
                             fieldsConn.classList.remove('hidden');
-                        } else if (type === 'hosting' || type === 'domain') {
+                            // Ensure metro form is reset/hidden when switching to connectivity
+                            // document.getElementById('metro_option').value = ''; // Don't reset if editing
+                            toggleMetroForm();
+                        } else if (serviceType === 'hosting' || serviceType === 'domain') {
+                            hostingFields.classList.remove('hidden');
                             fieldsHost.classList.remove('hidden');
                             // Hide 'Hosting Server' for domain registration
-                            const divServer = document.getElementById('div-hosting-server');
-                            if (type === 'domain') {
+                            const divServer = document.getElementById('div-hosting-server'); // Corrected ID
+                            if (serviceType === 'domain') {
                                 divServer.classList.add('hidden');
                             } else {
                                 divServer.classList.remove('hidden');
                             }
                         }
                     }
-                }
+                };
+
+                window.toggleMetroForm = function() {
+                    const metroOption = document.getElementById('metro_option');
+                    const newForm = document.getElementById('metro-new-form');
+                    const hiddenIdInput = document.getElementById('metro_ethernet_id_input');
+                    const selectedOption = metroOption.options[metroOption.selectedIndex];
+
+                    if (metroOption.value === 'new') {
+                        newForm.classList.remove('hidden');
+                        hiddenIdInput.value = ''; // Clear ID if creating new
+                    } else if (metroOption.value === 'existing') {
+                        newForm.classList.add('hidden');
+                        hiddenIdInput.value = selectedOption.getAttribute('data-id');
+                    } else {
+                        newForm.classList.add('hidden');
+                        hiddenIdInput.value = '';
+                    }
+                };
 
                 // Modal Functions
                 window.openModal = function (isEdit = false) {
@@ -729,11 +784,28 @@
                                 document.getElementById('ont_sn').value = data.connectivity.ont_sn || '';
                                 document.getElementById('vlan_id').value = data.connectivity.vlan_id || '';
 
-                                // Metro Ethernet
-                                document.getElementById('metro_vendor_id').value = data.connectivity.vendor_id || '';
-                                document.getElementById('metro_cid').value = data.connectivity.metro_cid || '';
-                                document.getElementById('metro_ip_address').value = data.connectivity.metro_ip_address || '';
-                                document.getElementById('metro_bandwidth').value = data.connectivity.metro_bandwidth || '';
+                                // Metro Ethernet Refactor
+                                if (data.connectivity.metro_ethernet_id) {
+                                     // Find option with data-id matching the ID
+                                     const metroSelect = document.getElementById('metro_option');
+                                     let found = false;
+                                     for (let i = 0; i < metroSelect.options.length; i++) {
+                                         if (metroSelect.options[i].getAttribute('data-id') == data.connectivity.metro_ethernet_id) {
+                                             metroSelect.selectedIndex = i;
+                                             document.getElementById('metro_ethernet_id_input').value = data.connectivity.metro_ethernet_id;
+                                             found = true;
+                                             break;
+                                         }
+                                     }
+                                     if (!found) {
+                                         // Handle case if referenced metro is not in list (deleted/inactive?)
+                                         metroSelect.value = '';
+                                     }
+                                     toggleMetroForm();
+                                } else {
+                                    document.getElementById('metro_option').value = '';
+                                    toggleMetroForm();
+                                }
                             }
                             if (data.hosting) {
                                 document.getElementById('hosting_server_id').value = data.hosting.hosting_server_id || '';

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Subscription;
 use App\Models\Client;
+use App\Models\MetroEthernet;
 use App\Models\Package;
 use App\Models\Router;
 use App\Models\HostingServer;
@@ -35,9 +36,10 @@ class SubscriptionController extends Controller
         $packages = Package::with('service')->where('is_active', true)->get();
         $routers = Router::where('is_active', true)->get();
         $servers = HostingServer::where('is_active', true)->get();
-        $vendors = Vendor::all();
+        // Fetch Metro Ethernets with Vendor for selection
+        $metroEthernets = MetroEthernet::with('vendor')->latest()->get();
 
-        return view('subscriptions.index', compact('subscriptions', 'clients', 'packages', 'routers', 'servers', 'vendors'));
+        return view('subscriptions.index', compact('subscriptions', 'clients', 'packages', 'routers', 'servers', 'metroEthernets'));
     }
 
     /**
@@ -64,10 +66,10 @@ class SubscriptionController extends Controller
                 'pppoe_user' => 'nullable|string|max:100',
                 'ont_sn' => 'nullable|string|max:100',
                 // Metro Ethernet Validation
-                'metro_vendor_id' => 'nullable|exists:vendors,id',
-                'metro_cid' => 'nullable|string|max:100',
-                'metro_ip_address' => 'nullable|string|max:45',
-                'metro_bandwidth' => 'nullable|integer|min:0',
+                'metro_option' => 'nullable|string|in:existing,new',
+                'metro_ethernet_id' => 'nullable|required_if:metro_option,existing|exists:metro_ethernets,id',
+                'metro_vendor_id' => 'nullable|required_if:metro_option,new|exists:vendors,id',
+                'metro_bandwidth' => 'nullable|required_if:metro_option,new|integer|min:0',
             ]);
         } elseif ($serviceType === 'hosting') {
             $request->validate([
@@ -117,15 +119,26 @@ class SubscriptionController extends Controller
                     'pppoe_user' => $request->pppoe_user,
                     'pppoe_secret' => $request->pppoe_secret ? encrypt($request->pppoe_secret) : null,
                     'ont_sn' => $request->ont_sn,
-                    'router_model' => $request->router_model,
-                    'vlan_id' => $request->vlan_id,
                     'signal_rx' => $request->signal_rx,
-                    // Metro Ethernet
-                    'vendor_id' => $request->metro_vendor_id,
-                    'metro_cid' => $request->metro_cid,
-                    'metro_ip_address' => $request->metro_ip_address,
-                    'metro_bandwidth' => $request->metro_bandwidth,
-                ]);
+                ];
+
+                // Handle Metro Ethernet Logic
+                if ($request->filled('metro_option')) {
+                    if ($request->metro_option === 'new') {
+                        $metro = MetroEthernet::create([
+                            'vendor_id' => $request->metro_vendor_id,
+                            'cid' => $request->metro_cid,
+                            'ip_address' => $request->metro_ip_address,
+                            'bandwidth' => $request->metro_bandwidth,
+                            'service_id' => $package->service_id, // Link to service of package
+                        ]);
+                        $connData['metro_ethernet_id'] = $metro->id;
+                    } else {
+                        $connData['metro_ethernet_id'] = $request->metro_ethernet_id;
+                    }
+                }
+
+                SubscriptionConnectivity::create($connData);
             } elseif ($serviceType === 'hosting') {
                 // Call HestiaCP API
                 $server = HostingServer::findOrFail($request->hosting_server_id);
@@ -198,7 +211,7 @@ class SubscriptionController extends Controller
     public function show(Subscription $subscription)
     {
         // Load all relationships
-        $subscription->load(['client', 'package.service', 'connectivity.vendor', 'hosting', 'domain']);
+        $subscription->load(['client', 'package.service', 'connectivity.metroEthernet.vendor', 'hosting', 'domain']);
 
         if (request()->wantsJson() || request()->ajax()) {
             return response()->json($subscription);
@@ -249,13 +262,25 @@ class SubscriptionController extends Controller
                         'router_model' => $request->router_model,
                         'vlan_id' => $request->vlan_id,
                         'signal_rx' => $request->signal_rx,
-                        // Metro Ethernet
-                        'vendor_id' => $request->metro_vendor_id,
-                        'metro_cid' => $request->metro_cid,
-                        'metro_ip_address' => $request->metro_ip_address,
-                        'metro_bandwidth' => $request->metro_bandwidth,
                     ]
                 );
+
+                // Handle Metro update/change
+                if ($request->filled('metro_option')) {
+                   $connectivity = $subscription->connectivity;
+                   if ($request->metro_option === 'new') {
+                        $metro = MetroEthernet::create([
+                            'vendor_id' => $request->metro_vendor_id,
+                            'cid' => $request->metro_cid,
+                            'ip_address' => $request->metro_ip_address,
+                            'bandwidth' => $request->metro_bandwidth,
+                            'service_id' => $package->service_id,
+                        ]);
+                        $connectivity->update(['metro_ethernet_id' => $metro->id]);
+                   } elseif ($request->metro_option === 'existing') {
+                        $connectivity->update(['metro_ethernet_id' => $request->metro_ethernet_id]);
+                   }
+                }
             } elseif ($serviceType === 'hosting') {
                 $hosting = $subscription->hosting;
                 $server = HostingServer::findOrFail($request->hosting_server_id); // Assuming server might change? Probably not often.
