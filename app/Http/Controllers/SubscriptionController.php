@@ -216,7 +216,13 @@ class SubscriptionController extends Controller
             return response()->json($subscription);
         }
 
-        return view('subscriptions.show', compact('subscription'));
+        $clients = Client::all();
+        $packages = Package::with('service')->get();
+        $routers = Router::all();
+        $servers = HostingServer::all();
+        $metroEthernets = MetroEthernet::with('vendor')->latest()->get();
+
+        return view('subscriptions.show', compact('subscription', 'clients', 'packages', 'routers', 'servers', 'metroEthernets'));
     }
 
     /**
