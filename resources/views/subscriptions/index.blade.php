@@ -351,7 +351,6 @@
                                 </div>
                             </div>
                         </div>
-                </div>
 
                 <div>
                     <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Catatan
