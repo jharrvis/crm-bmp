@@ -175,20 +175,28 @@
                 let tableData = @json($services);
                 let table;
 
+                function syncMetroSection(typeValue = document.getElementById('type')?.value) {
+                    const isConnectivity = typeValue === 'connectivity';
+
+                    $('#metro-section').toggleClass('hidden', !isConnectivity);
+                    $('#metro_vendor_id').prop('disabled', !isConnectivity).prop('required', isConnectivity);
+                    $('#metro_bandwidth').prop('disabled', !isConnectivity).prop('required', isConnectivity);
+
+                    if (!isConnectivity) {
+                        document.getElementById('metro_vendor_id').value = '';
+                        document.getElementById('metro_cid').value = '';
+                        document.getElementById('metro_ip_address').value = '';
+                        document.getElementById('metro_bandwidth').value = '';
+                    }
+                }
+
                 $(document).ready(function () {
                     // Type Change Event
                     $('#type').on('change', function () {
-                        const val = $(this).val();
-                        if (val === 'connectivity') {
-                            $('#metro-section').removeClass('hidden');
-                            $('#metro_vendor_id').prop('disabled', false).prop('required', true);
-                            $('#metro_bandwidth').prop('disabled', false).prop('required', true);
-                        } else {
-                            $('#metro-section').addClass('hidden');
-                            $('#metro_vendor_id').prop('disabled', true).prop('required', false);
-                            $('#metro_bandwidth').prop('disabled', true).prop('required', false);
-                        }
+                        syncMetroSection($(this).val());
                     });
+
+                    syncMetroSection($('#type').val());
 
                     // Existing DataTable init code...
                     table = $('#dataTable').DataTable({
@@ -281,9 +289,7 @@
                         document.getElementById('submitText').innerText = 'Simpan Data';
                         document.getElementById('dataForm').reset();
                         document.getElementById('dataId').value = '';
-                        // Trigger Event to reset validation and hide metro section
-                        $('#type').trigger('change');
-                        $('#metro-section').addClass('hidden'); // Ensure hidden by default for new
+                        syncMetroSection(document.getElementById('type').value);
                     }
                     lucide.createIcons();
                 };
@@ -315,9 +321,7 @@
 
                         // Metro Data Pre-fill
                         if (item.type === 'connectivity') {
-                            $('#metro-section').removeClass('hidden');
-                            $('#metro_vendor_id').prop('disabled', false).prop('required', true);
-                            $('#metro_bandwidth').prop('disabled', false).prop('required', true);
+                            syncMetroSection(item.type);
 
                             if (item.metro_ethernet) {
                                 document.getElementById('metro_vendor_id').value = item.metro_ethernet.vendor_id;
@@ -332,14 +336,7 @@
                                 document.getElementById('metro_bandwidth').value = '';
                             }
                         } else {
-                            $('#metro-section').addClass('hidden');
-                            $('#metro_vendor_id').prop('disabled', true).prop('required', false);
-                            $('#metro_bandwidth').prop('disabled', true).prop('required', false);
-                            // Clear data
-                            document.getElementById('metro_vendor_id').value = '';
-                            document.getElementById('metro_cid').value = '';
-                            document.getElementById('metro_ip_address').value = '';
-                            document.getElementById('metro_bandwidth').value = '';
+                            syncMetroSection(item.type);
                         }
 
                         window.openModal(true);
