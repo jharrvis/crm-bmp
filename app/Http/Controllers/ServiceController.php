@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Service;
-use App\Models\Vendor;
-use App\Models\MetroEthernet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -15,9 +13,8 @@ class ServiceController extends Controller
      */
     public function index()
     {
-        $services = Service::with('metroEthernet.vendor')->latest()->get();
-        $vendors = Vendor::all();
-        return view('services.index', compact('services', 'vendors'));
+        $services = Service::latest()->get();
+        return view('services.index', compact('services'));
     }
 
     public function create()
@@ -35,11 +32,6 @@ class ServiceController extends Controller
             'code' => 'required|string|max:255|unique:services,code',
             'type' => 'required|string',
             'description' => 'nullable|string',
-            // Metro Ethernet Validation
-            'metro_vendor_id' => 'nullable|required_if:type,connectivity|exists:vendors,id',
-            'metro_cid' => 'nullable|string|max:100',
-            'metro_ip_address' => 'nullable|string|max:45',
-            'metro_bandwidth' => 'nullable|required_if:type,connectivity|integer|min:0',
         ]);
 
         DB::beginTransaction();
@@ -52,24 +44,13 @@ class ServiceController extends Controller
                 'is_active' => $request->is_active ?? true,
             ]);
 
-            // Create Metro Ethernet if data exists
-            if ($request->type === 'connectivity' || $request->filled('metro_vendor_id')) {
-                MetroEthernet::create([
-                    'service_id' => $service->id,
-                    'vendor_id' => $request->metro_vendor_id,
-                    'cid' => $request->metro_cid,
-                    'ip_address' => $request->metro_ip_address,
-                    'bandwidth' => $request->metro_bandwidth ?? 0,
-                ]);
-            }
-
             DB::commit();
 
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Layanan berhasil ditambahkan.',
-                    'service' => $service->load('metroEthernet.vendor')
+                    'service' => $service
                 ]);
             }
 
@@ -89,7 +70,7 @@ class ServiceController extends Controller
     public function show(Request $request, Service $service)
     {
         if ($request->wantsJson() || $request->ajax()) {
-            return response()->json($service->load('metroEthernet.vendor'));
+            return response()->json($service);
         }
         return redirect()->route('services.index');
     }
@@ -109,11 +90,6 @@ class ServiceController extends Controller
             'code' => 'required|string|max:255|unique:services,code,' . $service->id,
             'type' => 'required|string',
             'description' => 'nullable|string',
-            // Metro Ethernet Validation
-            'metro_vendor_id' => 'nullable|required_if:type,connectivity|exists:vendors,id',
-            'metro_cid' => 'nullable|string|max:100',
-            'metro_ip_address' => 'nullable|string|max:45',
-            'metro_bandwidth' => 'nullable|required_if:type,connectivity|integer|min:0',
         ]);
 
         DB::beginTransaction();
@@ -134,39 +110,13 @@ class ServiceController extends Controller
             }
             $service->save();
 
-            // Handle Metro Ethernet
-            if ($request->type === 'connectivity' || $request->filled('metro_vendor_id')) {
-                // Check if exists
-                if ($service->metroEthernet) {
-                    $service->metroEthernet->update([
-                        'vendor_id' => $request->metro_vendor_id,
-                        'cid' => $request->metro_cid,
-                        'ip_address' => $request->metro_ip_address,
-                        'bandwidth' => $request->metro_bandwidth ?? 0,
-                    ]);
-                } else {
-                    MetroEthernet::create([
-                        'service_id' => $service->id,
-                        'vendor_id' => $request->metro_vendor_id,
-                        'cid' => $request->metro_cid,
-                        'ip_address' => $request->metro_ip_address,
-                        'bandwidth' => $request->metro_bandwidth ?? 0,
-                    ]);
-                }
-            } else {
-                // If type changed to something else, maybe delete the Metro Info?
-                // For now, let's keep it or delete it? User didn't specify.
-                // Safest is to keep it but maybe not update it. Or delete it if it's strictly bound to type.
-                // Let's leave it for now.
-            }
-
             DB::commit();
 
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Layanan berhasil diperbarui.',
-                    'service' => $service->load('metroEthernet.vendor')
+                    'service' => $service
                 ]);
             }
 

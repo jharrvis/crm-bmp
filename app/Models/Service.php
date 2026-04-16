@@ -25,9 +25,4 @@ class Service extends Model
     {
         return $this->hasMany(Package::class);
     }
-
-    public function metroEthernet()
-    {
-        return $this->hasOne(MetroEthernet::class);
-    }
 }
