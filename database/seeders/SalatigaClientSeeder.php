@@ -56,22 +56,25 @@ class SalatigaClientSeeder extends Seeder
         ];
 
         foreach ($clientNames as $index => $name) {
+            // Check if client already exists
+            $existing = Client::where('name', $name)->where('branch_id', $branch->id)->first();
+
+            // Generate client_code only for new records
+            if (!$existing) {
+                $count = Client::where('branch_id', $branch->id)->count() + 1;
+                $clientCode = sprintf("C-%s-%04d", strtoupper(Str::slug($branch->name)), $count);
+            }
+
             $client = Client::updateOrCreate(
                 ['name' => $name, 'branch_id' => $branch->id],
-                [
+                array_filter([
+                    'client_code' => $existing ? $existing->client_code : $clientCode,
                     'type' => 'business',
                     'status' => 'active',
                     'address' => 'Salatiga, Jawa Tengah',
                     'city' => 'Salatiga',
-                ]
+                ])
             );
-
-            // Generate code ONLY if new or empty
-            if (empty($client->client_code)) {
-                $count = Client::where('branch_id', $branch->id)->count();
-                $client->client_code = sprintf("C-%s-%04d", strtoupper(Str::slug($branch->name)), $count);
-                $client->save();
-            }
 
             // Add/Update PIC contact
             ClientContact::updateOrCreate(
