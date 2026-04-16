@@ -97,7 +97,7 @@
                             <div>
                                 <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Vendor
                                     Backbone <span class="text-red-500">*</span></label>
-                                <select id="metro_vendor_id" name="metro_vendor_id"
+                                <select id="metro_vendor_id" name="metro_vendor_id" disabled
                                     class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
                                     <option value="">Pilih Vendor</option>
                                     @foreach($vendors as $vendor)
@@ -124,7 +124,7 @@
                             <div>
                                 <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Kapasitas
                                     Bandwidth (Mbps) <span class="text-red-500">*</span></label>
-                                <input type="number" id="metro_bandwidth" name="metro_bandwidth" min="0"
+                                <input type="number" id="metro_bandwidth" name="metro_bandwidth" min="0" disabled
                                     class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                                     placeholder="Contoh: 100">
                             </div>
@@ -181,12 +181,12 @@
                         const val = $(this).val();
                         if (val === 'connectivity') {
                             $('#metro-section').removeClass('hidden');
-                            $('#metro_vendor_id').attr('required', true);
-                            $('#metro_bandwidth').attr('required', true);
+                            $('#metro_vendor_id').prop('disabled', false).prop('required', true);
+                            $('#metro_bandwidth').prop('disabled', false).prop('required', true);
                         } else {
                             $('#metro-section').addClass('hidden');
-                            $('#metro_vendor_id').removeAttr('required');
-                            $('#metro_bandwidth').removeAttr('required');
+                            $('#metro_vendor_id').prop('disabled', true).prop('required', false);
+                            $('#metro_bandwidth').prop('disabled', true).prop('required', false);
                         }
                     });
 
@@ -316,8 +316,8 @@
                         // Metro Data Pre-fill
                         if (item.type === 'connectivity') {
                             $('#metro-section').removeClass('hidden');
-                            $('#metro_vendor_id').attr('required', true);
-                            $('#metro_bandwidth').attr('required', true);
+                            $('#metro_vendor_id').prop('disabled', false).prop('required', true);
+                            $('#metro_bandwidth').prop('disabled', false).prop('required', true);
 
                             if (item.metro_ethernet) {
                                 document.getElementById('metro_vendor_id').value = item.metro_ethernet.vendor_id;
@@ -333,8 +333,8 @@
                             }
                         } else {
                             $('#metro-section').addClass('hidden');
-                            $('#metro_vendor_id').removeAttr('required');
-                            $('#metro_bandwidth').removeAttr('required');
+                            $('#metro_vendor_id').prop('disabled', true).prop('required', false);
+                            $('#metro_bandwidth').prop('disabled', true).prop('required', false);
                             // Clear data
                             document.getElementById('metro_vendor_id').value = '';
                             document.getElementById('metro_cid').value = '';
