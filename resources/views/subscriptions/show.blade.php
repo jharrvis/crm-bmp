@@ -59,6 +59,13 @@
                         <i data-lucide="wifi" class="w-4 h-4"></i>
                         <span>Detail Koneksi</span>
                     </button>
+                    @if(!empty($subscription->connectivity->zabbix_interfaces))
+                        <button type="button" id="tabMonitoring" onclick="switchTab('monitoring')"
+                            class="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-colors text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700">
+                            <i data-lucide="activity" class="w-4 h-4"></i>
+                            <span>Monitoring</span>
+                        </button>
+                    @endif
                     <button type="button" id="tabTopologi" onclick="switchTab('topologi')"
                         class="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-colors text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700">
                         <i data-lucide="git-branch" class="w-4 h-4"></i>
@@ -385,12 +392,108 @@
 
     <!-- Topologi Tab (Full Width Editor) -->
     @if($subscription->connectivity)
-        <div id="panelTopologi" class="tab-panel hidden">
+        <div id="panelTopologi" class="tab-panel hidden mt-6">
             <div
                 class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6">
                 {{-- React Flow will mount here - FULL WIDTH --}}
                 <div id="topology-editor-root" data-subscription-id="{{ $subscription->id }}"
                     data-api-base-url="{{ url('/') }}" data-can-edit="true" style="height: 75vh; min-height: 600px;">
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if($subscription->connectivity && !empty($subscription->connectivity->zabbix_interfaces))
+        <div id="panelMonitoring" class="tab-panel hidden mt-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div class="lg:col-span-4 space-y-6">
+                    <div class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-5 space-y-5">
+                    <div>
+                        <h4 class="text-sm font-bold uppercase tracking-widest text-slate-500">Monitoring</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                            {{ $subscription->connectivity->zabbix_group_name ?: '-' }} / {{ $subscription->connectivity->zabbix_host_name ?: '-' }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Interface</label>
+                        <select id="monitoringInterfaceSelect"
+                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                            @foreach(($subscription->connectivity->zabbix_interfaces ?? []) as $interface)
+                                <option value="{{ $interface['graphid'] ?? '' }}"
+                                    data-name="{{ $interface['name'] ?? '' }}"
+                                    data-item-in="{{ $interface['itemIn'] ?? '' }}"
+                                    data-item-out="{{ $interface['itemOut'] ?? '' }}">
+                                    {{ $interface['name'] ?? '-' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Preset Range</label>
+                        <div class="grid grid-cols-3 gap-2" id="monitoringPresetGroup">
+                            @foreach (['1h', '6h', '24h', '7d', '30d', '90d'] as $preset)
+                                <button type="button" data-period="{{ $preset }}"
+                                    class="monitoring-preset-btn px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 hover:border-blue-400 hover:text-blue-600 transition-colors">
+                                    {{ $preset }}
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Custom Range</label>
+                        <input type="date" id="monitoringDateFrom" max="{{ now()->format('Y-m-d') }}"
+                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none transition-all focus:ring-2 focus:ring-blue-500">
+                        <input type="date" id="monitoringDateTo" max="{{ now()->format('Y-m-d') }}"
+                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none transition-all focus:ring-2 focus:ring-blue-500">
+                        <button type="button" id="monitoringApplyCustom"
+                            class="w-full px-4 py-2.5 rounded-xl font-bold bg-slate-900 dark:bg-blue-600 text-white hover:bg-slate-800 dark:hover:bg-blue-700 transition-colors">
+                            Tampilkan
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="rounded-2xl bg-sky-50 dark:bg-sky-900/10 border border-sky-100 dark:border-sky-900/30 p-3">
+                            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Current IN</p>
+                            <p id="monitorCurIn" class="mt-2 text-lg font-mono font-bold text-sky-600 dark:text-sky-400">-</p>
+                        </div>
+                        <div class="rounded-2xl bg-sky-50 dark:bg-sky-900/10 border border-sky-100 dark:border-sky-900/30 p-3">
+                            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Max IN</p>
+                            <p id="monitorMaxIn" class="mt-2 text-lg font-mono font-bold text-sky-600 dark:text-sky-400">-</p>
+                        </div>
+                        <div class="rounded-2xl bg-rose-50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/30 p-3">
+                            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Current OUT</p>
+                            <p id="monitorCurOut" class="mt-2 text-lg font-mono font-bold text-rose-600 dark:text-rose-400">-</p>
+                        </div>
+                        <div class="rounded-2xl bg-rose-50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/30 p-3">
+                            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Max OUT</p>
+                            <p id="monitorMaxOut" class="mt-2 text-lg font-mono font-bold text-rose-600 dark:text-rose-400">-</p>
+                        </div>
+                    </div>
+                </div>
+                </div>
+
+                <div class="lg:col-span-8 space-y-6">
+                <div class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-5 md:p-6 min-w-0">
+                    <div class="flex flex-col gap-1">
+                        <h4 class="text-lg font-bold text-slate-800 dark:text-white">Bandwidth Monitoring</h4>
+                        <p id="monitoringMeta" class="text-sm text-slate-500 dark:text-slate-400">GRAPH: - | ITEM_IN: - | ITEM_OUT: -</p>
+                    </div>
+
+                    <div class="mt-5 relative min-h-[420px]">
+                        <div id="monitoringChartOverlay" class="hidden absolute inset-0 rounded-3xl bg-white/70 dark:bg-slate-900/70 items-center justify-center z-10">
+                            <div class="w-10 h-10 rounded-full border-4 border-slate-200 border-t-blue-600 animate-spin"></div>
+                        </div>
+                        <canvas id="monitoringChart" height="120"></canvas>
+                    </div>
+
+                    <div class="mt-4 flex items-center justify-between gap-3 flex-wrap text-sm">
+                        <div id="monitoringRangeInfo" class="text-slate-500 dark:text-slate-400">-</div>
+                        <div id="monitoringUpdatedAt" class="font-mono text-slate-500 dark:text-slate-400">-</div>
+                    </div>
+                </div>
                 </div>
             </div>
         </div>
@@ -605,7 +708,7 @@
     <script>
         // Tab switching
         function switchTab(tab) {
-            const tabs = ['Info', 'Teknis', 'Topologi', 'Hosting', 'Domain'];
+            const tabs = ['Info', 'Teknis', 'Monitoring', 'Topologi', 'Hosting', 'Domain'];
             const activeClass = 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
             const inactiveClass = 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700';
 
@@ -626,6 +729,191 @@
 
             lucide.createIcons();
         }
+
+        @if($subscription->connectivity && !empty($subscription->connectivity->zabbix_interfaces))
+            let monitoringChart;
+            let monitoringPeriod = '24h';
+            let monitoringMode = 'preset';
+
+            function setMonitoringLoading(isLoading) {
+                const overlay = document.getElementById('monitoringChartOverlay');
+                if (!overlay) return;
+                overlay.classList.toggle('hidden', !isLoading);
+                overlay.classList.toggle('flex', isLoading);
+            }
+
+            function setActiveMonitoringPreset(period) {
+                document.querySelectorAll('.monitoring-preset-btn').forEach(button => {
+                    const active = button.dataset.period === period;
+                    button.classList.toggle('bg-blue-600', active);
+                    button.classList.toggle('text-white', active);
+                    button.classList.toggle('border-blue-600', active);
+                });
+            }
+
+            function buildMonitoringChart(payload) {
+                const ctx = document.getElementById('monitoringChart');
+                if (!ctx) return;
+
+                if (monitoringChart) {
+                    monitoringChart.destroy();
+                }
+
+                monitoringChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: payload.labels,
+                        datasets: [
+                            {
+                                label: 'Download',
+                                data: payload.dataIn,
+                                borderColor: '#0284c7',
+                                backgroundColor: 'rgba(2,132,199,0.12)',
+                                fill: true,
+                                tension: 0.28,
+                                borderWidth: 2.5,
+                                pointRadius: 0,
+                                pointHoverRadius: 4
+                            },
+                            {
+                                label: 'Upload',
+                                data: payload.dataOut,
+                                borderColor: '#e11d48',
+                                backgroundColor: 'rgba(225,29,72,0.08)',
+                                fill: true,
+                                tension: 0.28,
+                                borderWidth: 2.5,
+                                pointRadius: 0,
+                                pointHoverRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        maintainAspectRatio: true,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#475569'
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: {
+                                    color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b',
+                                    maxRotation: 0
+                                },
+                                grid: {
+                                    color: document.documentElement.classList.contains('dark') ? 'rgba(148,163,184,0.08)' : 'rgba(15,23,42,0.06)'
+                                }
+                            },
+                            y: {
+                                ticks: {
+                                    color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b',
+                                    callback: (value) => `${value} Mbps`
+                                },
+                                grid: {
+                                    color: document.documentElement.classList.contains('dark') ? 'rgba(148,163,184,0.08)' : 'rgba(15,23,42,0.06)'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function updateMonitoringStats(payload) {
+                document.getElementById('monitorCurIn').textContent = Number(payload.stats.curIn).toFixed(2);
+                document.getElementById('monitorMaxIn').textContent = Number(payload.stats.maxIn).toFixed(2);
+                document.getElementById('monitorCurOut').textContent = Number(payload.stats.curOut).toFixed(2);
+                document.getElementById('monitorMaxOut').textContent = Number(payload.stats.maxOut).toFixed(2);
+                document.getElementById('monitoringRangeInfo').textContent = `${payload.rangeLabel} | ${payload.points} titik | ${payload.dataMode.toUpperCase()}`;
+                document.getElementById('monitoringUpdatedAt').textContent = payload.updatedAt;
+            }
+
+            async function loadMonitoringChart() {
+                const select = document.getElementById('monitoringInterfaceSelect');
+                if (!select || !select.value) return;
+
+                const option = select.options[select.selectedIndex];
+                const itemIn = option.getAttribute('data-item-in');
+                const itemOut = option.getAttribute('data-item-out');
+                const graphName = option.getAttribute('data-name');
+
+                document.getElementById('monitoringMeta').textContent = `GRAPH: ${graphName} | ITEM_IN: ${itemIn} | ITEM_OUT: ${itemOut}`;
+
+                const url = new URL(@json(route('zabbix-monitors.chart-data')));
+                url.searchParams.set('itemin', itemIn);
+                url.searchParams.set('itemout', itemOut);
+                url.searchParams.set('mode', monitoringMode);
+
+                if (monitoringMode === 'custom') {
+                    url.searchParams.set('from', document.getElementById('monitoringDateFrom').value);
+                    url.searchParams.set('to', document.getElementById('monitoringDateTo').value);
+                } else {
+                    url.searchParams.set('period', monitoringPeriod);
+                }
+
+                setMonitoringLoading(true);
+                try {
+                    const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                    const payload = await response.json();
+                    if (!response.ok) {
+                        throw new Error(payload.message || 'Gagal memuat chart monitoring.');
+                    }
+
+                    buildMonitoringChart(payload);
+                    updateMonitoringStats(payload);
+                } catch (error) {
+                    alert(error.message);
+                } finally {
+                    setMonitoringLoading(false);
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                const select = document.getElementById('monitoringInterfaceSelect');
+                const customButton = document.getElementById('monitoringApplyCustom');
+
+                if (select) {
+                    setActiveMonitoringPreset(monitoringPeriod);
+                    select.addEventListener('change', () => {
+                        monitoringMode = 'preset';
+                        setActiveMonitoringPreset(monitoringPeriod);
+                        loadMonitoringChart();
+                    });
+
+                    document.querySelectorAll('.monitoring-preset-btn').forEach(button => {
+                        button.addEventListener('click', () => {
+                            monitoringMode = 'preset';
+                            monitoringPeriod = button.dataset.period;
+                            setActiveMonitoringPreset(monitoringPeriod);
+                            loadMonitoringChart();
+                        });
+                    });
+
+                    customButton?.addEventListener('click', () => {
+                        const from = document.getElementById('monitoringDateFrom').value;
+                        const to = document.getElementById('monitoringDateTo').value;
+                        if (!from || !to) {
+                            alert('Tanggal custom range wajib diisi.');
+                            return;
+                        }
+
+                        monitoringMode = 'custom';
+                        document.querySelectorAll('.monitoring-preset-btn').forEach(button => {
+                            button.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+                        });
+                        loadMonitoringChart();
+                    });
+
+                    loadMonitoringChart();
+                }
+            });
+        @endif
 
         // Client Modal Functions
         function openClientModal() {
@@ -1077,6 +1365,9 @@
     </div>
 
     @push('scripts')
+        @if($subscription->connectivity && !empty($subscription->connectivity->zabbix_interfaces))
+            <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+        @endif
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
         <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
