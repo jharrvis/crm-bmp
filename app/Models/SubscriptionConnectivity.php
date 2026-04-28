@@ -20,8 +20,17 @@ class SubscriptionConnectivity extends Model
         'router_model',
         'vlan_id',
         'signal_rx',
+        'zabbix_group_id',
+        'zabbix_group_name',
+        'zabbix_host_id',
+        'zabbix_host_name',
+        'zabbix_interfaces',
         // Metro Ethernet
         'metro_ethernet_id',
+    ];
+
+    protected $casts = [
+        'zabbix_interfaces' => 'array',
     ];
 
     public function subscription()

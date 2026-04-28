@@ -11,12 +11,18 @@ use App\Models\HostingServer;
 use App\Models\SubscriptionConnectivity;
 use App\Models\SubscriptionHosting;
 use App\Models\Vendor;
+use App\Services\ZabbixService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class SubscriptionController extends Controller
 {
+    public function __construct(
+        protected ZabbixService $zabbixService
+    ) {
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -65,6 +71,15 @@ class SubscriptionController extends Controller
                 'ip_address' => 'nullable|ipv4',
                 'pppoe_user' => 'nullable|string|max:100',
                 'ont_sn' => 'nullable|string|max:100',
+                'zabbix_group_id' => 'nullable|string|max:255',
+                'zabbix_group_name' => 'nullable|string|max:255',
+                'zabbix_host_id' => 'nullable|string|max:255',
+                'zabbix_host_name' => 'nullable|string|max:255',
+                'zabbix_interfaces' => 'nullable|array',
+                'zabbix_interfaces.*.graphid' => 'required_with:zabbix_interfaces|string|max:255',
+                'zabbix_interfaces.*.name' => 'required_with:zabbix_interfaces|string|max:255',
+                'zabbix_interfaces.*.itemIn' => 'required_with:zabbix_interfaces|string|max:255',
+                'zabbix_interfaces.*.itemOut' => 'required_with:zabbix_interfaces|string|max:255',
                 // Metro Ethernet Validation
                 'metro_option' => 'nullable|string|in:existing,new',
                 'metro_ethernet_id' => 'nullable|required_if:metro_option,existing|exists:metro_ethernets,id',
@@ -120,6 +135,14 @@ class SubscriptionController extends Controller
                     'pppoe_secret' => $request->pppoe_secret ? encrypt($request->pppoe_secret) : null,
                     'ont_sn' => $request->ont_sn,
                     'signal_rx' => $request->signal_rx,
+                    'zabbix_group_id' => $request->zabbix_group_id,
+                    'zabbix_group_name' => $request->zabbix_group_name,
+                    'zabbix_host_id' => $request->zabbix_host_id,
+                    'zabbix_host_name' => $request->zabbix_host_name,
+                    'zabbix_interfaces' => $this->validatedZabbixInterfaces(
+                        $request->zabbix_host_id,
+                        $request->input('zabbix_interfaces', [])
+                    ),
                 ];
 
                 // Handle Metro Ethernet Logic
@@ -255,6 +278,26 @@ class SubscriptionController extends Controller
 
             // Update Details
             if ($serviceType === 'connectivity') {
+                $request->validate([
+                    'router_id' => 'nullable|exists:routers,id',
+                    'ip_address' => 'nullable|ipv4',
+                    'pppoe_user' => 'nullable|string|max:100',
+                    'ont_sn' => 'nullable|string|max:100',
+                    'zabbix_group_id' => 'nullable|string|max:255',
+                    'zabbix_group_name' => 'nullable|string|max:255',
+                    'zabbix_host_id' => 'nullable|string|max:255',
+                    'zabbix_host_name' => 'nullable|string|max:255',
+                    'zabbix_interfaces' => 'nullable|array',
+                    'zabbix_interfaces.*.graphid' => 'required_with:zabbix_interfaces|string|max:255',
+                    'zabbix_interfaces.*.name' => 'required_with:zabbix_interfaces|string|max:255',
+                    'zabbix_interfaces.*.itemIn' => 'required_with:zabbix_interfaces|string|max:255',
+                    'zabbix_interfaces.*.itemOut' => 'required_with:zabbix_interfaces|string|max:255',
+                    'metro_option' => 'nullable|string|in:existing,new',
+                    'metro_ethernet_id' => 'nullable|required_if:metro_option,existing|exists:metro_ethernets,id',
+                    'metro_vendor_id' => 'nullable|required_if:metro_option,new|exists:vendors,id',
+                    'metro_bandwidth' => 'nullable|required_if:metro_option,new|integer|min:0',
+                ]);
+
                 $subscription->connectivity()->updateOrCreate(
                     ['subscription_id' => $subscription->id],
                     [
@@ -267,6 +310,14 @@ class SubscriptionController extends Controller
                         'router_model' => $request->router_model,
                         'vlan_id' => $request->vlan_id,
                         'signal_rx' => $request->signal_rx,
+                        'zabbix_group_id' => $request->zabbix_group_id,
+                        'zabbix_group_name' => $request->zabbix_group_name,
+                        'zabbix_host_id' => $request->zabbix_host_id,
+                        'zabbix_host_name' => $request->zabbix_host_name,
+                        'zabbix_interfaces' => $this->validatedZabbixInterfaces(
+                            $request->zabbix_host_id,
+                            $request->input('zabbix_interfaces', [])
+                        ),
                     ]
                 );
 
@@ -358,5 +409,38 @@ class SubscriptionController extends Controller
             ]);
         }
         return redirect()->route('subscriptions.index');
+    }
+
+    protected function validatedZabbixInterfaces(?string $hostId, array $interfaces): array
+    {
+        if (empty($interfaces)) {
+            return [];
+        }
+
+        if (! $hostId) {
+            throw new \InvalidArgumentException('Host Zabbix wajib dipilih ketika interface monitoring diisi.');
+        }
+
+        $availableGraphs = collect($this->zabbixService->getGraphs($hostId))->keyBy('graphid');
+
+        return collect($interfaces)
+            ->map(function (array $selected) use ($availableGraphs) {
+                $graphId = (string) ($selected['graphid'] ?? '');
+                $graph = $availableGraphs->get($graphId);
+
+                if (! $graph) {
+                    throw new \InvalidArgumentException('Salah satu interface Zabbix tidak valid atau sudah berubah.');
+                }
+
+                return [
+                    'graphid' => (string) $graph['graphid'],
+                    'name' => (string) $graph['name'],
+                    'itemIn' => (string) $graph['itemIn'],
+                    'itemOut' => (string) $graph['itemOut'],
+                ];
+            })
+            ->unique('graphid')
+            ->values()
+            ->all();
     }
 }

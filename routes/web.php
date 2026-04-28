@@ -28,9 +28,6 @@ Route::middleware('auth')->group(function () {
         Route::resource('vendors', \App\Http\Controllers\VendorController::class);
         Route::resource('metro-ethernets', \App\Http\Controllers\MetroEthernetController::class);
         Route::get('zabbix-monitors', [\App\Http\Controllers\ZabbixMonitorController::class, 'index'])->name('zabbix-monitors.index');
-        Route::get('zabbix-monitors/groups', [\App\Http\Controllers\ZabbixMonitorController::class, 'groups'])->name('zabbix-monitors.groups');
-        Route::get('zabbix-monitors/hosts', [\App\Http\Controllers\ZabbixMonitorController::class, 'hosts'])->name('zabbix-monitors.hosts');
-        Route::get('zabbix-monitors/graphs', [\App\Http\Controllers\ZabbixMonitorController::class, 'graphs'])->name('zabbix-monitors.graphs');
         Route::get('zabbix-monitors/chart-data', [\App\Http\Controllers\ZabbixMonitorController::class, 'chartData'])->name('zabbix-monitors.chart-data');
     });
 
@@ -45,6 +42,9 @@ Route::middleware('auth')->group(function () {
         Route::resource('clients', \App\Http\Controllers\ClientController::class);
         Route::resource('clients.contacts', \App\Http\Controllers\ClientContactController::class)->only(['store', 'update', 'destroy']);
         Route::resource('subscriptions', \App\Http\Controllers\SubscriptionController::class);
+        Route::get('zabbix-monitors/groups', [\App\Http\Controllers\ZabbixMonitorController::class, 'groups'])->name('zabbix-monitors.groups');
+        Route::get('zabbix-monitors/hosts', [\App\Http\Controllers\ZabbixMonitorController::class, 'hosts'])->name('zabbix-monitors.hosts');
+        Route::get('zabbix-monitors/graphs', [\App\Http\Controllers\ZabbixMonitorController::class, 'graphs'])->name('zabbix-monitors.graphs');
 
         // Network Topology Editor
         Route::prefix('subscriptions/{subscription}/topology')->name('subscriptions.topology.')->group(function () {

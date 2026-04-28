@@ -313,6 +313,27 @@
                                     {{ $subscription->connectivity->vlan_id ?? '-' }}
                                 </p>
                             </div>
+                            <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4 md:col-span-2 lg:col-span-4">
+                                <p class="text-xs text-slate-400 uppercase tracking-wider mb-3">Monitoring Zabbix</p>
+                                @if($subscription->connectivity->zabbix_host_name)
+                                    <div class="space-y-3">
+                                        <p class="text-sm text-slate-600 dark:text-slate-300">
+                                            {{ $subscription->connectivity->zabbix_group_name ?: '-' }} / {{ $subscription->connectivity->zabbix_host_name }}
+                                        </p>
+                                        <div class="flex flex-wrap gap-2">
+                                            @forelse(($subscription->connectivity->zabbix_interfaces ?? []) as $interface)
+                                                <span class="inline-flex items-center px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-xs font-semibold">
+                                                    {{ $interface['name'] ?? '-' }}
+                                                </span>
+                                            @empty
+                                                <span class="text-sm text-slate-500 dark:text-slate-400">Belum ada interface dipilih.</span>
+                                            @endforelse
+                                        </div>
+                                    </div>
+                                @else
+                                    <p class="text-sm text-slate-500 dark:text-slate-400">Belum ada konfigurasi interface Zabbix.</p>
+                                @endif
+                            </div>
                             <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
                                 <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Signal RX</p>
                                 <p class="text-slate-800 dark:text-white font-mono text-lg">
@@ -862,6 +883,55 @@
                                             class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
                                     </div>
                                 </div>
+
+                                <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/30 p-5 space-y-4">
+                                    <div>
+                                        <h5 class="text-sm font-bold text-slate-700 dark:text-slate-200">Monitoring Zabbix</h5>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Pilih group, host, dan satu atau lebih network interface untuk layanan ini.</p>
+                                    </div>
+
+                                    <input type="hidden" id="zabbix_group_name" name="zabbix_group_name">
+                                    <input type="hidden" id="zabbix_host_name" name="zabbix_host_name">
+                                    <div id="zabbixInterfacesHiddenInputs"></div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Group Zabbix</label>
+                                            <select id="zabbix_group_id" name="zabbix_group_id"
+                                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                                <option value="">Pilih group</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Host Zabbix</label>
+                                            <select id="zabbix_host_id" name="zabbix_host_id"
+                                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                                disabled>
+                                                <option value="">Pilih group terlebih dahulu</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="relative">
+                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Network Interface Zabbix</label>
+                                        <button type="button" id="zabbixInterfaceToggle"
+                                            class="w-full flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-3 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                            <span id="zabbixInterfaceSummary" class="text-left text-sm text-slate-500 dark:text-slate-400">Pilih host terlebih dahulu</span>
+                                            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
+                                        </button>
+                                        <div id="zabbixInterfaceDropdown"
+                                            class="hidden absolute left-0 right-0 mt-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xl z-[80] overflow-hidden">
+                                            <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700 text-xs font-bold uppercase tracking-widest text-slate-400">
+                                                Pilih Interface
+                                            </div>
+                                            <div id="zabbixInterfaceOptions" class="max-h-72 overflow-y-auto p-2 space-y-1">
+                                                <p class="px-3 py-2 text-sm text-slate-500 dark:text-slate-400">Belum ada interface.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div id="zabbixSelectedInterfaces" class="flex flex-wrap gap-2"></div>
+                                </div>
                             </div>
 
                                 <!-- Metro Ethernet Details -->
@@ -1032,12 +1102,37 @@
                 border-color: #475569 !important;
                 color: #e2e8f0 !important;
             }
+
+            .zabbix-interface-option {
+                display: flex;
+                align-items: flex-start;
+                gap: 0.75rem;
+                padding: 0.75rem;
+                border-radius: 0.875rem;
+                cursor: pointer;
+                transition: background-color 0.15s ease-in-out;
+            }
+
+            .zabbix-interface-option:hover {
+                background-color: #f8fafc;
+            }
+
+            .dark .zabbix-interface-option:hover {
+                background-color: rgba(51, 65, 85, 0.45);
+            }
         </style>
 
         <script>
             (function () {
                 const baseUrl = '{{ url('/') }}';
                 let clientChoice;
+                let zabbixGraphOptions = [];
+                let selectedZabbixInterfaces = [];
+                const zabbixRoutes = {
+                    groups: '{{ route('zabbix-monitors.groups') }}',
+                    hosts: '{{ route('zabbix-monitors.hosts') }}',
+                    graphs: '{{ route('zabbix-monitors.graphs') }}'
+                };
 
                 $(document).ready(function () {
                     clientChoice = new Choices('#client_id', {
@@ -1048,7 +1143,223 @@
                         removeItemButton: true,
                         shouldSort: false
                     });
+
+                    initializeZabbixSelectors();
                 });
+
+                function initializeZabbixSelectors() {
+                    const groupSelect = document.getElementById('zabbix_group_id');
+                    const hostSelect = document.getElementById('zabbix_host_id');
+                    const toggle = document.getElementById('zabbixInterfaceToggle');
+                    const dropdown = document.getElementById('zabbixInterfaceDropdown');
+
+                    loadZabbixGroups();
+
+                    groupSelect.addEventListener('change', async function() {
+                        updateZabbixNameField('zabbix_group_name', groupSelect);
+                        clearZabbixInterfaces();
+                        await loadZabbixHosts(this.value);
+                    });
+
+                    hostSelect.addEventListener('change', async function() {
+                        updateZabbixNameField('zabbix_host_name', hostSelect);
+                        clearZabbixInterfaces();
+                        await loadZabbixGraphs(this.value);
+                    });
+
+                    toggle.addEventListener('click', function() {
+                        if (hostSelect.disabled) return;
+                        dropdown.classList.toggle('hidden');
+                    });
+
+                    document.addEventListener('click', function(event) {
+                        if (!event.target.closest('#zabbixInterfaceToggle') && !event.target.closest('#zabbixInterfaceDropdown')) {
+                            dropdown.classList.add('hidden');
+                        }
+                    });
+                }
+
+                async function loadZabbixGroups(selectedValue = '') {
+                    const groupSelect = document.getElementById('zabbix_group_id');
+                    try {
+                        const response = await fetch(zabbixRoutes.groups, { headers: { 'Accept': 'application/json' } });
+                        const groups = await response.json();
+                        groupSelect.innerHTML = '<option value="">Pilih group</option>';
+                        groups.forEach(group => {
+                            groupSelect.insertAdjacentHTML('beforeend', `<option value="${group.groupid}">${group.name}</option>`);
+                        });
+                        groupSelect.value = selectedValue;
+                    } catch (error) {
+                        alert('Gagal memuat group Zabbix');
+                    }
+                }
+
+                async function loadZabbixHosts(groupId, selectedValue = '') {
+                    const hostSelect = document.getElementById('zabbix_host_id');
+                    hostSelect.disabled = true;
+                    hostSelect.innerHTML = `<option value="">${groupId ? 'Memuat host...' : 'Pilih group terlebih dahulu'}</option>`;
+
+                    if (!groupId) {
+                        updateZabbixInterfaceSummary();
+                        return;
+                    }
+
+                    try {
+                        const url = new URL(zabbixRoutes.hosts);
+                        url.searchParams.set('groupid', groupId);
+                        const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                        const hosts = await response.json();
+                        hostSelect.innerHTML = '<option value="">Pilih host</option>';
+                        hosts.forEach(host => {
+                            hostSelect.insertAdjacentHTML('beforeend', `<option value="${host.hostid}">${host.name}</option>`);
+                        });
+                        hostSelect.disabled = false;
+                        hostSelect.value = selectedValue;
+                    } catch (error) {
+                        hostSelect.innerHTML = '<option value="">Gagal memuat host</option>';
+                    }
+                }
+
+                async function loadZabbixGraphs(hostId, selectedValues = []) {
+                    const optionsContainer = document.getElementById('zabbixInterfaceOptions');
+                    zabbixGraphOptions = [];
+                    optionsContainer.innerHTML = `<p class="px-3 py-2 text-sm text-slate-500 dark:text-slate-400">${hostId ? 'Memuat interface...' : 'Pilih host terlebih dahulu'}</p>`;
+
+                    if (!hostId) {
+                        updateZabbixInterfaceSummary();
+                        return;
+                    }
+
+                    try {
+                        const url = new URL(zabbixRoutes.graphs);
+                        url.searchParams.set('hostid', hostId);
+                        const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                        zabbixGraphOptions = await response.json();
+                        selectedZabbixInterfaces = zabbixGraphOptions.filter(option => selectedValues.includes(String(option.graphid)));
+                        renderZabbixInterfaceOptions();
+                        syncZabbixHiddenInputs();
+                    } catch (error) {
+                        optionsContainer.innerHTML = '<p class="px-3 py-2 text-sm text-red-500">Gagal memuat interface.</p>';
+                    }
+                }
+
+                function renderZabbixInterfaceOptions() {
+                    const optionsContainer = document.getElementById('zabbixInterfaceOptions');
+                    if (!zabbixGraphOptions.length) {
+                        optionsContainer.innerHTML = '<p class="px-3 py-2 text-sm text-slate-500 dark:text-slate-400">Tidak ada network interface yang cocok.</p>';
+                        updateZabbixInterfaceSummary();
+                        renderSelectedZabbixInterfaces();
+                        return;
+                    }
+
+                    optionsContainer.innerHTML = zabbixGraphOptions.map(option => {
+                        const checked = selectedZabbixInterfaces.some(item => String(item.graphid) === String(option.graphid));
+                        return `
+                            <label class="zabbix-interface-option">
+                                <input type="checkbox" class="mt-1 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                    value="${option.graphid}" ${checked ? 'checked' : ''} onchange="window.toggleZabbixInterface('${option.graphid}')">
+                                <div class="min-w-0">
+                                    <div class="text-sm font-medium text-slate-700 dark:text-slate-200">${option.name}</div>
+                                    <div class="text-xs font-mono text-slate-500 dark:text-slate-400 mt-1">IN ${option.itemIn} / OUT ${option.itemOut}</div>
+                                </div>
+                            </label>
+                        `;
+                    }).join('');
+
+                    updateZabbixInterfaceSummary();
+                    renderSelectedZabbixInterfaces();
+                }
+
+                window.toggleZabbixInterface = function(graphId) {
+                    const selected = zabbixGraphOptions.find(option => String(option.graphid) === String(graphId));
+                    if (!selected) return;
+
+                    const exists = selectedZabbixInterfaces.some(item => String(item.graphid) === String(graphId));
+                    if (exists) {
+                        selectedZabbixInterfaces = selectedZabbixInterfaces.filter(item => String(item.graphid) !== String(graphId));
+                    } else {
+                        selectedZabbixInterfaces.push(selected);
+                    }
+
+                    syncZabbixHiddenInputs();
+                    updateZabbixInterfaceSummary();
+                    renderSelectedZabbixInterfaces();
+                };
+
+                function renderSelectedZabbixInterfaces() {
+                    const container = document.getElementById('zabbixSelectedInterfaces');
+                    if (!selectedZabbixInterfaces.length) {
+                        container.innerHTML = '<span class="text-xs text-slate-400">Belum ada interface dipilih.</span>';
+                        return;
+                    }
+
+                    container.innerHTML = selectedZabbixInterfaces.map(item => `
+                        <span class="inline-flex items-center px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-xs font-semibold">
+                            ${item.name}
+                        </span>
+                    `).join('');
+                }
+
+                function updateZabbixInterfaceSummary() {
+                    const summary = document.getElementById('zabbixInterfaceSummary');
+                    const hostSelect = document.getElementById('zabbix_host_id');
+                    if (hostSelect.disabled || !hostSelect.value) {
+                        summary.textContent = 'Pilih host terlebih dahulu';
+                        summary.className = 'text-left text-sm text-slate-500 dark:text-slate-400';
+                        return;
+                    }
+
+                    if (!selectedZabbixInterfaces.length) {
+                        summary.textContent = 'Pilih satu atau lebih network interface';
+                        summary.className = 'text-left text-sm text-slate-500 dark:text-slate-400';
+                        return;
+                    }
+
+                    summary.textContent = `${selectedZabbixInterfaces.length} interface dipilih`;
+                    summary.className = 'text-left text-sm text-slate-700 dark:text-slate-200 font-medium';
+                }
+
+                function syncZabbixHiddenInputs() {
+                    const container = document.getElementById('zabbixInterfacesHiddenInputs');
+                    container.innerHTML = selectedZabbixInterfaces.map((item, index) => `
+                        <input type="hidden" name="zabbix_interfaces[${index}][graphid]" value="${item.graphid}">
+                        <input type="hidden" name="zabbix_interfaces[${index}][name]" value="${escapeHtml(item.name)}">
+                        <input type="hidden" name="zabbix_interfaces[${index}][itemIn]" value="${item.itemIn}">
+                        <input type="hidden" name="zabbix_interfaces[${index}][itemOut]" value="${item.itemOut}">
+                    `).join('');
+                }
+
+                function clearZabbixInterfaces() {
+                    selectedZabbixInterfaces = [];
+                    zabbixGraphOptions = [];
+                    document.getElementById('zabbixInterfaceDropdown').classList.add('hidden');
+                    syncZabbixHiddenInputs();
+                    renderSelectedZabbixInterfaces();
+                    updateZabbixInterfaceSummary();
+                    document.getElementById('zabbixInterfaceOptions').innerHTML = '<p class="px-3 py-2 text-sm text-slate-500 dark:text-slate-400">Pilih host terlebih dahulu.</p>';
+                }
+
+                function resetZabbixFields() {
+                    document.getElementById('zabbix_group_id').value = '';
+                    document.getElementById('zabbix_group_name').value = '';
+                    document.getElementById('zabbix_host_id').innerHTML = '<option value="">Pilih group terlebih dahulu</option>';
+                    document.getElementById('zabbix_host_id').disabled = true;
+                    document.getElementById('zabbix_host_name').value = '';
+                    clearZabbixInterfaces();
+                }
+
+                function updateZabbixNameField(fieldId, selectElement) {
+                    const selectedOption = selectElement.options[selectElement.selectedIndex];
+                    document.getElementById(fieldId).value = selectedOption && selectedOption.value ? selectedOption.textContent.trim() : '';
+                }
+
+                function escapeHtml(value) {
+                    return String(value)
+                        .replace(/&/g, '&amp;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;');
+                }
 
                 window.handlePackageChange = function () {
                     const packageSelect = document.getElementById('package_id');
@@ -1197,7 +1508,7 @@
                         }
                     })
                         .then(r => r.json())
-                        .then(data => {
+                        .then(async data => {
                             document.getElementById('dataId').value = data.id;
 
                             // Fill Form Values
@@ -1225,6 +1536,13 @@
                                 document.getElementById('ont_sn').value = data.connectivity.ont_sn || '';
                                 document.getElementById('vlan_id').value = data.connectivity.vlan_id || '';
 
+                                const selectedInterfaces = (data.connectivity.zabbix_interfaces || []).map(item => String(item.graphid));
+                                await loadZabbixGroups(data.connectivity.zabbix_group_id || '');
+                                await loadZabbixHosts(data.connectivity.zabbix_group_id || '', data.connectivity.zabbix_host_id || '');
+                                updateZabbixNameField('zabbix_group_name', document.getElementById('zabbix_group_id'));
+                                updateZabbixNameField('zabbix_host_name', document.getElementById('zabbix_host_id'));
+                                await loadZabbixGraphs(data.connectivity.zabbix_host_id || '', selectedInterfaces);
+
                                 // Metro Ethernet Refactor
                                 if (data.connectivity.metro_ethernet_id) {
                                      const metroSelect = document.getElementById('metro_option');
@@ -1245,6 +1563,8 @@
                                     document.getElementById('metro_option').value = '';
                                     toggleMetroForm();
                                 }
+                            } else {
+                                resetZabbixFields();
                             }
                             // Hosting
                             if (data.hosting) {
