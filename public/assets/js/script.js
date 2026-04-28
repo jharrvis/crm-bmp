@@ -18,21 +18,36 @@ if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && w
 }
 
 // Sidebar & UI Logic
+const SIDEBAR_STATE_KEY = 'crm.sidebar.collapsed';
+
+function applySidebarState(isCollapsed) {
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('main-content');
+
+    if (!sidebar || !mainContent || window.innerWidth < 1024) {
+        return;
+    }
+
+    sidebar.classList.toggle('sidebar-collapsed', isCollapsed);
+    mainContent.classList.toggle('main-content-collapsed', isCollapsed);
+    mainContent.classList.toggle('main-content-expanded', !isCollapsed);
+}
+
+function persistSidebarState(isCollapsed) {
+    localStorage.setItem(SIDEBAR_STATE_KEY, isCollapsed ? 'true' : 'false');
+}
+
+function loadSidebarState() {
+    return localStorage.getItem(SIDEBAR_STATE_KEY) === 'true';
+}
+
 function toggleSidebar() {
     if (window.innerWidth >= 1024) {
         // Desktop Collapse
         const sidebar = document.getElementById('sidebar');
-        const mainContent = document.getElementById('main-content');
-
-        sidebar.classList.toggle('sidebar-collapsed');
-
-        if (sidebar.classList.contains('sidebar-collapsed')) {
-            mainContent.classList.toggle('lg:ml-72', false);
-            mainContent.classList.toggle('lg:ml-20', true);
-        } else {
-            mainContent.classList.toggle('lg:ml-20', false);
-            mainContent.classList.toggle('lg:ml-72', true);
-        }
+        const isCollapsed = !sidebar.classList.contains('sidebar-collapsed');
+        applySidebarState(isCollapsed);
+        persistSidebarState(isCollapsed);
     } else {
         // Mobile Toggle
         toggleSidebarMobile();
@@ -381,6 +396,8 @@ function closeModal(modalId) {
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
+    applySidebarState(loadSidebarState());
+
     // Initialize Lucide icons
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
@@ -392,5 +409,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize charts if on dashboard
     if (typeof Chart !== 'undefined') {
         initCharts();
+    }
+});
+
+window.addEventListener('resize', () => {
+    if (window.innerWidth >= 1024) {
+        applySidebarState(loadSidebarState());
     }
 });

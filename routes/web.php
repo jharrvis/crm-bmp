@@ -27,6 +27,11 @@ Route::middleware('auth')->group(function () {
         Route::resource('servers', \App\Http\Controllers\HostingServerController::class);
         Route::resource('vendors', \App\Http\Controllers\VendorController::class);
         Route::resource('metro-ethernets', \App\Http\Controllers\MetroEthernetController::class);
+        Route::get('zabbix-monitors', [\App\Http\Controllers\ZabbixMonitorController::class, 'index'])->name('zabbix-monitors.index');
+        Route::get('zabbix-monitors/groups', [\App\Http\Controllers\ZabbixMonitorController::class, 'groups'])->name('zabbix-monitors.groups');
+        Route::get('zabbix-monitors/hosts', [\App\Http\Controllers\ZabbixMonitorController::class, 'hosts'])->name('zabbix-monitors.hosts');
+        Route::get('zabbix-monitors/graphs', [\App\Http\Controllers\ZabbixMonitorController::class, 'graphs'])->name('zabbix-monitors.graphs');
+        Route::get('zabbix-monitors/chart-data', [\App\Http\Controllers\ZabbixMonitorController::class, 'chartData'])->name('zabbix-monitors.chart-data');
     });
 
     // Master Data: Products & Services (Owner, Admin, & Employee)

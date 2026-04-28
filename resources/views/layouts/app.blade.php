@@ -7,33 +7,13 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'BMPnet CRM') }}</title>
 
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('vite')
 
     <!-- Scripts & Styles -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        slate: {
-                            850: '#151e2e',
-                            950: '#020617',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
-
-    <!-- Vite (Optional if strictly using Tailwind CDN, but good to keep for future) -->
-    {{-- @vite(['resources/css/app.css', 'resources/js/app.js']) --}}
 </head>
 
 <body
@@ -111,7 +91,7 @@
 
         <!-- Main Content Area -->
         <main id="main-content"
-            class="flex-1 lg:ml-72 sidebar-transition flex flex-col min-w-0 bg-slate-50 dark:bg-slate-900 transition-all duration-300">
+            class="flex-1 main-content-expanded sidebar-transition flex flex-col min-w-0 bg-slate-50 dark:bg-slate-900 transition-all duration-300">
             <!-- Top Bar -->
             @include('layouts.header')
 

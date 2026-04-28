@@ -178,7 +178,7 @@
 
     <!-- Submenu: Infrastruktur -->
     @php
-        $isInfraActive = request()->routeIs('routers.*') || request()->routeIs('servers.*');
+        $isInfraActive = request()->routeIs('routers.*') || request()->routeIs('servers.*') || request()->routeIs('zabbix-monitors.*');
     @endphp
     <div class="submenu-container {{ $isInfraActive ? 'submenu-active' : '' }}" id="menu-infrastruktur"
         data-menu-title="Infrastruktur">
@@ -208,6 +208,10 @@
             <a href="{{ route('metro-ethernets.index') }}"
                 class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('metro-ethernets.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
                 Metro Ethernet
+            </a>
+            <a href="{{ route('zabbix-monitors.index') }}"
+                class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('zabbix-monitors.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
+                Zabbix Monitoring
             </a>
         </div>
     </div>
