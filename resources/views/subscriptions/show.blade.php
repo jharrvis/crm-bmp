@@ -444,10 +444,12 @@
 
                     <div class="space-y-3">
                         <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Custom Range</label>
-                        <input type="date" id="monitoringDateFrom" max="{{ now()->format('Y-m-d') }}"
-                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none transition-all focus:ring-2 focus:ring-blue-500">
-                        <input type="date" id="monitoringDateTo" max="{{ now()->format('Y-m-d') }}"
-                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none transition-all focus:ring-2 focus:ring-blue-500">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="date" id="monitoringDateFrom" max="{{ now()->format('Y-m-d') }}"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none transition-all focus:ring-2 focus:ring-blue-500">
+                            <input type="date" id="monitoringDateTo" max="{{ now()->format('Y-m-d') }}"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none transition-all focus:ring-2 focus:ring-blue-500">
+                        </div>
                         <button type="button" id="monitoringApplyCustom"
                             class="w-full px-4 py-2.5 rounded-xl font-bold bg-slate-900 dark:bg-blue-600 text-white hover:bg-slate-800 dark:hover:bg-blue-700 transition-colors">
                             Tampilkan
@@ -480,6 +482,33 @@
                     <div class="flex flex-col gap-1">
                         <h4 class="text-lg font-bold text-slate-800 dark:text-white">Bandwidth Monitoring</h4>
                         <p id="monitoringMeta" class="text-sm text-slate-500 dark:text-slate-400">GRAPH: - | ITEM_IN: - | ITEM_OUT: -</p>
+                    </div>
+
+                    <div class="mt-5 flex flex-wrap items-center gap-2">
+                        <button id="monitoringBtnDragZoom" type="button"
+                            class="monitoring-zoom-btn px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 hover:border-blue-400 hover:text-blue-600 transition-colors">
+                            Select Area
+                        </button>
+                        <button id="monitoringBtnScrollZoom" type="button"
+                            class="monitoring-zoom-btn px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 hover:border-blue-400 hover:text-blue-600 transition-colors">
+                            Scroll
+                        </button>
+                        <button id="monitoringBtnPanMode" type="button"
+                            class="monitoring-zoom-btn px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 hover:border-blue-400 hover:text-blue-600 transition-colors">
+                            Pan
+                        </button>
+                        <button id="monitoringZoomInBtn" type="button"
+                            class="px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 hover:border-blue-400 hover:text-blue-600 transition-colors">
+                            +
+                        </button>
+                        <button id="monitoringZoomOutBtn" type="button"
+                            class="px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 hover:border-blue-400 hover:text-blue-600 transition-colors">
+                            -
+                        </button>
+                        <button id="monitoringResetZoomBtn" type="button"
+                            class="px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 hover:border-red-400 hover:text-red-600 transition-colors">
+                            Reset
+                        </button>
                     </div>
 
                     <div class="mt-5 relative min-h-[420px]">
@@ -751,6 +780,31 @@
                 });
             }
 
+            function configureMonitoringZoom(mode) {
+                if (!monitoringChart) {
+                    return;
+                }
+
+                const zoomOptions = monitoringChart.options.plugins.zoom;
+                zoomOptions.pan.enabled = mode === 'pan';
+                zoomOptions.zoom.wheel.enabled = mode === 'scroll';
+                zoomOptions.zoom.pinch.enabled = mode === 'scroll';
+                zoomOptions.zoom.drag.enabled = mode === 'drag';
+                monitoringChart.update('none');
+
+                [
+                    ['monitoringBtnDragZoom', 'drag'],
+                    ['monitoringBtnScrollZoom', 'scroll'],
+                    ['monitoringBtnPanMode', 'pan']
+                ].forEach(([id, targetMode]) => {
+                    const button = document.getElementById(id);
+                    const active = mode === targetMode;
+                    button?.classList.toggle('bg-blue-600', active);
+                    button?.classList.toggle('text-white', active);
+                    button?.classList.toggle('border-blue-600', active);
+                });
+            }
+
             function buildMonitoringChart(payload) {
                 const ctx = document.getElementById('monitoringChart');
                 if (!ctx) return;
@@ -799,6 +853,24 @@
                                 labels: {
                                     color: document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#475569'
                                 }
+                            },
+                            zoom: {
+                                limits: { x: { min: 'original', max: 'original' } },
+                                pan: {
+                                    enabled: false,
+                                    mode: 'x'
+                                },
+                                zoom: {
+                                    wheel: { enabled: false },
+                                    pinch: { enabled: false },
+                                    drag: {
+                                        enabled: true,
+                                        backgroundColor: 'rgba(37,99,235,0.12)',
+                                        borderColor: 'rgba(37,99,235,0.45)',
+                                        borderWidth: 1
+                                    },
+                                    mode: 'x'
+                                }
                             }
                         },
                         scales: {
@@ -823,6 +895,8 @@
                         }
                     }
                 });
+
+                configureMonitoringZoom('drag');
             }
 
             function updateMonitoringStats(payload) {
@@ -909,6 +983,13 @@
                         });
                         loadMonitoringChart();
                     });
+
+                    document.getElementById('monitoringZoomInBtn')?.addEventListener('click', () => monitoringChart?.zoom(1.15));
+                    document.getElementById('monitoringZoomOutBtn')?.addEventListener('click', () => monitoringChart?.zoom(0.9));
+                    document.getElementById('monitoringResetZoomBtn')?.addEventListener('click', () => monitoringChart?.resetZoom());
+                    document.getElementById('monitoringBtnDragZoom')?.addEventListener('click', () => configureMonitoringZoom('drag'));
+                    document.getElementById('monitoringBtnScrollZoom')?.addEventListener('click', () => configureMonitoringZoom('scroll'));
+                    document.getElementById('monitoringBtnPanMode')?.addEventListener('click', () => configureMonitoringZoom('pan'));
 
                     loadMonitoringChart();
                 }
@@ -1367,6 +1448,8 @@
     @push('scripts')
         @if($subscription->connectivity && !empty($subscription->connectivity->zabbix_interfaces))
             <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
         @endif
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
         <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
