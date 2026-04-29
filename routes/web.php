@@ -62,6 +62,15 @@ Route::middleware('auth')->group(function () {
         Route::resource('invoices', \App\Http\Controllers\InvoiceController::class);
     });
 
+    Route::middleware(['role:Owner|Admin'])->group(function () {
+        Route::post('clients/{client}/portal-account', [\App\Http\Controllers\ClientPortalAccountController::class, 'store'])
+            ->name('clients.portal-account.store');
+        Route::put('clients/{client}/portal-account', [\App\Http\Controllers\ClientPortalAccountController::class, 'update'])
+            ->name('clients.portal-account.update');
+        Route::post('clients/{client}/portal-account/revoke-sessions', [\App\Http\Controllers\ClientPortalAccountController::class, 'revokeSessions'])
+            ->name('clients.portal-account.revoke-sessions');
+    });
+
     // Role & Permission Management (Owner & Admin)
     Route::middleware(['role:Owner|Admin'])->group(function () {
         Route::resource('roles', \App\Http\Controllers\RoleController::class);

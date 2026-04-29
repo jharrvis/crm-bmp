@@ -61,6 +61,12 @@
                     class="px-6 py-4 text-sm font-bold border-b-2 text-slate-500 border-transparent hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors">
                     Layanan Langganan
                 </button>
+                @role('Owner|Admin')
+                <button onclick="switchTab('portal')" id="tab-portal"
+                    class="px-6 py-4 text-sm font-bold border-b-2 text-slate-500 border-transparent hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors">
+                    Portal Client
+                </button>
+                @endrole
             </div>
 
             <!-- Tab Content -->
@@ -367,6 +373,106 @@
                         </div>
                     @endif
                 </div>
+
+                @role('Owner|Admin')
+                @php
+                    $portalAccount = $client->portalAccount;
+                    $activePortalSessions = $portalAccount
+                        ? $portalAccount->sessions->whereNull('revoked_at')->filter(fn ($session) => $session->expires_at?->isFuture())->count()
+                        : 0;
+                    $defaultPortalEmail = $portalAccount?->email ?? $client->primaryContact?->email ?? '';
+                    $portalUnreadNotifications = \App\Models\ClientPortalNotification::query()
+                        ->where('client_id', $client->id)
+                        ->whereNull('read_at')
+                        ->count();
+                @endphp
+                <div id="content-portal" class="hidden space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                        <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30 p-5">
+                            <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400">Status Akun</p>
+                            <p id="portalStatusBadge" class="mt-3 inline-flex items-center px-3 py-1 rounded-full text-xs font-bold
+                                @if(($portalAccount?->status) === 'active') bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400
+                                @elseif(($portalAccount?->status) === 'suspended') bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400
+                                @elseif($portalAccount) bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400
+                                @else bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 @endif">
+                                {{ $portalAccount ? strtoupper($portalAccount->status) : 'BELUM DIBUAT' }}
+                            </p>
+                            <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">Akun portal client terhubung ke data CRM dan dipakai untuk login Email OTP.</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30 p-5">
+                            <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400">Login Terakhir</p>
+                            <p id="portalLastLogin" class="mt-3 text-base font-bold text-slate-800 dark:text-white">
+                                {{ $portalAccount?->last_login_at ? $portalAccount->last_login_at->format('d M Y H:i') : '-' }}
+                            </p>
+                            <p id="portalLastLoginIp" class="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                                IP: {{ $portalAccount?->last_login_ip ?? '-' }}
+                            </p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30 p-5">
+                            <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400">Sesi & Notifikasi</p>
+                            <div class="mt-3 flex items-center justify-between text-sm">
+                                <span class="text-slate-500 dark:text-slate-400">Sesi aktif</span>
+                                <span id="portalActiveSessions" class="font-bold text-slate-800 dark:text-white">{{ $activePortalSessions }}</span>
+                            </div>
+                            <div class="mt-2 flex items-center justify-between text-sm">
+                                <span class="text-slate-500 dark:text-slate-400">Unread notif</span>
+                                <span id="portalUnreadNotifications" class="font-bold text-slate-800 dark:text-white">{{ $portalUnreadNotifications }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-[2rem] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-800 dark:text-white">Pengaturan Akun Portal</h3>
+                                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Atur email login portal client dan status aksesnya dari CRM.</p>
+                            </div>
+                            @if($portalAccount)
+                                <button type="button" onclick="revokePortalSessions()"
+                                    class="px-4 py-2 rounded-xl font-bold text-sm bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 transition-colors">
+                                    Revoke Semua Sesi
+                                </button>
+                            @endif
+                        </div>
+
+                        <form id="portalAccountForm" class="space-y-5">
+                            @csrf
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Email Login Portal <span class="text-red-500">*</span></label>
+                                    <input type="email" id="portal_email" name="email" value="{{ $defaultPortalEmail }}"
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                        placeholder="client@example.com">
+                                    <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Default diambil dari kontak utama pelanggan jika tersedia.</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Status Akses</label>
+                                    <select id="portal_status" name="status"
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <option value="pending" {{ ($portalAccount?->status ?? 'pending') === 'pending' ? 'selected' : '' }}>Pending</option>
+                                        <option value="active" {{ ($portalAccount?->status ?? '') === 'active' ? 'selected' : '' }}>Active</option>
+                                        <option value="suspended" {{ ($portalAccount?->status ?? '') === 'suspended' ? 'selected' : '' }}>Suspended</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Catatan Internal</label>
+                                <textarea id="portal_notes" name="notes" rows="3"
+                                    class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                    placeholder="Catatan admin terkait akses portal client">{{ $portalAccount?->notes }}</textarea>
+                            </div>
+
+                            <div class="flex items-center justify-end gap-3 pt-2">
+                                <button type="button" id="portalSaveBtn" onclick="savePortalAccount()"
+                                    class="px-5 py-2.5 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200 dark:shadow-none transition-all">
+                                    {{ $portalAccount ? 'Simpan Perubahan' : 'Buat Akun Portal' }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                @endrole
             </div>
         </div>
     </div>
@@ -451,6 +557,7 @@
             const clientId = {{ $client->id }};
             let isEditMode = false;
             let originalData = {};
+            const hasPortalAccount = @json((bool) $client->portalAccount);
 
             function switchTab(tabName) {
                 // If in edit mode and switching tabs, cancel edit
@@ -461,9 +568,13 @@
                     cancelEdit();
                 }
 
-                ['info', 'contacts', 'services'].forEach(t => {
+                ['info', 'contacts', 'services', 'portal'].forEach(t => {
                     const btn = document.getElementById(`tab-${t}`);
                     const content = document.getElementById(`content-${t}`);
+
+                    if (!btn || !content) {
+                        return;
+                    }
 
                     if (t === tabName) {
                         btn.classList.add('text-blue-600', 'border-blue-600');
@@ -578,6 +689,76 @@
                 // ... same as before
                 document.getElementById('view-name').textContent = client.name;
                 // ... (rest of updates handled by reload primarily, but good for SPA feel)
+            }
+
+            function savePortalAccount() {
+                const form = document.getElementById('portalAccountForm');
+                const button = document.getElementById('portalSaveBtn');
+                const originalText = button.textContent;
+                const data = Object.fromEntries(new FormData(form).entries());
+                const url = hasPortalAccount
+                    ? `${baseUrl}/clients/${clientId}/portal-account`
+                    : `${baseUrl}/clients/${clientId}/portal-account`;
+                const method = hasPortalAccount ? 'PUT' : 'POST';
+
+                button.disabled = true;
+                button.textContent = hasPortalAccount ? 'Menyimpan...' : 'Membuat...';
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ ...data, _method: method })
+                })
+                    .then(async response => {
+                        const payload = await response.json();
+                        if (!response.ok) {
+                            throw payload;
+                        }
+                        return payload;
+                    })
+                    .then(res => {
+                        showToast(res.message || 'Akun portal berhasil disimpan.');
+                        setTimeout(() => location.reload(), 400);
+                    })
+                    .catch(error => {
+                        const message = error?.message || (error?.errors ? Object.values(error.errors).flat().join(', ') : 'Gagal menyimpan akun portal.');
+                        showToast(message, 'error');
+                    })
+                    .finally(() => {
+                        button.disabled = false;
+                        button.textContent = originalText;
+                    });
+            }
+
+            function revokePortalSessions() {
+                if (!confirm('Cabut semua sesi portal client yang sedang aktif?')) return;
+
+                fetch(`${baseUrl}/clients/${clientId}/portal-account/revoke-sessions`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                        'Accept': 'application/json',
+                    },
+                })
+                    .then(async response => {
+                        const payload = await response.json();
+                        if (!response.ok) {
+                            throw payload;
+                        }
+                        return payload;
+                    })
+                    .then(res => {
+                        showToast(res.message || 'Sesi portal berhasil dicabut.');
+                        setTimeout(() => location.reload(), 400);
+                    })
+                    .catch(error => {
+                        const message = error?.message || 'Gagal mencabut sesi portal client.';
+                        showToast(message, 'error');
+                    });
             }
 
             // Contact Modal Functions

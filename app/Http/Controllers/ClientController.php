@@ -135,7 +135,7 @@ class ClientController extends Controller
             return response()->json($client->load('branch', 'contacts'));
         }
 
-        $client->load(['branch', 'contacts', 'subscriptions.package.service']);
+        $client->load(['branch', 'contacts', 'subscriptions.package.service', 'portalAccount.sessions']);
         $packages = \App\Models\Package::where('is_active', true)->get(); // For "Add Service" modal if needed here
 
         return view('clients.show', compact('client', 'packages'));
