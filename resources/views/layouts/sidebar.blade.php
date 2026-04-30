@@ -86,6 +86,12 @@
         <span class="font-medium text-sm menu-text transition-opacity duration-200">Tagihan</span>
     </a>
 
+    <a href="{{ route('tickets.index') }}"
+        class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all group whitespace-nowrap {{ request()->routeIs('tickets.*') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
+        <i data-lucide="ticket" class="w-5 h-5 shrink-0 transition-colors"></i>
+        <span class="font-medium text-sm menu-text transition-opacity duration-200">Tiket Support</span>
+    </a>
+
     <!-- Produk & Layanan -->
     <div class="pt-4 pb-2 menu-text">
         <p class="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Produk & Layanan</p>

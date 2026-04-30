@@ -56,6 +56,11 @@ class Client extends Model
         return $this->hasMany(Invoice::class);
     }
 
+    public function tickets()
+    {
+        return $this->hasMany(Ticket::class);
+    }
+
     public function portalAccount()
     {
         return $this->hasOne(ClientPortalAccount::class);

@@ -67,6 +67,11 @@ class Subscription extends Model
         return $this->hasOne(SubscriptionTopology::class);
     }
 
+    public function tickets()
+    {
+        return $this->hasMany(Ticket::class);
+    }
+
     /**
      * Get the effective price for billing.
      * Uses custom_price if set, otherwise calculates from package price.

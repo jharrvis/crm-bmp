@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\ClientPortal;
 use App\Http\Controllers\Controller;
 use App\Models\ClientPortalAccount;
 use App\Models\ClientPortalNotification;
+use App\Models\Ticket;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -31,6 +32,10 @@ class ClientPortalDashboardController extends Controller
                 'total_subscriptions_count' => $subscriptions->count(),
                 'unpaid_invoices_count' => (clone $invoicesQuery)->where('status', 'unpaid')->count(),
                 'overdue_invoices_count' => (clone $invoicesQuery)->where('status', 'overdue')->count(),
+                'open_tickets_count' => Ticket::query()
+                    ->where('client_id', $client->id)
+                    ->whereNotIn('status', ['resolved', 'closed'])
+                    ->count(),
                 'unread_notifications_count' => ClientPortalNotification::query()
                     ->where('client_id', $client->id)
                     ->whereNull('read_at')

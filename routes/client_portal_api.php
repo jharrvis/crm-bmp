@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\ClientPortal\ClientPortalDashboardController;
 use App\Http\Controllers\Api\ClientPortal\ClientPortalInvoiceController;
 use App\Http\Controllers\Api\ClientPortal\ClientPortalNotificationController;
 use App\Http\Controllers\Api\ClientPortal\ClientPortalSubscriptionController;
+use App\Http\Controllers\Api\ClientPortal\ClientPortalTicketController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('client-portal')->group(function () {
@@ -25,6 +26,11 @@ Route::prefix('client-portal')->group(function () {
         Route::get('invoices', [ClientPortalInvoiceController::class, 'index']);
         Route::get('invoices/{invoice}', [ClientPortalInvoiceController::class, 'show']);
         Route::get('invoices/{invoice}/download', [ClientPortalInvoiceController::class, 'download']);
+
+        Route::get('tickets', [ClientPortalTicketController::class, 'index']);
+        Route::post('tickets', [ClientPortalTicketController::class, 'store']);
+        Route::get('tickets/{ticket}', [ClientPortalTicketController::class, 'show']);
+        Route::post('tickets/{ticket}/replies', [ClientPortalTicketController::class, 'reply']);
 
         Route::get('notifications', [ClientPortalNotificationController::class, 'index']);
         Route::post('notifications/{notification}/read', [ClientPortalNotificationController::class, 'markRead']);
