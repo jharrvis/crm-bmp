@@ -84,7 +84,7 @@ class ClientPortalAccountController extends Controller
                 'email' => $otp['email'],
                 'expires_at' => $otp['expires_at']?->toIso8601String(),
                 'expires_at_human' => $otp['expires_at']?->format('d M Y H:i'),
-                'verify_url' => rtrim((string) config('client_portal.app_url'), '/') . '/verify-otp?email=' . urlencode($otp['email']),
+                'verify_url' => rtrim((string) config('client_portal.app_url'), '/') . '/verify-otp?email=' . urlencode($otp['email']) . '&lock_email=1',
             ],
         ]);
     }

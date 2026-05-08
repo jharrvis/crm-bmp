@@ -450,10 +450,16 @@
                                             Gunakan kode berikut untuk membantu client login tanpa email. OTP tetap mengikuti masa berlaku normal.
                                         </p>
                                     </div>
-                                    <a id="portalOtpVerifyLink" href="#" target="_blank"
-                                        class="inline-flex items-center justify-center px-4 py-2 rounded-xl font-bold text-sm bg-white text-blue-600 hover:bg-blue-100 dark:bg-slate-900 dark:text-blue-400 dark:hover:bg-slate-800 transition-colors">
-                                        Buka Verifikasi Portal
-                                    </a>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <a id="portalOtpVerifyLink" href="#" target="_blank"
+                                            class="inline-flex items-center justify-center px-4 py-2 rounded-xl font-bold text-sm bg-white text-blue-600 hover:bg-blue-100 dark:bg-slate-900 dark:text-blue-400 dark:hover:bg-slate-800 transition-colors">
+                                            Buka Verifikasi Portal
+                                        </a>
+                                        <button type="button" id="portalOtpCopyLinkBtn" onclick="copyPortalVerifyLink()"
+                                            class="inline-flex items-center justify-center px-4 py-2 rounded-xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+                                            Copy Link Verifikasi
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div class="rounded-2xl bg-white/80 dark:bg-slate-900/60 border border-blue-100 dark:border-slate-800 p-4">
@@ -821,6 +827,7 @@
                         document.getElementById('portalOtpEmail').textContent = res.otp.email || '-';
                         document.getElementById('portalOtpExpiresAt').textContent = res.otp.expires_at_human || '-';
                         document.getElementById('portalOtpVerifyLink').href = res.otp.verify_url || '#';
+                        document.getElementById('portalOtpCopyLinkBtn').dataset.href = res.otp.verify_url || '';
                         otpPanel.classList.remove('hidden');
                         showToast(res.message || 'OTP manual berhasil dibuat.');
                     })
@@ -828,6 +835,23 @@
                         const message = error?.message || (error?.errors ? Object.values(error.errors).flat().join(', ') : 'Gagal membuat OTP manual.');
                         showToast(message, 'error');
                     });
+            }
+
+            async function copyPortalVerifyLink() {
+                const button = document.getElementById('portalOtpCopyLinkBtn');
+                const url = button?.dataset?.href;
+
+                if (!url) {
+                    showToast('Generate OTP manual terlebih dahulu.', 'error');
+                    return;
+                }
+
+                try {
+                    await navigator.clipboard.writeText(url);
+                    showToast('Link verifikasi berhasil disalin.');
+                } catch (error) {
+                    showToast('Gagal menyalin link verifikasi.', 'error');
+                }
             }
 
             // Contact Modal Functions
