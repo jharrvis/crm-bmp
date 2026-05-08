@@ -36,22 +36,7 @@ class ClientPortalOtpService
             ]);
         }
 
-        ClientPortalOtp::query()
-            ->where('client_portal_account_id', $account->id)
-            ->whereNull('verified_at')
-            ->update(['expires_at' => now()]);
-
-        $otpCode = str_pad((string) random_int(0, (10 ** config('client_portal.otp_length')) - 1), config('client_portal.otp_length'), '0', STR_PAD_LEFT);
-
-        ClientPortalOtp::create([
-            'client_portal_account_id' => $account->id,
-            'email' => $account->email,
-            'code_hash' => Hash::make($otpCode),
-            'expires_at' => now()->addMinutes(config('client_portal.otp_ttl_minutes')),
-            'attempt_count' => 0,
-            'request_ip' => $ipAddress,
-            'sent_at' => now(),
-        ]);
+        [$otpCode] = $this->issueOtpForAccount($account, $ipAddress);
 
         Mail::to($account->email)->send(
             new ClientPortalOtpMail(
@@ -66,6 +51,23 @@ class ClientPortalOtpService
         return $account;
     }
 
+    public function generateManualOtp(ClientPortalAccount $account, ?string $ipAddress = null): array
+    {
+        if (! $account->isActive()) {
+            throw ValidationException::withMessages([
+                'status' => 'Akun portal client harus berstatus active untuk membuat OTP manual.',
+            ]);
+        }
+
+        [$otpCode, $otp] = $this->issueOtpForAccount($account, $ipAddress);
+
+        return [
+            'code' => $otpCode,
+            'expires_at' => $otp->expires_at,
+            'email' => $account->email,
+        ];
+    }
+
     public function latestPendingOtp(ClientPortalAccount $account, string $email): ?ClientPortalOtp
     {
         return $account->otpCodes()
@@ -78,5 +80,32 @@ class ClientPortalOtpService
     private function requestRateKey(string $email, ?string $ipAddress): string
     {
         return 'client-portal:otp-request:' . sha1($email . '|' . ($ipAddress ?? 'unknown'));
+    }
+
+    private function issueOtpForAccount(ClientPortalAccount $account, ?string $ipAddress = null): array
+    {
+        ClientPortalOtp::query()
+            ->where('client_portal_account_id', $account->id)
+            ->whereNull('verified_at')
+            ->update(['expires_at' => now()]);
+
+        $otpCode = str_pad(
+            (string) random_int(0, (10 ** config('client_portal.otp_length')) - 1),
+            config('client_portal.otp_length'),
+            '0',
+            STR_PAD_LEFT
+        );
+
+        $otp = ClientPortalOtp::create([
+            'client_portal_account_id' => $account->id,
+            'email' => $account->email,
+            'code_hash' => Hash::make($otpCode),
+            'expires_at' => now()->addMinutes(config('client_portal.otp_ttl_minutes')),
+            'attempt_count' => 0,
+            'request_ip' => $ipAddress,
+            'sent_at' => now(),
+        ]);
+
+        return [$otpCode, $otp];
     }
 }

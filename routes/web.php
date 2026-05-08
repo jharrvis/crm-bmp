@@ -71,6 +71,8 @@ Route::middleware('auth')->group(function () {
             ->name('clients.portal-account.update');
         Route::post('clients/{client}/portal-account/revoke-sessions', [\App\Http\Controllers\ClientPortalAccountController::class, 'revokeSessions'])
             ->name('clients.portal-account.revoke-sessions');
+        Route::post('clients/{client}/portal-account/generate-otp', [\App\Http\Controllers\ClientPortalAccountController::class, 'generateOtp'])
+            ->name('clients.portal-account.generate-otp');
     });
 
     // Role & Permission Management (Owner & Admin)

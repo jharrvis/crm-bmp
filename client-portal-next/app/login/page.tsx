@@ -1,8 +1,10 @@
-export default function LoginPage({
+export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; email?: string }>;
 }) {
+  const params = await searchParams;
+
   return (
     <div className="app-root">
       <div className="phone-frame">
@@ -51,6 +53,7 @@ export default function LoginPage({
                       className="input with-icon"
                       type="email"
                       name="email"
+                      defaultValue={params.email ? decodeURIComponent(params.email) : ""}
                       placeholder="nama@email.com"
                       required
                     />
@@ -62,29 +65,25 @@ export default function LoginPage({
                 </button>
               </form>
 
-              <ErrorBlock searchParams={searchParams} />
+              <div style={{ marginTop: 14, textAlign: "center" }}>
+                <a
+                  href="/verify-otp"
+                  className="small"
+                  style={{ color: "#2563eb", fontWeight: 800 }}
+                >
+                  Saya sudah punya OTP
+                </a>
+              </div>
+
+              {params.error ? (
+                <div className="alert alert-error" style={{ marginTop: 18 }}>
+                  {decodeURIComponent(params.error)}
+                </div>
+              ) : null}
             </section>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-async function ErrorBlock({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string }>;
-}) {
-  const params = await searchParams;
-
-  if (!params.error) {
-    return null;
-  }
-
-  return (
-    <div className="alert alert-error" style={{ marginTop: 18 }}>
-      {decodeURIComponent(params.error)}
     </div>
   );
 }

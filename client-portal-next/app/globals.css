@@ -633,6 +633,251 @@ button {
   border: 1px solid var(--line);
 }
 
+.ds-link-card {
+  display: block;
+  color: inherit;
+}
+
+.ds-link-card.active .ds-list-item {
+  border-color: var(--primary);
+  background: rgba(219, 234, 254, 0.72);
+}
+
+.ds-monitor-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ds-monitor-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ds-filter-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.ds-period-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ds-period-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ds-period-chip.active {
+  background: linear-gradient(135deg, var(--brand), var(--brand-strong));
+  border-color: transparent;
+  color: #fff;
+}
+
+.ds-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ds-kpi-card {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 14px;
+}
+
+.ds-kpi-value {
+  margin-top: 6px;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+.ds-chart-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ds-chart-legend {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.ds-chart-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.ds-chart-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 2px solid currentColor;
+}
+
+.ds-chart-swatch-in {
+  color: #0094d8;
+  background: rgba(0, 148, 216, 0.12);
+}
+
+.ds-chart-swatch-out {
+  color: #ff275f;
+  background: rgba(255, 39, 95, 0.12);
+}
+
+.ds-chart-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.ds-chart-svg {
+  width: 100%;
+  min-width: 640px;
+  height: auto;
+  display: block;
+}
+
+.ds-chart-grid-line {
+  stroke: rgba(216, 227, 251, 0.95);
+  stroke-width: 1;
+}
+
+.ds-chart-grid-line-soft {
+  opacity: 0.38;
+}
+
+.ds-chart-axis {
+  fill: var(--muted);
+  font-size: 11px;
+}
+
+.ds-chart-line {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ds-chart-line-in {
+  stroke: #0094d8;
+}
+
+.ds-chart-line-out {
+  stroke: #ff275f;
+}
+
+.ds-chart-area {
+  opacity: 0.1;
+}
+
+.ds-chart-area-in {
+  fill: #0094d8;
+}
+
+.ds-chart-area-out {
+  fill: #ff275f;
+}
+
+.ds-chart-surface {
+  position: relative;
+}
+
+.ds-chart-surface.is-loading {
+  min-height: 320px;
+}
+
+.ds-chart-loader {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(248, 251, 255, 0.82);
+  backdrop-filter: blur(6px);
+  border-radius: 18px;
+}
+
+.ds-spinner {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 3px solid rgba(29, 78, 216, 0.18);
+  border-top-color: var(--brand);
+  animation: ds-spin 0.8s linear infinite;
+}
+
+.ds-chart-animate {
+  animation: ds-chart-fade 220ms ease-out;
+}
+
+.ds-chart-animate .ds-chart-line {
+  stroke-dasharray: 1800;
+  stroke-dashoffset: 1800;
+  animation: ds-chart-draw 700ms ease-out forwards;
+}
+
+.ds-chart-animate .ds-chart-area {
+  animation: ds-chart-area-fade 420ms ease-out forwards;
+}
+
+@keyframes ds-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ds-chart-fade {
+  from {
+    opacity: 0.55;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ds-chart-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes ds-chart-area-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 0.12;
+  }
+}
+
 @media (min-width: 768px) {
   .app-root {
     padding: 18px;

@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'app_url' => env('CLIENT_PORTAL_APP_URL', 'https://client-portal-roan-five.vercel.app'),
     'otp_length' => (int) env('CLIENT_PORTAL_OTP_LENGTH', 6),
     'otp_ttl_minutes' => (int) env('CLIENT_PORTAL_OTP_TTL', 10),
     'otp_max_attempts' => (int) env('CLIENT_PORTAL_OTP_MAX_ATTEMPTS', 5),

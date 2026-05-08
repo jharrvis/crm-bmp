@@ -22,7 +22,7 @@ export default async function VerifyOtpPage({
               </div>
 
               <p className="auth-subcopy" style={{ marginTop: 8 }}>
-                Gunakan kode OTP yang dikirim ke email Anda untuk masuk ke portal.
+                Gunakan kode OTP yang dikirim ke email Anda atau yang diberikan admin CRM untuk masuk ke portal.
               </p>
 
               {params.message ? (

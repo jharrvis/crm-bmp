@@ -30,3 +30,58 @@ export type DashboardPayload = {
     created_at: string | null;
   }>;
 };
+
+export type PortalSubscriptionSummary = {
+  id: number;
+  subscription_code: string;
+  status: string;
+  package_name: string | null;
+  service_name: string | null;
+  next_billing_date: string | null;
+  effective_price: number;
+  has_usage: boolean;
+};
+
+export type SubscriptionListPayload = {
+  data: PortalSubscriptionSummary[];
+};
+
+export type SubscriptionUsageInterface = {
+  graphid?: string | null;
+  name?: string | null;
+  itemIn: string;
+  itemOut: string;
+};
+
+export type SubscriptionUsagePayload = {
+  subscription_id: number;
+  subscription_code: string;
+  service_name: string | null;
+  package_name: string | null;
+  interfaces: SubscriptionUsageInterface[];
+};
+
+export type SubscriptionChartPayload = {
+  labels: string[];
+  dataIn: number[];
+  dataOut: number[];
+  stats: {
+    curIn: number;
+    curOut: number;
+    maxIn: number;
+    maxOut: number;
+    avgIn: number;
+    avgOut: number;
+  };
+  isLive: boolean;
+  rangeLabel: string;
+  updatedAt: string;
+  points: number;
+  dataMode: string;
+  interface?: {
+    graphid?: string | null;
+    name?: string | null;
+    itemIn: string;
+    itemOut: string;
+  };
+};

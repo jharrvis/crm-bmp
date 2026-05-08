@@ -4,12 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Models\Client;
 use App\Models\ClientPortalNotification;
+use App\Services\ClientPortalOtpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class ClientPortalAccountController extends Controller
 {
+    public function __construct(
+        protected ClientPortalOtpService $otpService
+    ) {
+    }
+
     public function store(Request $request, Client $client): JsonResponse
     {
         $validated = $this->validatedData($request);
@@ -60,6 +66,26 @@ class ClientPortalAccountController extends Controller
             'success' => true,
             'message' => 'Semua sesi portal client berhasil dicabut.',
             'account' => $this->accountPayload($client->fresh('portalAccount.sessions')),
+        ]);
+    }
+
+    public function generateOtp(Request $request, Client $client): JsonResponse
+    {
+        $account = $client->portalAccount;
+        abort_unless($account !== null, 404);
+
+        $otp = $this->otpService->generateManualOtp($account, $request->ip());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'OTP manual berhasil dibuat.',
+            'otp' => [
+                'code' => $otp['code'],
+                'email' => $otp['email'],
+                'expires_at' => $otp['expires_at']?->toIso8601String(),
+                'expires_at_human' => $otp['expires_at']?->format('d M Y H:i'),
+                'verify_url' => rtrim((string) config('client_portal.app_url'), '/') . '/verify-otp?email=' . urlencode($otp['email']),
+            ],
         ]);
     }
 
