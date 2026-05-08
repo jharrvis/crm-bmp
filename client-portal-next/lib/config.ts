@@ -1,5 +1,15 @@
-export const CRM_API_BASE_URL =
-  process.env.CRM_API_BASE_URL ?? "http://crm.test/api/client-portal";
+const env = (value: string | undefined, fallback: string): string => {
+  const normalized = value?.trim();
 
-export const SESSION_COOKIE_NAME =
-  process.env.SESSION_COOKIE_NAME ?? "client_portal_token";
+  return normalized && normalized.length > 0 ? normalized : fallback;
+};
+
+export const CRM_API_BASE_URL = env(
+  process.env.CRM_API_BASE_URL,
+  "https://crm.bmp.net.id/api/client-portal",
+);
+
+export const SESSION_COOKIE_NAME = env(
+  process.env.SESSION_COOKIE_NAME,
+  "client_portal_token",
+);

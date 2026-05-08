@@ -10,10 +10,12 @@ export async function POST(request: Request) {
       method: "POST",
       body: { email },
     });
-
-    redirect(`/verify-otp?email=${encodeURIComponent(email)}&message=${encodeURIComponent("OTP berhasil dikirim ke email terdaftar.")}`);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Gagal meminta OTP.";
     redirect(`/login?error=${encodeURIComponent(message)}&email=${encodeURIComponent(email)}`);
   }
+
+  redirect(
+    `/verify-otp?email=${encodeURIComponent(email)}&message=${encodeURIComponent("OTP berhasil dikirim ke email terdaftar.")}`,
+  );
 }
