@@ -449,15 +449,26 @@
                                         <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
                                             Gunakan kode berikut untuk membantu client login tanpa email. OTP tetap mengikuti masa berlaku normal.
                                         </p>
+                                        <p id="portalOtpVisibilityInfo" class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                                            Panel ini akan disembunyikan otomatis untuk keamanan.
+                                        </p>
                                     </div>
                                     <div class="flex flex-wrap items-center gap-2">
                                         <a id="portalOtpVerifyLink" href="#" target="_blank"
                                             class="inline-flex items-center justify-center px-4 py-2 rounded-xl font-bold text-sm bg-white text-blue-600 hover:bg-blue-100 dark:bg-slate-900 dark:text-blue-400 dark:hover:bg-slate-800 transition-colors">
                                             Buka Verifikasi Portal
                                         </a>
+                                        <button type="button" id="portalOtpCopyCodeBtn" onclick="copyPortalOtpCode()"
+                                            class="inline-flex items-center justify-center px-4 py-2 rounded-xl font-bold text-sm bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 transition-colors">
+                                            Copy OTP
+                                        </button>
                                         <button type="button" id="portalOtpCopyLinkBtn" onclick="copyPortalVerifyLink()"
                                             class="inline-flex items-center justify-center px-4 py-2 rounded-xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 transition-colors">
                                             Copy Link Verifikasi
+                                        </button>
+                                        <button type="button" id="portalOtpCopyBundleBtn" onclick="copyPortalOtpBundle()"
+                                            class="inline-flex items-center justify-center px-4 py-2 rounded-xl font-bold text-sm bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
+                                            Copy OTP + Link
                                         </button>
                                     </div>
                                 </div>
@@ -601,6 +612,7 @@
             let isEditMode = false;
             let originalData = {};
             const hasPortalAccount = @json((bool) $client->portalAccount);
+            let portalOtpHideTimer = null;
 
             function switchTab(tabName) {
                 // If in edit mode and switching tabs, cancel edit
@@ -828,7 +840,12 @@
                         document.getElementById('portalOtpExpiresAt').textContent = res.otp.expires_at_human || '-';
                         document.getElementById('portalOtpVerifyLink').href = res.otp.verify_url || '#';
                         document.getElementById('portalOtpCopyLinkBtn').dataset.href = res.otp.verify_url || '';
+                        document.getElementById('portalOtpCopyCodeBtn').dataset.code = res.otp.code || '';
+                        document.getElementById('portalOtpCopyBundleBtn').dataset.code = res.otp.code || '';
+                        document.getElementById('portalOtpCopyBundleBtn').dataset.href = res.otp.verify_url || '';
+                        document.getElementById('portalOtpVisibilityInfo').textContent = 'Panel ini akan disembunyikan otomatis dalam 3 menit untuk keamanan.';
                         otpPanel.classList.remove('hidden');
+                        schedulePortalOtpAutoHide();
                         showToast(res.message || 'OTP manual berhasil dibuat.');
                     })
                     .catch(error => {
@@ -852,6 +869,78 @@
                 } catch (error) {
                     showToast('Gagal menyalin link verifikasi.', 'error');
                 }
+            }
+
+            async function copyPortalOtpCode() {
+                const button = document.getElementById('portalOtpCopyCodeBtn');
+                const code = button?.dataset?.code;
+
+                if (!code) {
+                    showToast('Generate OTP manual terlebih dahulu.', 'error');
+                    return;
+                }
+
+                try {
+                    await navigator.clipboard.writeText(code);
+                    showToast('Kode OTP berhasil disalin.');
+                } catch (error) {
+                    showToast('Gagal menyalin kode OTP.', 'error');
+                }
+            }
+
+            async function copyPortalOtpBundle() {
+                const button = document.getElementById('portalOtpCopyBundleBtn');
+                const code = button?.dataset?.code;
+                const url = button?.dataset?.href;
+                const email = document.getElementById('portalOtpEmail')?.textContent?.trim();
+                const expiresAt = document.getElementById('portalOtpExpiresAt')?.textContent?.trim();
+
+                if (!code || !url) {
+                    showToast('Generate OTP manual terlebih dahulu.', 'error');
+                    return;
+                }
+
+                const message = [
+                    'Berikut akses login Portal Client BMPnet:',
+                    `Email: ${email || '-'}`,
+                    `OTP: ${code}`,
+                    `Berlaku sampai: ${expiresAt || '-'}`,
+                    `Link verifikasi: ${url}`,
+                ].join('\n');
+
+                try {
+                    await navigator.clipboard.writeText(message);
+                    showToast('OTP dan link verifikasi berhasil disalin.');
+                } catch (error) {
+                    showToast('Gagal menyalin OTP dan link.', 'error');
+                }
+            }
+
+            function schedulePortalOtpAutoHide() {
+                if (portalOtpHideTimer) {
+                    clearTimeout(portalOtpHideTimer);
+                }
+
+                portalOtpHideTimer = setTimeout(() => {
+                    clearPortalOtpPanel();
+                    showToast('Panel OTP disembunyikan otomatis untuk keamanan.');
+                }, 3 * 60 * 1000);
+            }
+
+            function clearPortalOtpPanel() {
+                const otpPanel = document.getElementById('portalOtpResult');
+                if (!otpPanel) return;
+
+                otpPanel.classList.add('hidden');
+                document.getElementById('portalOtpCode').textContent = '-';
+                document.getElementById('portalOtpEmail').textContent = '-';
+                document.getElementById('portalOtpExpiresAt').textContent = '-';
+                document.getElementById('portalOtpVerifyLink').href = '#';
+                document.getElementById('portalOtpCopyLinkBtn').dataset.href = '';
+                document.getElementById('portalOtpCopyCodeBtn').dataset.code = '';
+                document.getElementById('portalOtpCopyBundleBtn').dataset.code = '';
+                document.getElementById('portalOtpCopyBundleBtn').dataset.href = '';
+                document.getElementById('portalOtpVisibilityInfo').textContent = 'Panel ini akan disembunyikan otomatis untuk keamanan.';
             }
 
             // Contact Modal Functions
