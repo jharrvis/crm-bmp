@@ -37,21 +37,26 @@
                 </div>
             </form>
 
-            <div class="overflow-x-auto no-scrollbar">
-                <table id="ticketsTable" class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="text-slate-400 text-xs font-bold uppercase tracking-wider border-b border-slate-100 dark:border-slate-700">
-                            <th class="p-4 pl-6">No. Tiket</th>
-                            <th class="p-4">Client</th>
-                            <th class="p-4">Subjek</th>
-                            <th class="p-4">Kategori</th>
-                            <th class="p-4">Status</th>
-                            <th class="p-4">Assigned</th>
-                            <th class="p-4 pr-6 text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
-                        @forelse($tickets as $ticket)
+            @if($tickets->isEmpty())
+                <div class="rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-10 text-center text-slate-500 dark:text-slate-400">
+                    Belum ada tiket support.
+                </div>
+            @else
+                <div class="overflow-x-auto no-scrollbar">
+                    <table id="ticketsTable" class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="text-slate-400 text-xs font-bold uppercase tracking-wider border-b border-slate-100 dark:border-slate-700">
+                                <th class="p-4 pl-6">No. Tiket</th>
+                                <th class="p-4">Client</th>
+                                <th class="p-4">Subjek</th>
+                                <th class="p-4">Kategori</th>
+                                <th class="p-4">Status</th>
+                                <th class="p-4">Assigned</th>
+                                <th class="p-4 pr-6 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+                            @foreach($tickets as $ticket)
                             <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
                                 <td class="p-4 pl-6">
                                     <div class="font-mono font-bold text-slate-700 dark:text-slate-200">{{ $ticket->ticket_number }}</div>
@@ -95,14 +100,11 @@
                                     </a>
                                 </td>
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7" class="p-10 text-center text-slate-500 dark:text-slate-400">Belum ada tiket support.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
         </div>
     </div>
 
@@ -111,6 +113,10 @@
         <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
         <script>
             $(document).ready(function () {
+                if (!document.getElementById('ticketsTable')) {
+                    return;
+                }
+
                 $('#ticketsTable').DataTable({
                     language: {
                         search: "",
