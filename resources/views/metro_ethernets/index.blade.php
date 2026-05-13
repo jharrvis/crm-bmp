@@ -42,7 +42,8 @@
                     <thead>
                         <tr
                             class="text-slate-400 text-xs font-bold uppercase tracking-wider border-b border-slate-100 dark:border-slate-700">
-                            <th class="p-4 pl-6">Vendor</th>
+                            <th class="p-4 pl-6">Nama</th>
+                            <th class="p-4">Vendor</th>
                             <th class="p-4">CID (Circuit ID)</th>
                             <th class="p-4">IP Address</th>
                             <th class="p-4">Bandwidth</th>
@@ -54,7 +55,7 @@
                     </tbody>
                     <tfoot>
                         <tr class="bg-slate-50 dark:bg-slate-700/50 font-bold text-slate-800 dark:text-slate-200">
-                            <td colspan="3" class="p-4 text-right">Total Bandwidth:</td>
+                            <td colspan="4" class="p-4 text-right">Total Bandwidth:</td>
                             <td class="p-4" id="total-bandwidth-display">0 Mbps</td>
                             <td></td>
                         </tr>
@@ -87,6 +88,14 @@
                     <form id="dataForm" class="space-y-4">
                         @csrf
                         <input type="hidden" id="dataId" name="id">
+
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nama Metro Ethernet <span
+                                    class="text-red-500">*</span></label>
+                            <input type="text" id="name" name="name" required
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-slate-400"
+                                placeholder="Contoh: Link Metro Salatiga POP A">
+                        </div>
 
                         <div>
                             <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Vendor <span
@@ -171,9 +180,15 @@
                         },
                         columns: [
                             {
+                                data: 'name',
+                                name: 'name',
+                                className: 'p-4 pl-6',
+                                render: (data, type, row) => `<div class="font-bold text-slate-800 dark:text-slate-100">${data || row.display_name}</div>`
+                            },
+                            {
                                 data: 'vendor_name',
                                 name: 'vendor.name',
-                                className: 'p-4 pl-6',
+                                className: 'p-4',
                                 render: (data) => `<div class="font-bold text-slate-800 dark:text-slate-300">${data}</div>`
                             },
                             {
@@ -338,6 +353,7 @@
                         .then(r => r.json())
                         .then(item => {
                             document.getElementById('dataId').value = item.id;
+                            document.getElementById('name').value = item.name || '';
                             document.getElementById('vendor_id').value = item.vendor_id;
                             document.getElementById('cid').value = item.cid || '';
                             document.getElementById('ip_address').value = item.ip_address || '';

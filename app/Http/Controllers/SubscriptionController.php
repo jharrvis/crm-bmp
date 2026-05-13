@@ -83,6 +83,7 @@ class SubscriptionController extends Controller
                 // Metro Ethernet Validation
                 'metro_option' => 'nullable|string|in:existing,new',
                 'metro_ethernet_id' => 'nullable|required_if:metro_option,existing|exists:metro_ethernets,id',
+                'metro_name' => 'nullable|required_if:metro_option,new|string|max:255',
                 'metro_vendor_id' => 'nullable|required_if:metro_option,new|exists:vendors,id',
                 'metro_bandwidth' => 'nullable|required_if:metro_option,new|integer|min:0',
             ]);
@@ -149,6 +150,7 @@ class SubscriptionController extends Controller
                 if ($request->filled('metro_option')) {
                     if ($request->metro_option === 'new') {
                         $metro = MetroEthernet::create([
+                            'name' => $request->metro_name,
                             'vendor_id' => $request->metro_vendor_id,
                             'cid' => $request->metro_cid,
                             'ip_address' => $request->metro_ip_address,
@@ -294,6 +296,7 @@ class SubscriptionController extends Controller
                     'zabbix_interfaces.*.itemOut' => 'required_with:zabbix_interfaces|string|max:255',
                     'metro_option' => 'nullable|string|in:existing,new',
                     'metro_ethernet_id' => 'nullable|required_if:metro_option,existing|exists:metro_ethernets,id',
+                    'metro_name' => 'nullable|required_if:metro_option,new|string|max:255',
                     'metro_vendor_id' => 'nullable|required_if:metro_option,new|exists:vendors,id',
                     'metro_bandwidth' => 'nullable|required_if:metro_option,new|integer|min:0',
                 ]);
@@ -326,6 +329,7 @@ class SubscriptionController extends Controller
                     $connectivity = $subscription->connectivity;
                     if ($request->metro_option === 'new') {
                         $metro = MetroEthernet::create([
+                            'name' => $request->metro_name,
                             'vendor_id' => $request->metro_vendor_id,
                             'cid' => $request->metro_cid,
                             'ip_address' => $request->metro_ip_address,

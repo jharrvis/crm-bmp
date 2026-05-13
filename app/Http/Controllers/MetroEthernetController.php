@@ -47,6 +47,7 @@ class MetroEthernetController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'name' => 'required|string|max:255',
             'vendor_id' => 'required|exists:vendors,id',
             'cid' => 'nullable|string|max:100',
             'ip_address' => 'nullable|string|max:45',
@@ -72,6 +73,7 @@ class MetroEthernetController extends Controller
     public function update(Request $request, MetroEthernet $metroEthernet)
     {
         $request->validate([
+            'name' => 'required|string|max:255',
             'vendor_id' => 'required|exists:vendors,id',
             'cid' => 'nullable|string|max:100',
             'ip_address' => 'nullable|string|max:45',

@@ -362,6 +362,12 @@
                 Detail Metro Ethernet
             </h4>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                    <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Nama Metro Ethernet</p>
+                    <p class="font-bold text-slate-800 dark:text-white text-lg">
+                        {{ $subscription->connectivity->metroEthernet->display_name }}
+                    </p>
+                </div>
                 <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-800">
                     <p class="text-xs font-bold text-blue-500 uppercase mb-1">Vendor Backbone</p>
                     <p class="font-bold text-slate-800 dark:text-white text-lg">
@@ -1323,7 +1329,7 @@
                                         <optgroup label="Tersedia">
                                             @foreach($metroEthernets as $metro)
                                                 <option value="existing" data-id="{{ $metro->id }}">
-                                                    {{ $metro->vendor->name ?? 'Unknown' }} | CID: {{ $metro->cid }} | {{ $metro->bandwidth }} Mbps
+                                                    {{ $metro->selection_label }}
                                                 </option>
                                             @endforeach
                                         </optgroup>
@@ -1333,6 +1339,12 @@
 
                                 <div id="metro-new-form" class="hidden space-y-6 border-l-4 border-blue-500 pl-4">
                                     <h5 class="text-sm font-bold text-blue-600">Buat Metro Ethernet Baru</h5>
+                                    <div>
+                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nama Metro Ethernet</label>
+                                        <input type="text" id="metro_name" name="metro_name"
+                                            placeholder="Contoh: Link Metro Salatiga POP A"
+                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                    </div>
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
                                             <label
