@@ -206,27 +206,32 @@ class ZabbixService
         $dataOutMin = [];
         $dataOutMax = [];
 
-        if ($useTrend) {
-            foreach ($rawIn as $row) {
-                $labels[] = Carbon::createFromTimestamp((int) $row['clock'])->format($fmt);
-                $dataIn[] = round(((float) $row['value_avg']) / 1000000, 3);
-                $dataInMin[] = round(((float) $row['value_min']) / 1000000, 3);
-                $dataInMax[] = round(((float) $row['value_max']) / 1000000, 3);
-            }
+        $seriesIn = $useTrend
+            ? $this->normalizeTrendSeries($rawIn)
+            : $this->normalizeHistorySeries($rawIn);
+        $seriesOut = $useTrend
+            ? $this->normalizeTrendSeries($rawOut)
+            : $this->normalizeHistorySeries($rawOut);
 
-            foreach ($rawOut as $row) {
-                $dataOut[] = round(((float) $row['value_avg']) / 1000000, 3);
-                $dataOutMin[] = round(((float) $row['value_min']) / 1000000, 3);
-                $dataOutMax[] = round(((float) $row['value_max']) / 1000000, 3);
-            }
-        } else {
-            foreach ($rawIn as $row) {
-                $labels[] = Carbon::createFromTimestamp((int) $row['clock'])->format($fmt);
-                $dataIn[] = round(((float) $row['value']) / 1000000, 3);
-            }
+        $clocks = array_values(array_unique(array_merge(array_keys($seriesIn), array_keys($seriesOut))));
+        sort($clocks, SORT_NUMERIC);
 
-            foreach ($rawOut as $row) {
-                $dataOut[] = round(((float) $row['value']) / 1000000, 3);
+        foreach ($clocks as $clock) {
+            $labels[] = Carbon::createFromTimestamp((int) $clock)->format($fmt);
+
+            if ($useTrend) {
+                $in = $seriesIn[$clock] ?? ['avg' => 0.0, 'min' => 0.0, 'max' => 0.0];
+                $out = $seriesOut[$clock] ?? ['avg' => 0.0, 'min' => 0.0, 'max' => 0.0];
+
+                $dataIn[] = $in['avg'];
+                $dataInMin[] = $in['min'];
+                $dataInMax[] = $in['max'];
+                $dataOut[] = $out['avg'];
+                $dataOutMin[] = $out['min'];
+                $dataOutMax[] = $out['max'];
+            } else {
+                $dataIn[] = $seriesIn[$clock]['value'] ?? 0.0;
+                $dataOut[] = $seriesOut[$clock]['value'] ?? 0.0;
             }
         }
 
@@ -257,6 +262,50 @@ class ZabbixService
         }
 
         return $response;
+    }
+
+    protected function normalizeHistorySeries(array $rows): array
+    {
+        $normalized = [];
+
+        foreach ($rows as $row) {
+            $clock = (int) ($row['clock'] ?? 0);
+
+            if ($clock <= 0) {
+                continue;
+            }
+
+            $normalized[$clock] = [
+                'value' => round(((float) ($row['value'] ?? 0)) / 1000000, 3),
+            ];
+        }
+
+        ksort($normalized, SORT_NUMERIC);
+
+        return $normalized;
+    }
+
+    protected function normalizeTrendSeries(array $rows): array
+    {
+        $normalized = [];
+
+        foreach ($rows as $row) {
+            $clock = (int) ($row['clock'] ?? 0);
+
+            if ($clock <= 0) {
+                continue;
+            }
+
+            $normalized[$clock] = [
+                'avg' => round(((float) ($row['value_avg'] ?? 0)) / 1000000, 3),
+                'min' => round(((float) ($row['value_min'] ?? 0)) / 1000000, 3),
+                'max' => round(((float) ($row['value_max'] ?? 0)) / 1000000, 3),
+            ];
+        }
+
+        ksort($normalized, SORT_NUMERIC);
+
+        return $normalized;
     }
 
     protected function getHistory(string $itemId, int $timeFrom, int $timeTo, int $limit): array

@@ -774,9 +774,10 @@ button {
 
 .ds-chart-line {
   fill: none;
-  stroke-width: 3;
+  stroke-width: 2.25;
   stroke-linecap: round;
   stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
 }
 
 .ds-chart-line-in {
@@ -878,6 +879,70 @@ button {
   }
 }
 
+.ds-install-banner {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(15, 23, 42, 0.96);
+  color: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.22);
+}
+
+.ds-install-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ds-install-title {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 20px;
+}
+
+.ds-install-text {
+  font-size: 12px;
+  line-height: 18px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.ds-install-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ds-btn-install {
+  width: auto;
+  min-height: 38px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #5de7b2;
+  color: #052814;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ds-btn-install-muted {
+  width: auto;
+  min-height: 38px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
 @media (min-width: 768px) {
   .app-root {
     padding: 18px;
@@ -905,6 +970,22 @@ button {
   .screen {
     min-height: calc(100vh - 36px);
     min-height: calc(100dvh - 36px);
+  }
+}
+
+@media (max-width: 520px) {
+  .ds-install-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ds-install-actions {
+    width: 100%;
+  }
+
+  .ds-btn-install,
+  .ds-btn-install-muted {
+    flex: 1;
   }
 }
 
