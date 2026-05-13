@@ -8,6 +8,112 @@
                 </div>
             </div>
 
+            <div class="rounded-[1.75rem] border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/30 p-5 md:p-6 mb-8">
+                <div class="mb-5">
+                    <h4 class="text-sm font-bold uppercase tracking-widest text-slate-500">Buat Ticket Baru</h4>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Gunakan form ini jika client melapor lewat telepon, WhatsApp, atau belum bisa membuat tiket dari portal sendiri.</p>
+                </div>
+
+                <form method="POST" action="{{ route('tickets.store') }}" class="space-y-5">
+                    @csrf
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Client <span class="text-red-500">*</span></label>
+                            <select id="client_id" name="client_id" required
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Pilih client</option>
+                                @foreach($clients as $client)
+                                    <option value="{{ $client->id }}" {{ old('client_id') == $client->id ? 'selected' : '' }}>
+                                        {{ $client->name }} ({{ $client->client_code }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('client_id')
+                                <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Layanan Terkait</label>
+                            <select id="subscription_id" name="subscription_id"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Pilih layanan jika ada</option>
+                                @foreach($clients as $client)
+                                    @foreach($client->subscriptions as $subscription)
+                                        <option value="{{ $subscription->id }}"
+                                            data-client-id="{{ $client->id }}"
+                                            {{ old('subscription_id') == $subscription->id ? 'selected' : '' }}>
+                                            {{ $subscription->subscription_code }} | {{ $subscription->package->name ?? '-' }}
+                                        </option>
+                                    @endforeach
+                                @endforeach
+                            </select>
+                            @error('subscription_id')
+                                <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Kategori <span class="text-red-500">*</span></label>
+                            <select name="category" required
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                @foreach(['connectivity' => 'Connectivity', 'billing' => 'Billing', 'technical' => 'Technical', 'general' => 'General'] as $value => $label)
+                                    <option value="{{ $value }}" {{ old('category', 'technical') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Priority <span class="text-red-500">*</span></label>
+                            <select name="priority" required
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                @foreach(['low' => 'Low', 'normal' => 'Normal', 'high' => 'High', 'urgent' => 'Urgent'] as $value => $label)
+                                    <option value="{{ $value }}" {{ old('priority', 'normal') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Assign Ke</label>
+                            <select name="assigned_to"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Belum di-assign</option>
+                                @foreach($staffUsers as $user)
+                                    <option value="{{ $user->id }}" {{ old('assigned_to') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Subjek <span class="text-red-500">*</span></label>
+                        <input type="text" name="subject" value="{{ old('subject') }}" required
+                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Contoh: Internet down di kantor cabang Salatiga">
+                        @error('subject')
+                            <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Pesan / Kronologi <span class="text-red-500">*</span></label>
+                        <textarea name="message" rows="4" required
+                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-3 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Tulis ringkasan keluhan, kronologi, dan detail yang dilaporkan client.">{{ old('message') }}</textarea>
+                        @error('message')
+                            <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button type="submit"
+                            class="px-5 py-2.5 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+                            Buat Ticket
+                        </button>
+                    </div>
+                </form>
+            </div>
+
             <form method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Filter Status</label>
@@ -113,6 +219,46 @@
         <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
         <script>
             $(document).ready(function () {
+                const clientSelect = document.getElementById('client_id');
+                const subscriptionSelect = document.getElementById('subscription_id');
+
+                function filterSubscriptions() {
+                    if (!clientSelect || !subscriptionSelect) {
+                        return;
+                    }
+
+                    const selectedClientId = clientSelect.value;
+                    let hasVisibleOption = false;
+
+                    Array.from(subscriptionSelect.options).forEach((option, index) => {
+                        if (index === 0) {
+                            option.hidden = false;
+                            return;
+                        }
+
+                        const optionClientId = option.getAttribute('data-client-id');
+                        const shouldShow = !selectedClientId || optionClientId === selectedClientId;
+                        option.hidden = !shouldShow;
+
+                        if (!shouldShow && option.selected) {
+                            subscriptionSelect.value = '';
+                        }
+
+                        if (shouldShow) {
+                            hasVisibleOption = true;
+                        }
+                    });
+
+                    if (!hasVisibleOption) {
+                        subscriptionSelect.value = '';
+                    }
+                }
+
+                if (clientSelect && subscriptionSelect) {
+                    clientSelect.addEventListener('change', filterSubscriptions);
+                    filterSubscriptions();
+                }
+
                 if (!document.getElementById('ticketsTable')) {
                     return;
                 }

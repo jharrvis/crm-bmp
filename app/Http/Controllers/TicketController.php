@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\ClientPortalNotification;
+use App\Models\Client;
+use App\Models\Subscription;
 use App\Models\Ticket;
 use App\Models\TicketReply;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class TicketController extends Controller
@@ -28,8 +31,90 @@ class TicketController extends Controller
         }
 
         $tickets = $query->get();
+        $clients = Client::query()
+            ->with(['subscriptions.package.service'])
+            ->orderBy('name')
+            ->get();
+        $staffUsers = User::role(['Owner', 'Admin', 'Employee'])
+            ->orderBy('name')
+            ->get();
 
-        return view('tickets.index', compact('tickets'));
+        return view('tickets.index', compact('tickets', 'clients', 'staffUsers'));
+    }
+
+    public function store(Request $request): RedirectResponse|JsonResponse
+    {
+        $validated = $request->validate([
+            'client_id' => 'required|exists:clients,id',
+            'subscription_id' => 'nullable|exists:subscriptions,id',
+            'subject' => 'required|string|max:255',
+            'category' => ['required', Rule::in(['connectivity', 'billing', 'technical', 'general'])],
+            'priority' => ['required', Rule::in(['low', 'normal', 'high', 'urgent'])],
+            'assigned_to' => 'nullable|exists:users,id',
+            'message' => 'required|string',
+        ]);
+
+        $subscription = null;
+        if (! empty($validated['subscription_id'])) {
+            $subscription = Subscription::query()
+                ->where('id', $validated['subscription_id'])
+                ->where('client_id', $validated['client_id'])
+                ->first();
+
+            if (! $subscription) {
+                $message = 'Layanan yang dipilih tidak sesuai dengan client.';
+
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json(['success' => false, 'message' => $message], 422);
+                }
+
+                return redirect()->back()->withErrors(['subscription_id' => $message])->withInput();
+            }
+        }
+
+        $ticket = DB::transaction(function () use ($validated, $subscription, $request) {
+            $ticket = Ticket::create([
+                'client_id' => $validated['client_id'],
+                'subscription_id' => $subscription?->id,
+                'assigned_to' => $validated['assigned_to'] ?? null,
+                'ticket_number' => Ticket::generateTicketNumber(),
+                'subject' => $validated['subject'],
+                'category' => $validated['category'],
+                'priority' => $validated['priority'],
+                'status' => 'open',
+                'message' => $validated['message'],
+            ]);
+
+            TicketReply::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $request->user()->id,
+                'author_type' => 'staff',
+                'message' => $validated['message'],
+            ]);
+
+            ClientPortalNotification::create([
+                'client_id' => $ticket->client_id,
+                'type' => 'ticket_created',
+                'title' => 'Tiket support baru dibuat',
+                'message' => "Tiket {$ticket->ticket_number} telah dibuat oleh tim support.",
+                'payload' => [
+                    'ticket_id' => $ticket->id,
+                    'ticket_number' => $ticket->ticket_number,
+                ],
+            ]);
+
+            return $ticket;
+        });
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Tiket berhasil dibuat.',
+                'ticket_id' => $ticket->id,
+            ], 201);
+        }
+
+        return redirect()->route('tickets.show', $ticket)->with('success', 'Tiket berhasil dibuat.');
     }
 
     public function show(Ticket $ticket)

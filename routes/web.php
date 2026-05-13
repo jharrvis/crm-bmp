@@ -60,7 +60,7 @@ Route::middleware('auth')->group(function () {
         // Billing
         Route::post('invoices/generate', [\App\Http\Controllers\InvoiceController::class, 'generate'])->name('invoices.generate');
         Route::resource('invoices', \App\Http\Controllers\InvoiceController::class);
-        Route::resource('tickets', \App\Http\Controllers\TicketController::class)->only(['index', 'show', 'update']);
+        Route::resource('tickets', \App\Http\Controllers\TicketController::class)->only(['index', 'store', 'show', 'update']);
         Route::post('tickets/{ticket}/reply', [\App\Http\Controllers\TicketController::class, 'reply'])->name('tickets.reply');
     });
 
