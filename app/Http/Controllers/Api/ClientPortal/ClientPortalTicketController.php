@@ -187,6 +187,41 @@ class ClientPortalTicketController extends Controller
         ], 201);
     }
 
+    public function reopen(Request $request, Ticket $ticket): JsonResponse
+    {
+        /** @var ClientPortalAccount $account */
+        $account = $request->user();
+        $ticket = $this->authorizedTicket($request, $ticket);
+
+        if (! in_array($ticket->status, ['resolved', 'closed'], true)) {
+            return response()->json([
+                'message' => 'Hanya tiket resolved atau closed yang dapat dibuka kembali.',
+            ], 422);
+        }
+
+        DB::transaction(function () use ($account, $ticket) {
+            TicketReply::create([
+                'ticket_id' => $ticket->id,
+                'client_portal_account_id' => $account->id,
+                'author_type' => 'client',
+                'is_internal' => false,
+                'message' => 'Client membuka kembali tiket ini untuk tindak lanjut lanjutan.',
+            ]);
+
+            $ticket->forceFill([
+                'status' => 'open',
+                'resolved_at' => null,
+                'closed_at' => null,
+                'client_last_read_at' => now(),
+            ])->save();
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tiket berhasil dibuka kembali.',
+        ]);
+    }
+
     private function authorizedTicket(Request $request, Ticket $ticket): Ticket
     {
         /** @var ClientPortalAccount $account */

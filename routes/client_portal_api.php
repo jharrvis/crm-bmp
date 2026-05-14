@@ -30,6 +30,7 @@ Route::prefix('client-portal')->group(function () {
         Route::get('tickets', [ClientPortalTicketController::class, 'index']);
         Route::post('tickets', [ClientPortalTicketController::class, 'store']);
         Route::get('tickets/{ticket}', [ClientPortalTicketController::class, 'show']);
+        Route::post('tickets/{ticket}/reopen', [ClientPortalTicketController::class, 'reopen']);
         Route::post('tickets/{ticket}/replies', [ClientPortalTicketController::class, 'reply']);
 
         Route::get('notifications', [ClientPortalNotificationController::class, 'index']);
