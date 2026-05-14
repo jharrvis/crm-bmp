@@ -221,6 +221,7 @@
                                 <th class="p-4">Subjek</th>
                                 <th class="p-4">Kategori</th>
                                 <th class="p-4">Status</th>
+                                <th class="p-4">Priority</th>
                                 <th class="p-4">Assigned</th>
                                 <th class="p-4 pr-6 text-center">Aksi</th>
                             </tr>
@@ -266,15 +267,71 @@
                                         {{ ucfirst(str_replace('_', ' ', $ticket->status)) }}
                                     </span>
                                 </td>
+                                <td class="p-4">
+                                    @php
+                                        $priorityClasses = [
+                                            'low' => 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300',
+                                            'normal' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+                                            'high' => 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+                                            'urgent' => 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+                                        ];
+                                    @endphp
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold {{ $priorityClasses[$ticket->priority] ?? 'bg-slate-100 text-slate-700' }}">
+                                        {{ ucfirst($ticket->priority) }}
+                                    </span>
+                                </td>
                                 <td class="p-4 text-sm text-slate-600 dark:text-slate-300">
                                     {{ $ticket->assignedUser?->name ?? '-' }}
                                 </td>
-                                <td class="p-4 pr-6 text-center">
-                                    <a href="{{ route('tickets.show', $ticket) }}"
-                                        class="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 font-bold text-sm transition-colors">
-                                        <i data-lucide="eye" class="w-4 h-4"></i>
-                                        Detail
-                                    </a>
+                                <td class="p-4 pr-6">
+                                    <div class="space-y-3 min-w-[220px]">
+                                        <div class="flex justify-center">
+                                            <a href="{{ route('tickets.show', $ticket) }}"
+                                                class="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 font-bold text-sm transition-colors">
+                                                <i data-lucide="eye" class="w-4 h-4"></i>
+                                                Detail
+                                            </a>
+                                        </div>
+
+                                        <form method="POST" action="{{ route('tickets.update', $ticket) }}" class="space-y-2 text-left">
+                                            @csrf
+                                            @method('PUT')
+
+                                            <select name="status"
+                                                class="w-full rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-800 text-xs font-medium text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                                @foreach(['open', 'in_progress', 'waiting_client', 'resolved', 'closed'] as $status)
+                                                    <option value="{{ $status }}" {{ $ticket->status === $status ? 'selected' : '' }}>
+                                                        Status: {{ ucfirst(str_replace('_', ' ', $status)) }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+
+                                            <select name="priority"
+                                                class="w-full rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-800 text-xs font-medium text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                                @foreach(['low', 'normal', 'high', 'urgent'] as $priority)
+                                                    <option value="{{ $priority }}" {{ $ticket->priority === $priority ? 'selected' : '' }}>
+                                                        Priority: {{ ucfirst($priority) }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+
+                                            <select name="assigned_to"
+                                                class="w-full rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-800 text-xs font-medium text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                                <option value="">Assign: Belum di-assign</option>
+                                                @foreach($staffUsers as $user)
+                                                    <option value="{{ $user->id }}" {{ $ticket->assigned_to === $user->id ? 'selected' : '' }}>
+                                                        Assign: {{ $user->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+
+                                            <button type="submit"
+                                                class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-slate-900 dark:bg-blue-600 text-white text-xs font-bold hover:bg-slate-800 dark:hover:bg-blue-700 transition-colors">
+                                                <i data-lucide="save" class="w-4 h-4"></i>
+                                                Simpan Cepat
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                             @endforeach
