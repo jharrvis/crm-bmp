@@ -14,7 +14,7 @@
                     <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Gunakan form ini jika client melapor lewat telepon, WhatsApp, atau belum bisa membuat tiket dari portal sendiri.</p>
                 </div>
 
-                <form method="POST" action="{{ route('tickets.store') }}" class="space-y-5">
+                <form method="POST" action="{{ route('tickets.store') }}" enctype="multipart/form-data" class="space-y-5">
                     @csrf
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -101,6 +101,19 @@
                             class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-3 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Tulis ringkasan keluhan, kronologi, dan detail yang dilaporkan client.">{{ old('message') }}</textarea>
                         @error('message')
+                            <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Lampiran</label>
+                        <input type="file" name="attachments[]" multiple
+                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                        <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Maksimal 5MB per file. Format: JPG, PNG, PDF, DOC, DOCX, XLS, XLSX, ZIP, TXT.</p>
+                        @error('attachments')
+                            <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
+                        @enderror
+                        @error('attachments.*')
                             <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
                         @enderror
                     </div>

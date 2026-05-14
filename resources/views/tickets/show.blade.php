@@ -66,6 +66,17 @@
                                     <p class="text-xs text-slate-500 dark:text-slate-400">{{ $reply->created_at?->format('d M Y H:i') }}</p>
                                 </div>
                                 <div class="mt-4 text-sm leading-6 text-slate-700 dark:text-slate-200 whitespace-pre-line">{{ $reply->message }}</div>
+                                @if($reply->attachments->isNotEmpty())
+                                    <div class="mt-4 flex flex-wrap gap-2">
+                                        @foreach($reply->attachments as $attachment)
+                                            <a href="{{ $attachment->public_url }}" target="_blank"
+                                                class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/80 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-200 hover:border-blue-400 hover:text-blue-600 transition-colors">
+                                                <i data-lucide="paperclip" class="w-4 h-4"></i>
+                                                <span>{{ $attachment->original_name }}</span>
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </div>
                         @endforeach
                     </div>
@@ -73,11 +84,17 @@
 
                 <div class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6 md:p-8">
                     <h3 class="text-lg font-bold text-slate-800 dark:text-white">Balas Tiket</h3>
-                    <form method="POST" action="{{ route('tickets.reply', $ticket) }}" class="mt-5 space-y-4">
+                    <form method="POST" action="{{ route('tickets.reply', $ticket) }}" enctype="multipart/form-data" class="mt-5 space-y-4">
                         @csrf
                         <textarea name="message" rows="5"
                             class="w-full rounded-2xl border border-slate-200 dark:border-slate-600 px-4 py-3 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Tulis balasan untuk client..." required></textarea>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Lampiran</label>
+                            <input type="file" name="attachments[]" multiple
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                            <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Maksimal 5MB per file. Format: JPG, PNG, PDF, DOC, DOCX, XLS, XLSX, ZIP, TXT.</p>
+                        </div>
                         <div class="flex justify-end">
                             <button type="submit"
                                 class="px-5 py-2.5 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors">

@@ -7,11 +7,13 @@ use App\Models\Client;
 use App\Models\Subscription;
 use App\Models\Ticket;
 use App\Models\TicketReply;
+use App\Models\TicketReplyAttachment;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
 
 class TicketController extends Controller
@@ -52,6 +54,8 @@ class TicketController extends Controller
             'priority' => ['required', Rule::in(['low', 'normal', 'high', 'urgent'])],
             'assigned_to' => 'nullable|exists:users,id',
             'message' => 'required|string',
+            'attachments' => 'nullable|array',
+            'attachments.*' => 'file|max:5120|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx,zip,txt',
         ]);
 
         $subscription = null;
@@ -85,12 +89,14 @@ class TicketController extends Controller
                 'message' => $validated['message'],
             ]);
 
-            TicketReply::create([
+            $reply = TicketReply::create([
                 'ticket_id' => $ticket->id,
                 'user_id' => $request->user()->id,
                 'author_type' => 'staff',
                 'message' => $validated['message'],
             ]);
+
+            $this->storeReplyAttachments($reply, $request->file('attachments', []));
 
             ClientPortalNotification::create([
                 'client_id' => $ticket->client_id,
@@ -123,6 +129,7 @@ class TicketController extends Controller
             'client.primaryContact',
             'subscription.package.service',
             'assignedUser',
+            'replies.attachments',
             'replies.portalAccount.client',
             'replies.user',
         ]);
@@ -183,6 +190,8 @@ class TicketController extends Controller
     {
         $validated = $request->validate([
             'message' => 'required|string',
+            'attachments' => 'nullable|array',
+            'attachments.*' => 'file|max:5120|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx,zip,txt',
         ]);
 
         $reply = TicketReply::create([
@@ -191,6 +200,8 @@ class TicketController extends Controller
             'author_type' => 'staff',
             'message' => $validated['message'],
         ]);
+
+        $this->storeReplyAttachments($reply, $request->file('attachments', []));
 
         if ($ticket->first_response_at === null) {
             $ticket->update(['first_response_at' => now()]);
@@ -220,5 +231,25 @@ class TicketController extends Controller
         }
 
         return redirect()->route('tickets.show', $ticket)->with('success', 'Balasan berhasil dikirim.');
+    }
+
+    private function storeReplyAttachments(TicketReply $reply, array $files): void
+    {
+        foreach ($files as $file) {
+            if (! $file instanceof UploadedFile) {
+                continue;
+            }
+
+            $path = $file->store('ticket-attachments', 'public');
+
+            TicketReplyAttachment::create([
+                'ticket_reply_id' => $reply->id,
+                'disk' => 'public',
+                'path' => $path,
+                'original_name' => $file->getClientOriginalName(),
+                'mime_type' => $file->getMimeType(),
+                'size_bytes' => (int) $file->getSize(),
+            ]);
+        }
     }
 }

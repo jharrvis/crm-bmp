@@ -8,9 +8,11 @@ use App\Models\ClientPortalNotification;
 use App\Models\Subscription;
 use App\Models\Ticket;
 use App\Models\TicketReply;
+use App\Models\TicketReplyAttachment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
 
 class ClientPortalTicketController extends Controller
@@ -49,6 +51,8 @@ class ClientPortalTicketController extends Controller
             'category' => ['required', Rule::in(['connectivity', 'billing', 'technical', 'general'])],
             'priority' => ['nullable', Rule::in(['low', 'normal', 'high', 'urgent'])],
             'message' => 'required|string',
+            'attachments' => 'nullable|array',
+            'attachments.*' => 'file|max:5120|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx,zip,txt',
         ]);
 
         $subscription = null;
@@ -59,7 +63,7 @@ class ClientPortalTicketController extends Controller
                 ->firstOrFail();
         }
 
-        $ticket = DB::transaction(function () use ($account, $subscription, $validated) {
+        $ticket = DB::transaction(function () use ($account, $subscription, $validated, $request) {
             $ticket = Ticket::create([
                 'client_id' => $account->client_id,
                 'subscription_id' => $subscription?->id,
@@ -72,12 +76,14 @@ class ClientPortalTicketController extends Controller
                 'message' => $validated['message'],
             ]);
 
-            TicketReply::create([
+            $reply = TicketReply::create([
                 'ticket_id' => $ticket->id,
                 'client_portal_account_id' => $account->id,
                 'author_type' => 'client',
                 'message' => $validated['message'],
             ]);
+
+            $this->storeReplyAttachments($reply, $request->file('attachments', []));
 
             ClientPortalNotification::create([
                 'client_id' => $account->client_id,
@@ -93,7 +99,7 @@ class ClientPortalTicketController extends Controller
             return $ticket;
         });
 
-        $ticket->load(['subscription.package.service', 'replies.portalAccount']);
+        $ticket->load(['subscription.package.service', 'replies.attachments', 'replies.portalAccount']);
 
         return response()->json([
             'success' => true,
@@ -105,7 +111,7 @@ class ClientPortalTicketController extends Controller
     public function show(Request $request, Ticket $ticket): JsonResponse
     {
         $ticket = $this->authorizedTicket($request, $ticket);
-        $ticket->load(['subscription.package.service', 'replies.portalAccount', 'replies.user', 'assignedUser']);
+        $ticket->load(['subscription.package.service', 'replies.attachments', 'replies.portalAccount', 'replies.user', 'assignedUser']);
 
         return response()->json([
             'data' => $this->serializeTicketDetail($ticket),
@@ -126,15 +132,19 @@ class ClientPortalTicketController extends Controller
 
         $validated = $request->validate([
             'message' => 'required|string',
+            'attachments' => 'nullable|array',
+            'attachments.*' => 'file|max:5120|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx,zip,txt',
         ]);
 
-        $reply = DB::transaction(function () use ($account, $ticket, $validated) {
+        $reply = DB::transaction(function () use ($account, $ticket, $validated, $request) {
             $reply = TicketReply::create([
                 'ticket_id' => $ticket->id,
                 'client_portal_account_id' => $account->id,
                 'author_type' => 'client',
                 'message' => $validated['message'],
             ]);
+
+            $this->storeReplyAttachments($reply, $request->file('attachments', []));
 
             $ticket->forceFill([
                 'status' => 'open',
@@ -154,7 +164,7 @@ class ClientPortalTicketController extends Controller
             return $reply;
         });
 
-        $reply->load(['portalAccount', 'user']);
+        $reply->load(['attachments', 'portalAccount', 'user']);
 
         return response()->json([
             'success' => true,
@@ -220,6 +230,33 @@ class ClientPortalTicketController extends Controller
                 default => 'System',
             },
             'created_at' => $reply->created_at?->toIso8601String(),
+            'attachments' => $reply->attachments->map(fn (TicketReplyAttachment $attachment) => [
+                'id' => $attachment->id,
+                'name' => $attachment->original_name,
+                'mime_type' => $attachment->mime_type,
+                'size_bytes' => (int) $attachment->size_bytes,
+                'url' => $attachment->public_url,
+            ])->values(),
         ];
+    }
+
+    private function storeReplyAttachments(TicketReply $reply, array $files): void
+    {
+        foreach ($files as $file) {
+            if (! $file instanceof UploadedFile) {
+                continue;
+            }
+
+            $path = $file->store('ticket-attachments', 'public');
+
+            TicketReplyAttachment::create([
+                'ticket_reply_id' => $reply->id,
+                'disk' => 'public',
+                'path' => $path,
+                'original_name' => $file->getClientOriginalName(),
+                'mime_type' => $file->getMimeType(),
+                'size_bytes' => (int) $file->getSize(),
+            ]);
+        }
     }
 }
