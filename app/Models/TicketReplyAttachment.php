@@ -30,6 +30,6 @@ class TicketReplyAttachment extends Model
 
     public function getPublicUrlAttribute(): string
     {
-        return url(Storage::disk($this->disk)->url($this->path));
+        return Storage::disk($this->disk)->url($this->path);
     }
 }

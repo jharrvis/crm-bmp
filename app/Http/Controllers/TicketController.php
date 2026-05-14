@@ -22,6 +22,12 @@ class TicketController extends Controller
     {
         $query = Ticket::query()
             ->with(['client.primaryContact', 'subscription.package.service', 'assignedUser'])
+            ->withCount([
+                'replies as unread_staff_replies_count' => fn ($replyQuery) => $replyQuery
+                    ->where('author_type', 'client')
+                    ->where('is_internal', false)
+                    ->whereRaw('ticket_replies.created_at > COALESCE(tickets.staff_last_read_at, tickets.created_at)'),
+            ])
             ->latest();
 
         if ($request->filled('status')) {
@@ -87,6 +93,7 @@ class TicketController extends Controller
                 'priority' => $validated['priority'],
                 'status' => 'open',
                 'message' => $validated['message'],
+                'staff_last_read_at' => now(),
             ]);
 
             $reply = TicketReply::create([
@@ -125,6 +132,10 @@ class TicketController extends Controller
 
     public function show(Ticket $ticket)
     {
+        $ticket->forceFill([
+            'staff_last_read_at' => now(),
+        ])->save();
+
         $ticket->load([
             'client.primaryContact',
             'subscription.package.service',
@@ -190,6 +201,7 @@ class TicketController extends Controller
     {
         $validated = $request->validate([
             'message' => 'required|string',
+            'is_internal' => 'nullable|boolean',
             'attachments' => 'nullable|array',
             'attachments.*' => 'file|max:5120|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx,zip,txt',
         ]);
@@ -198,30 +210,37 @@ class TicketController extends Controller
             'ticket_id' => $ticket->id,
             'user_id' => $request->user()->id,
             'author_type' => 'staff',
+            'is_internal' => (bool) ($validated['is_internal'] ?? false),
             'message' => $validated['message'],
         ]);
 
         $this->storeReplyAttachments($reply, $request->file('attachments', []));
 
-        if ($ticket->first_response_at === null) {
+        if (! $reply->is_internal && $ticket->first_response_at === null) {
             $ticket->update(['first_response_at' => now()]);
         }
 
-        if (! in_array($ticket->status, ['resolved', 'closed'], true)) {
+        $ticket->forceFill([
+            'staff_last_read_at' => now(),
+        ])->save();
+
+        if (! $reply->is_internal && ! in_array($ticket->status, ['resolved', 'closed'], true)) {
             $ticket->update(['status' => 'waiting_client']);
         }
 
-        ClientPortalNotification::create([
-            'client_id' => $ticket->client_id,
-            'type' => 'ticket_reply',
-            'title' => 'Ada balasan baru pada tiket Anda',
-            'message' => "Tiket {$ticket->ticket_number} mendapat balasan baru dari tim support.",
-            'payload' => [
-                'ticket_id' => $ticket->id,
-                'ticket_number' => $ticket->ticket_number,
-                'reply_id' => $reply->id,
-            ],
-        ]);
+        if (! $reply->is_internal) {
+            ClientPortalNotification::create([
+                'client_id' => $ticket->client_id,
+                'type' => 'ticket_reply',
+                'title' => 'Ada balasan baru pada tiket Anda',
+                'message' => "Tiket {$ticket->ticket_number} mendapat balasan baru dari tim support.",
+                'payload' => [
+                    'ticket_id' => $ticket->id,
+                    'ticket_number' => $ticket->ticket_number,
+                    'reply_id' => $reply->id,
+                ],
+            ]);
+        }
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([

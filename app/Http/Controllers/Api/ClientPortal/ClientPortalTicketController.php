@@ -28,6 +28,12 @@ class ClientPortalTicketController extends Controller
 
         $query = Ticket::query()
             ->with(['subscription.package.service'])
+            ->withCount([
+                'replies as unread_client_replies_count' => fn ($replyQuery) => $replyQuery
+                    ->where('author_type', 'staff')
+                    ->where('is_internal', false)
+                    ->whereRaw('ticket_replies.created_at > COALESCE(tickets.client_last_read_at, tickets.created_at)'),
+            ])
             ->where('client_id', $account->client_id)
             ->latest();
 
@@ -74,12 +80,14 @@ class ClientPortalTicketController extends Controller
                 'priority' => $validated['priority'] ?? 'normal',
                 'status' => 'open',
                 'message' => $validated['message'],
+                'client_last_read_at' => now(),
             ]);
 
             $reply = TicketReply::create([
                 'ticket_id' => $ticket->id,
                 'client_portal_account_id' => $account->id,
                 'author_type' => 'client',
+                'is_internal' => false,
                 'message' => $validated['message'],
             ]);
 
@@ -111,6 +119,10 @@ class ClientPortalTicketController extends Controller
     public function show(Request $request, Ticket $ticket): JsonResponse
     {
         $ticket = $this->authorizedTicket($request, $ticket);
+        $ticket->forceFill([
+            'client_last_read_at' => now(),
+        ])->save();
+
         $ticket->load(['subscription.package.service', 'replies.attachments', 'replies.portalAccount', 'replies.user', 'assignedUser']);
 
         return response()->json([
@@ -141,6 +153,7 @@ class ClientPortalTicketController extends Controller
                 'ticket_id' => $ticket->id,
                 'client_portal_account_id' => $account->id,
                 'author_type' => 'client',
+                'is_internal' => false,
                 'message' => $validated['message'],
             ]);
 
@@ -148,6 +161,7 @@ class ClientPortalTicketController extends Controller
 
             $ticket->forceFill([
                 'status' => 'open',
+                'client_last_read_at' => now(),
             ])->save();
 
             ClientPortalNotification::create([
@@ -193,6 +207,7 @@ class ClientPortalTicketController extends Controller
             'priority' => $ticket->priority,
             'status' => $ticket->status,
             'created_at' => $ticket->created_at?->toIso8601String(),
+            'unread_replies_count' => (int) ($ticket->unread_client_replies_count ?? 0),
             'subscription' => $ticket->subscription ? [
                 'id' => $ticket->subscription->id,
                 'subscription_code' => $ticket->subscription->subscription_code,
@@ -214,7 +229,10 @@ class ClientPortalTicketController extends Controller
             'first_response_at' => $ticket->first_response_at?->toIso8601String(),
             'resolved_at' => $ticket->resolved_at?->toIso8601String(),
             'closed_at' => $ticket->closed_at?->toIso8601String(),
-            'replies' => $ticket->replies->map(fn (TicketReply $reply) => $this->serializeReply($reply))->values(),
+            'replies' => $ticket->replies
+                ->where('is_internal', false)
+                ->map(fn (TicketReply $reply) => $this->serializeReply($reply))
+                ->values(),
         ];
     }
 

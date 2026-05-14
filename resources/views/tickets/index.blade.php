@@ -186,7 +186,14 @@
                                     <div class="text-xs text-slate-500">{{ $ticket->client->client_code }}</div>
                                 </td>
                                 <td class="p-4">
-                                    <div class="font-bold text-slate-800 dark:text-white">{{ $ticket->subject }}</div>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <div class="font-bold text-slate-800 dark:text-white">{{ $ticket->subject }}</div>
+                                        @if(($ticket->unread_staff_replies_count ?? 0) > 0)
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+                                                {{ $ticket->unread_staff_replies_count }} balasan baru
+                                            </span>
+                                        @endif
+                                    </div>
                                     <div class="text-xs text-slate-500 truncate max-w-[260px]">{{ $ticket->message }}</div>
                                 </td>
                                 <td class="p-4">

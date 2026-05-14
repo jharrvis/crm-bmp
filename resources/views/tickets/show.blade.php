@@ -55,27 +55,54 @@
 
                     <div class="mt-6 space-y-4">
                         @foreach($ticket->replies as $reply)
-                            <div class="rounded-2xl border {{ $reply->author_type === 'staff' ? 'border-blue-200 dark:border-blue-900/30 bg-blue-50/70 dark:bg-blue-900/10' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30' }} p-5">
+                            <div class="rounded-2xl border {{ $reply->is_internal ? 'border-amber-200 dark:border-amber-900/30 bg-amber-50/80 dark:bg-amber-900/10' : ($reply->author_type === 'staff' ? 'border-blue-200 dark:border-blue-900/30 bg-blue-50/70 dark:bg-blue-900/10' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30') }} p-5">
                                 <div class="flex items-start justify-between gap-4">
                                     <div>
                                         <p class="font-bold text-slate-800 dark:text-white">
                                             {{ $reply->author_type === 'staff' ? ($reply->user?->name ?? 'Staff') : ($reply->portalAccount?->client?->name ?? 'Client') }}
                                         </p>
-                                        <p class="text-xs uppercase tracking-widest text-slate-400 mt-1">{{ $reply->author_type }}</p>
+                                        <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                            <p class="text-xs uppercase tracking-widest text-slate-400">{{ $reply->author_type }}</p>
+                                            @if($reply->is_internal)
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                                                    Internal note
+                                                </span>
+                                            @endif
+                                        </div>
                                     </div>
                                     <p class="text-xs text-slate-500 dark:text-slate-400">{{ $reply->created_at?->format('d M Y H:i') }}</p>
                                 </div>
                                 <div class="mt-4 text-sm leading-6 text-slate-700 dark:text-slate-200 whitespace-pre-line">{{ $reply->message }}</div>
                                 @if($reply->attachments->isNotEmpty())
-                                    <div class="mt-4 flex flex-wrap gap-2">
-                                        @foreach($reply->attachments as $attachment)
-                                            <a href="{{ $attachment->public_url }}" target="_blank"
-                                                class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/80 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-200 hover:border-blue-400 hover:text-blue-600 transition-colors">
-                                                <i data-lucide="paperclip" class="w-4 h-4"></i>
-                                                <span>{{ $attachment->original_name }}</span>
-                                            </a>
-                                        @endforeach
-                                    </div>
+                                    @php
+                                        $imageAttachments = $reply->attachments->filter(fn ($attachment) => str_starts_with((string) $attachment->mime_type, 'image/'));
+                                        $fileAttachments = $reply->attachments->reject(fn ($attachment) => str_starts_with((string) $attachment->mime_type, 'image/'));
+                                    @endphp
+
+                                    @if($imageAttachments->isNotEmpty())
+                                        <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+                                            @foreach($imageAttachments as $attachment)
+                                                <a href="{{ $attachment->public_url }}" target="_blank" class="group block rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+                                                    <img src="{{ $attachment->public_url }}" alt="{{ $attachment->original_name }}" class="w-full h-36 object-cover group-hover:scale-[1.02] transition-transform">
+                                                    <div class="px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 truncate">
+                                                        {{ $attachment->original_name }}
+                                                    </div>
+                                                </a>
+                                            @endforeach
+                                        </div>
+                                    @endif
+
+                                    @if($fileAttachments->isNotEmpty())
+                                        <div class="mt-4 flex flex-wrap gap-2">
+                                            @foreach($fileAttachments as $attachment)
+                                                <a href="{{ $attachment->public_url }}" target="_blank"
+                                                    class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/80 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-200 hover:border-blue-400 hover:text-blue-600 transition-colors">
+                                                    <i data-lucide="paperclip" class="w-4 h-4"></i>
+                                                    <span>{{ $attachment->original_name }}</span>
+                                                </a>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 @endif
                             </div>
                         @endforeach
@@ -89,6 +116,13 @@
                         <textarea name="message" rows="5"
                             class="w-full rounded-2xl border border-slate-200 dark:border-slate-600 px-4 py-3 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Tulis balasan untuk client..." required></textarea>
+                        <label class="inline-flex items-center gap-3 rounded-2xl border border-amber-200 dark:border-amber-900/30 bg-amber-50/80 dark:bg-amber-900/10 px-4 py-3 cursor-pointer">
+                            <input type="checkbox" name="is_internal" value="1"
+                                class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+                            <span class="text-sm text-slate-700 dark:text-slate-200">
+                                Simpan sebagai <strong>catatan internal</strong> saja. Tidak dikirim ke client portal.
+                            </span>
+                        </label>
                         <div>
                             <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Lampiran</label>
                             <input type="file" name="attachments[]" multiple

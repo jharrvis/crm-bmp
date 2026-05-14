@@ -14,8 +14,16 @@ class TicketReply extends Model
         'client_portal_account_id',
         'user_id',
         'author_type',
+        'is_internal',
         'message',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_internal' => 'boolean',
+        ];
+    }
 
     public function ticket()
     {

@@ -23,6 +23,8 @@ class Ticket extends Model
         'first_response_at',
         'resolved_at',
         'closed_at',
+        'client_last_read_at',
+        'staff_last_read_at',
     ];
 
     protected function casts(): array
@@ -31,6 +33,8 @@ class Ticket extends Model
             'first_response_at' => 'datetime',
             'resolved_at' => 'datetime',
             'closed_at' => 'datetime',
+            'client_last_read_at' => 'datetime',
+            'staff_last_read_at' => 'datetime',
         ];
     }
 
