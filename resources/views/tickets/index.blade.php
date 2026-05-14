@@ -232,10 +232,75 @@
                     Belum ada tiket support.
                 </div>
             @else
+                <form method="POST" action="{{ route('tickets.bulk-update') }}" class="rounded-[1.5rem] border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/30 p-4 md:p-5 mb-6">
+                    @csrf
+                    <div class="flex items-center justify-between gap-4 mb-4">
+                        <div>
+                            <h4 class="text-sm font-bold uppercase tracking-widest text-slate-500">Bulk Actions</h4>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Pilih beberapa ticket lalu ubah queue, status, priority, atau assignee sekaligus.</p>
+                        </div>
+                        <span id="bulkSelectionCount" class="text-sm font-semibold text-slate-600 dark:text-slate-300">0 ticket dipilih</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
+                            <select name="status"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Tidak diubah</option>
+                                @foreach(['open', 'in_progress', 'waiting_client', 'resolved', 'closed'] as $status)
+                                    <option value="{{ $status }}">{{ ucfirst(str_replace('_', ' ', $status)) }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Queue</label>
+                            <select name="queue"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Tidak diubah</option>
+                                @foreach($ticketQueues as $value => $label)
+                                    <option value="{{ $value }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Priority</label>
+                            <select name="priority"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Tidak diubah</option>
+                                @foreach(['low', 'normal', 'high', 'urgent'] as $priority)
+                                    <option value="{{ $priority }}">{{ ucfirst($priority) }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Assign Staff</label>
+                            <select name="assigned_to"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Tidak diubah</option>
+                                <option value="__unassigned__">Unassigned</option>
+                                @foreach($staffUsers as $user)
+                                    <option value="{{ $user->id }}">{{ $user->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex justify-end">
+                        <button type="submit"
+                            class="px-5 py-2.5 rounded-xl font-bold bg-slate-900 dark:bg-blue-600 text-white hover:bg-slate-800 dark:hover:bg-blue-700 transition-colors">
+                            Terapkan Bulk Action
+                        </button>
+                    </div>
+
                 <div class="overflow-x-auto no-scrollbar">
                     <table id="ticketsTable" class="w-full text-left border-collapse">
                         <thead>
                             <tr class="text-slate-400 text-xs font-bold uppercase tracking-wider border-b border-slate-100 dark:border-slate-700">
+                                <th class="p-4 pl-6 w-12">
+                                    <input type="checkbox" id="bulkSelectAll"
+                                        class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                                </th>
                                 <th class="p-4 pl-6">No. Tiket</th>
                                 <th class="p-4">Client</th>
                                 <th class="p-4">Subjek</th>
@@ -250,6 +315,10 @@
                         <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
                             @foreach($tickets as $ticket)
                             <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                                <td class="p-4 pl-6">
+                                    <input type="checkbox" name="ticket_ids[]" value="{{ $ticket->id }}"
+                                        class="bulk-ticket-checkbox rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                                </td>
                                 <td class="p-4 pl-6">
                                     <div class="font-mono font-bold text-slate-700 dark:text-slate-200">{{ $ticket->ticket_number }}</div>
                                     <div class="text-xs text-slate-500">{{ $ticket->created_at?->format('d M Y H:i') }}</div>
@@ -374,6 +443,7 @@
                         </tbody>
                     </table>
                 </div>
+                </form>
             @endif
         </div>
     </div>
@@ -421,6 +491,38 @@
                 if (clientSelect && subscriptionSelect) {
                     clientSelect.addEventListener('change', filterSubscriptions);
                     filterSubscriptions();
+                }
+
+                const bulkSelectAll = document.getElementById('bulkSelectAll');
+                const bulkCheckboxes = Array.from(document.querySelectorAll('.bulk-ticket-checkbox'));
+                const bulkSelectionCount = document.getElementById('bulkSelectionCount');
+
+                function updateBulkSelectionCount() {
+                    if (!bulkSelectionCount) {
+                        return;
+                    }
+
+                    const selectedCount = bulkCheckboxes.filter((checkbox) => checkbox.checked).length;
+                    bulkSelectionCount.textContent = `${selectedCount} ticket dipilih`;
+                }
+
+                if (bulkSelectAll && bulkCheckboxes.length > 0) {
+                    bulkSelectAll.addEventListener('change', function () {
+                        bulkCheckboxes.forEach((checkbox) => {
+                            checkbox.checked = bulkSelectAll.checked;
+                        });
+
+                        updateBulkSelectionCount();
+                    });
+
+                    bulkCheckboxes.forEach((checkbox) => {
+                        checkbox.addEventListener('change', function () {
+                            bulkSelectAll.checked = bulkCheckboxes.every((item) => item.checked);
+                            updateBulkSelectionCount();
+                        });
+                    });
+
+                    updateBulkSelectionCount();
                 }
 
                 if (!document.getElementById('ticketsTable')) {

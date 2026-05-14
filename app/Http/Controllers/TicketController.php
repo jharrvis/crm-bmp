@@ -325,6 +325,134 @@ class TicketController extends Controller
         return redirect()->route('tickets.show', $ticket)->with('success', 'Tiket berhasil diperbarui.');
     }
 
+    public function bulkUpdate(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'ticket_ids' => 'required|array|min:1',
+            'ticket_ids.*' => 'integer|exists:tickets,id',
+            'status' => ['nullable', Rule::in(['open', 'in_progress', 'waiting_client', 'resolved', 'closed'])],
+            'queue' => ['nullable', Rule::in(array_keys(config('tickets.queues', [])))],
+            'priority' => ['nullable', Rule::in(['low', 'normal', 'high', 'urgent'])],
+            'assigned_to' => 'nullable',
+        ]);
+
+        $assignedToValue = $request->input('assigned_to');
+
+        if ($assignedToValue !== null && $assignedToValue !== '' && $assignedToValue !== '__unassigned__') {
+            validator(
+                ['assigned_to' => $assignedToValue],
+                ['assigned_to' => 'exists:users,id']
+            )->validate();
+        }
+
+        $updates = array_filter([
+            'status' => $validated['status'] ?? null,
+            'queue' => $validated['queue'] ?? null,
+            'priority' => $validated['priority'] ?? null,
+        ], fn ($value) => $value !== null && $value !== '');
+
+        if ($assignedToValue === '__unassigned__') {
+            $updates['assigned_to'] = null;
+        } elseif ($assignedToValue !== null && $assignedToValue !== '') {
+            $updates['assigned_to'] = (int) $assignedToValue;
+        }
+
+        if ($updates === []) {
+            return redirect()
+                ->route('tickets.index')
+                ->with('error', 'Pilih minimal satu perubahan untuk bulk action.');
+        }
+
+        $tickets = Ticket::query()
+            ->with('assignedUser')
+            ->whereIn('id', $validated['ticket_ids'])
+            ->get();
+
+        DB::transaction(function () use ($tickets, $updates, $request) {
+            foreach ($tickets as $ticket) {
+                $previousStatus = $ticket->status;
+                $previousQueue = $ticket->queue;
+                $previousPriority = $ticket->priority;
+                $previousAssignedTo = $ticket->assigned_to;
+
+                $ticket->fill($updates);
+
+                if (array_key_exists('status', $updates)) {
+                    $ticket->resolved_at = $ticket->status === 'resolved'
+                        ? ($ticket->resolved_at ?? now())
+                        : null;
+                    $ticket->closed_at = $ticket->status === 'closed'
+                        ? ($ticket->closed_at ?? now())
+                        : null;
+
+                    if ($ticket->first_response_at === null && in_array($ticket->status, ['in_progress', 'waiting_client', 'resolved', 'closed'], true)) {
+                        $ticket->first_response_at = now();
+                    }
+                }
+
+                $ticket->save();
+
+                $activityChanges = [];
+                if ($previousStatus !== $ticket->status) {
+                    $activityChanges[] = "status: {$previousStatus} -> {$ticket->status}";
+                }
+                if ($previousQueue !== $ticket->queue) {
+                    $activityChanges[] = 'queue: ' . ($previousQueue ?: 'unassigned') . ' -> ' . ($ticket->queue ?: 'unassigned');
+                }
+                if ($previousPriority !== $ticket->priority) {
+                    $activityChanges[] = "priority: {$previousPriority} -> {$ticket->priority}";
+                }
+                if ((int) $previousAssignedTo !== (int) $ticket->assigned_to) {
+                    $newAssignee = $ticket->assignedUser()->first();
+                    $activityChanges[] = 'assignee: ' . ($previousAssignedTo ?: 'unassigned') . ' -> ' . ($newAssignee?->name ?? 'unassigned');
+                }
+
+                if ($activityChanges !== []) {
+                    $this->ticketActivityService->recordStaff(
+                        $ticket,
+                        'bulk_updated',
+                        'Bulk update ticket (' . implode(', ', $activityChanges) . ').',
+                        $request->user(),
+                        [
+                            'from' => [
+                                'status' => $previousStatus,
+                                'queue' => $previousQueue,
+                                'priority' => $previousPriority,
+                                'assigned_to' => $previousAssignedTo,
+                            ],
+                            'to' => [
+                                'status' => $ticket->status,
+                                'queue' => $ticket->queue,
+                                'priority' => $ticket->priority,
+                                'assigned_to' => $ticket->assigned_to,
+                            ],
+                        ]
+                    );
+                }
+
+                if ($previousStatus !== $ticket->status) {
+                    ClientPortalNotification::create([
+                        'client_id' => $ticket->client_id,
+                        'type' => 'ticket_status',
+                        'title' => 'Status tiket diperbarui',
+                        'message' => "Status tiket {$ticket->ticket_number} sekarang {$ticket->status}.",
+                        'payload' => [
+                            'ticket_id' => $ticket->id,
+                            'ticket_number' => $ticket->ticket_number,
+                            'status' => $ticket->status,
+                        ],
+                    ]);
+
+                    $this->ticketNotificationService->sendClientStatusChanged($ticket);
+                }
+            }
+        });
+
+        return redirect()
+            ->route('tickets.index')
+            ->with('success', count($validated['ticket_ids']) . ' tiket berhasil diperbarui.');
+    }
+
     public function reply(Request $request, Ticket $ticket): RedirectResponse|JsonResponse
     {
         $validated = $request->validate([
