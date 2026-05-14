@@ -202,6 +202,9 @@ class ClientPortalTicketController extends Controller
         /** @var ClientPortalAccount $account */
         $account = $request->user();
         $ticket = $this->authorizedTicket($request, $ticket);
+        $validated = $request->validate([
+            'reason' => 'required|string|max:2000',
+        ]);
 
         if (! in_array($ticket->status, ['resolved', 'closed'], true)) {
             return response()->json([
@@ -209,13 +212,13 @@ class ClientPortalTicketController extends Controller
             ], 422);
         }
 
-        DB::transaction(function () use ($account, $ticket) {
+        DB::transaction(function () use ($account, $ticket, $validated) {
             TicketReply::create([
                 'ticket_id' => $ticket->id,
                 'client_portal_account_id' => $account->id,
                 'author_type' => 'client',
                 'is_internal' => false,
-                'message' => 'Client membuka kembali tiket ini untuk tindak lanjut lanjutan.',
+                'message' => "Client membuka kembali tiket ini.\n\nAlasan reopen:\n" . $validated['reason'],
             ]);
 
             $ticket->forceFill([
