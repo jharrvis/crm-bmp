@@ -61,6 +61,21 @@
                 </form>
             </div>
 
+            <div class="rounded-[1.75rem] border border-slate-200 dark:border-slate-700 bg-blue-50/70 dark:bg-blue-900/10 p-5 md:p-6 mb-8">
+                <h4 class="text-sm font-bold uppercase tracking-widest text-blue-700 dark:text-blue-300">Placeholder Tersedia</h4>
+                <p class="text-sm text-slate-600 dark:text-slate-300 mt-2 mb-4">
+                    Gunakan placeholder berikut di isi template agar sistem otomatis mengganti nilainya sesuai ticket yang sedang dibalas.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                    @foreach($placeholders as $placeholder => $label)
+                        <div class="rounded-xl border border-blue-100 dark:border-blue-900/30 bg-white/80 dark:bg-slate-800 px-4 py-3">
+                            <div class="font-mono text-sm font-bold text-blue-700 dark:text-blue-300">{{ '{' . '{' . $placeholder . '}' . '}' }}</div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ $label }}</div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
             <div class="space-y-4">
                 @forelse($responses as $response)
                     <div class="rounded-[1.5rem] border border-slate-200 dark:border-slate-700 p-5 bg-white dark:bg-slate-800">

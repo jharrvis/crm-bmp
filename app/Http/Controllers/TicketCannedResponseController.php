@@ -18,7 +18,9 @@ class TicketCannedResponseController extends Controller
             ->orderBy('title')
             ->get();
 
-        return view('ticket_canned_responses.index', compact('responses'));
+        $placeholders = config('tickets.placeholders', []);
+
+        return view('ticket_canned_responses.index', compact('responses', 'placeholders'));
     }
 
     public function store(Request $request): RedirectResponse

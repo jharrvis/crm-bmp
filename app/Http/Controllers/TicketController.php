@@ -11,6 +11,7 @@ use App\Models\TicketReply;
 use App\Models\TicketReplyAttachment;
 use App\Services\TicketActivityService;
 use App\Services\TicketNotificationService;
+use App\Services\TicketCannedResponseRenderer;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -23,7 +24,8 @@ class TicketController extends Controller
 {
     public function __construct(
         private readonly TicketNotificationService $ticketNotificationService,
-        private readonly TicketActivityService $ticketActivityService
+        private readonly TicketActivityService $ticketActivityService,
+        private readonly TicketCannedResponseRenderer $ticketCannedResponseRenderer
     ) {
     }
 
@@ -228,7 +230,12 @@ class TicketController extends Controller
             ->where('is_active', true)
             ->orderBy('sort_order')
             ->orderBy('title')
-            ->get();
+            ->get()
+            ->map(function (TicketCannedResponse $response) use ($ticket) {
+                $response->rendered_message = $this->ticketCannedResponseRenderer->renderForTicket($ticket, $response->message);
+
+                return $response;
+            });
 
         return view('tickets.show', compact('ticket', 'staffUsers', 'ticketQueues', 'cannedResponses'));
     }
