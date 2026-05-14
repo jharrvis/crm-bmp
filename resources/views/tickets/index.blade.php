@@ -127,7 +127,13 @@
                 </form>
             </div>
 
-            <form method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <form method="GET" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+                <div class="md:col-span-2 xl:col-span-4">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Pencarian</label>
+                    <input type="text" name="q" value="{{ request('q') }}"
+                        placeholder="Cari nomor tiket, subjek, isi ticket, nama client, atau client code"
+                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Filter Status</label>
                     <select name="status"
@@ -148,7 +154,52 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="flex items-end gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Filter Priority</label>
+                    <select name="priority"
+                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Semua Priority</option>
+                        @foreach(['low', 'normal', 'high', 'urgent'] as $priority)
+                            <option value="{{ $priority }}" {{ request('priority') === $priority ? 'selected' : '' }}>{{ ucfirst($priority) }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Filter Client</label>
+                    <select name="client_id"
+                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Semua Client</option>
+                        @foreach($clients as $client)
+                            <option value="{{ $client->id }}" {{ (string) request('client_id') === (string) $client->id ? 'selected' : '' }}>
+                                {{ $client->name }} ({{ $client->client_code }})
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Filter Assignee</label>
+                    <select name="assigned_to"
+                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Semua Assignee</option>
+                        <option value="unassigned" {{ request('assigned_to') === 'unassigned' ? 'selected' : '' }}>Belum di-assign</option>
+                        @foreach($staffUsers as $user)
+                            <option value="{{ $user->id }}" {{ (string) request('assigned_to') === (string) $user->id ? 'selected' : '' }}>
+                                {{ $user->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Dari Tanggal</label>
+                    <input type="date" name="date_from" value="{{ request('date_from') }}"
+                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Sampai Tanggal</label>
+                    <input type="date" name="date_to" value="{{ request('date_to') }}"
+                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex items-end gap-3 md:col-span-2 xl:col-span-4">
                     <button type="submit"
                         class="px-5 py-2.5 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors">Terapkan</button>
                     <a href="{{ route('tickets.index') }}"

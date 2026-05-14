@@ -113,7 +113,20 @@
                     <h3 class="text-lg font-bold text-slate-800 dark:text-white">Balas Tiket</h3>
                     <form method="POST" action="{{ route('tickets.reply', $ticket) }}" enctype="multipart/form-data" class="mt-5 space-y-4">
                         @csrf
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Template Balasan</label>
+                            <select id="cannedResponseSelect"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Pilih template balasan</option>
+                                @foreach(config('tickets.canned_responses', []) as $key => $template)
+                                    <option value="{{ $key }}" data-message="{{ $template['message'] }}">
+                                        {{ $template['label'] }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
                         <textarea name="message" rows="5"
+                            id="ticketReplyMessage"
                             class="w-full rounded-2xl border border-slate-200 dark:border-slate-600 px-4 py-3 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Tulis balasan untuk client..." required></textarea>
                         <label class="inline-flex items-center gap-3 rounded-2xl border border-amber-200 dark:border-amber-900/30 bg-amber-50/80 dark:bg-amber-900/10 px-4 py-3 cursor-pointer">
@@ -206,4 +219,29 @@
             </div>
         </div>
     </div>
+
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const cannedResponseSelect = document.getElementById('cannedResponseSelect');
+                const replyMessage = document.getElementById('ticketReplyMessage');
+
+                if (!cannedResponseSelect || !replyMessage) {
+                    return;
+                }
+
+                cannedResponseSelect.addEventListener('change', function () {
+                    const selectedOption = cannedResponseSelect.options[cannedResponseSelect.selectedIndex];
+                    const templateMessage = selectedOption?.getAttribute('data-message');
+
+                    if (!templateMessage) {
+                        return;
+                    }
+
+                    replyMessage.value = templateMessage;
+                    replyMessage.focus();
+                });
+            });
+        </script>
+    @endpush
 </x-app-layout>

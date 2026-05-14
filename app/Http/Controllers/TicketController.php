@@ -8,6 +8,7 @@ use App\Models\Subscription;
 use App\Models\Ticket;
 use App\Models\TicketReply;
 use App\Models\TicketReplyAttachment;
+use App\Services\TicketNotificationService;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -18,6 +19,11 @@ use Illuminate\Validation\Rule;
 
 class TicketController extends Controller
 {
+    public function __construct(
+        private readonly TicketNotificationService $ticketNotificationService
+    ) {
+    }
+
     public function index(Request $request)
     {
         $query = Ticket::query()
@@ -30,12 +36,52 @@ class TicketController extends Controller
             ])
             ->latest();
 
+        if ($request->filled('q')) {
+            $keyword = trim((string) $request->string('q'));
+
+            $query->where(function ($builder) use ($keyword) {
+                $builder
+                    ->where('ticket_number', 'like', '%' . $keyword . '%')
+                    ->orWhere('subject', 'like', '%' . $keyword . '%')
+                    ->orWhere('message', 'like', '%' . $keyword . '%')
+                    ->orWhereHas('client', fn ($clientQuery) => $clientQuery
+                        ->where('name', 'like', '%' . $keyword . '%')
+                        ->orWhere('client_code', 'like', '%' . $keyword . '%'));
+            });
+        }
+
         if ($request->filled('status')) {
             $query->where('status', $request->string('status'));
         }
 
         if ($request->filled('category')) {
             $query->where('category', $request->string('category'));
+        }
+
+        if ($request->filled('priority')) {
+            $query->where('priority', $request->string('priority'));
+        }
+
+        if ($request->filled('client_id')) {
+            $query->where('client_id', $request->integer('client_id'));
+        }
+
+        if ($request->filled('assigned_to')) {
+            $assignedTo = $request->string('assigned_to')->toString();
+
+            if ($assignedTo === 'unassigned') {
+                $query->whereNull('assigned_to');
+            } else {
+                $query->where('assigned_to', (int) $assignedTo);
+            }
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->string('date_from'));
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->string('date_to'));
         }
 
         $tickets = $query->get();
@@ -119,6 +165,8 @@ class TicketController extends Controller
             return $ticket;
         });
 
+        $this->ticketNotificationService->sendClientTicketCreated($ticket);
+
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
@@ -154,6 +202,8 @@ class TicketController extends Controller
 
     public function update(Request $request, Ticket $ticket): RedirectResponse|JsonResponse
     {
+        $previousStatus = $ticket->status;
+
         $validated = $request->validate([
             'status' => ['required', Rule::in(['open', 'in_progress', 'waiting_client', 'resolved', 'closed'])],
             'priority' => ['required', Rule::in(['low', 'normal', 'high', 'urgent'])],
@@ -186,6 +236,10 @@ class TicketController extends Controller
                 'status' => $ticket->status,
             ],
         ]);
+
+        if ($previousStatus !== $ticket->status) {
+            $this->ticketNotificationService->sendClientStatusChanged($ticket);
+        }
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
@@ -240,6 +294,8 @@ class TicketController extends Controller
                     'reply_id' => $reply->id,
                 ],
             ]);
+
+            $this->ticketNotificationService->sendClientReplyPosted($ticket);
         }
 
         if ($request->wantsJson() || $request->ajax()) {

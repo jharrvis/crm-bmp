@@ -9,6 +9,7 @@ use App\Models\Subscription;
 use App\Models\Ticket;
 use App\Models\TicketReply;
 use App\Models\TicketReplyAttachment;
+use App\Services\TicketNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,11 @@ use Illuminate\Validation\Rule;
 
 class ClientPortalTicketController extends Controller
 {
+    public function __construct(
+        private readonly TicketNotificationService $ticketNotificationService
+    ) {
+    }
+
     public function index(Request $request): JsonResponse
     {
         /** @var ClientPortalAccount $account */
@@ -109,6 +115,8 @@ class ClientPortalTicketController extends Controller
 
         $ticket->load(['subscription.package.service', 'replies.attachments', 'replies.portalAccount']);
 
+        $this->ticketNotificationService->sendStaffTicketCreated($ticket);
+
         return response()->json([
             'success' => true,
             'message' => 'Tiket berhasil dibuat.',
@@ -180,6 +188,8 @@ class ClientPortalTicketController extends Controller
 
         $reply->load(['attachments', 'portalAccount', 'user']);
 
+        $this->ticketNotificationService->sendStaffClientReply($ticket);
+
         return response()->json([
             'success' => true,
             'message' => 'Balasan tiket berhasil dikirim.',
@@ -215,6 +225,8 @@ class ClientPortalTicketController extends Controller
                 'client_last_read_at' => now(),
             ])->save();
         });
+
+        $this->ticketNotificationService->sendStaffTicketReopened($ticket);
 
         return response()->json([
             'success' => true,
