@@ -6,6 +6,7 @@ use App\Models\ClientPortalNotification;
 use App\Models\Client;
 use App\Models\Subscription;
 use App\Models\Ticket;
+use App\Models\TicketCannedResponse;
 use App\Models\TicketReply;
 use App\Models\TicketReplyAttachment;
 use App\Services\TicketActivityService;
@@ -223,8 +224,13 @@ class TicketController extends Controller
             ->get();
 
         $ticketQueues = config('tickets.queues', []);
+        $cannedResponses = TicketCannedResponse::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('title')
+            ->get();
 
-        return view('tickets.show', compact('ticket', 'staffUsers', 'ticketQueues'));
+        return view('tickets.show', compact('ticket', 'staffUsers', 'ticketQueues', 'cannedResponses'));
     }
 
     public function update(Request $request, Ticket $ticket): RedirectResponse|JsonResponse

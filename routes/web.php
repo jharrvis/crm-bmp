@@ -63,6 +63,8 @@ Route::middleware('auth')->group(function () {
         Route::resource('tickets', \App\Http\Controllers\TicketController::class)->only(['index', 'store', 'show', 'update']);
         Route::post('tickets/bulk-update', [\App\Http\Controllers\TicketController::class, 'bulkUpdate'])->name('tickets.bulk-update');
         Route::post('tickets/{ticket}/reply', [\App\Http\Controllers\TicketController::class, 'reply'])->name('tickets.reply');
+        Route::resource('ticket-canned-responses', \App\Http\Controllers\TicketCannedResponseController::class)
+            ->only(['index', 'store', 'update', 'destroy']);
     });
 
     Route::middleware(['role:Owner|Admin'])->group(function () {

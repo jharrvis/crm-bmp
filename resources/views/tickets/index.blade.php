@@ -6,6 +6,11 @@
                     <h3 class="text-xl font-bold text-slate-800 dark:text-white">Daftar Tiket Support</h3>
                     <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Pantau tiket dari client portal dan tindak lanjuti thread support.</p>
                 </div>
+                <a href="{{ route('ticket-canned-responses.index') }}"
+                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                    <i data-lucide="messages-square" class="w-4 h-4"></i>
+                    Template Balasan
+                </a>
             </div>
 
             <div class="rounded-[1.75rem] border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/30 p-5 md:p-6 mb-8">

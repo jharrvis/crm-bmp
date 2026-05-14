@@ -122,9 +122,9 @@
                             <select id="cannedResponseSelect"
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
                                 <option value="">Pilih template balasan</option>
-                                @foreach(config('tickets.canned_responses', []) as $key => $template)
-                                    <option value="{{ $key }}" data-message="{{ $template['message'] }}">
-                                        {{ $template['label'] }}
+                                @foreach($cannedResponses as $response)
+                                    <option value="{{ $response->id }}" data-message="{{ $response->message }}">
+                                        {{ $response->title }}
                                     </option>
                                 @endforeach
                             </select>
