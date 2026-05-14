@@ -82,12 +82,15 @@
                                     @if($imageAttachments->isNotEmpty())
                                         <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
                                             @foreach($imageAttachments as $attachment)
-                                                <a href="{{ $attachment->public_url }}" target="_blank" class="group block rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+                                                <button type="button"
+                                                    class="group block w-full text-left rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 ticket-image-trigger"
+                                                    data-image-url="{{ $attachment->public_url }}"
+                                                    data-image-name="{{ $attachment->original_name }}">
                                                     <img src="{{ $attachment->public_url }}" alt="{{ $attachment->original_name }}" class="w-full h-36 object-cover group-hover:scale-[1.02] transition-transform">
                                                     <div class="px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 truncate">
                                                         {{ $attachment->original_name }}
                                                     </div>
-                                                </a>
+                                                </button>
                                             @endforeach
                                         </div>
                                     @endif
@@ -220,27 +223,100 @@
         </div>
     </div>
 
+    <div id="ticketImageLightbox"
+        class="fixed inset-0 z-[120] hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+        <div class="relative w-full max-w-5xl">
+            <button type="button"
+                id="ticketImageLightboxClose"
+                class="absolute -top-12 right-0 inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm font-bold text-white hover:bg-white/20 transition-colors">
+                <i data-lucide="x" class="w-4 h-4"></i>
+                Tutup
+            </button>
+            <div class="overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-900 shadow-2xl">
+                <img id="ticketImageLightboxPreview" src="" alt="" class="w-full max-h-[78vh] object-contain bg-slate-950">
+                <div class="flex items-center justify-between gap-4 px-5 py-4 bg-slate-900/90">
+                    <div id="ticketImageLightboxName" class="text-sm font-medium text-slate-200 truncate"></div>
+                    <a id="ticketImageLightboxLink" href="#" target="_blank"
+                        class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 transition-colors">
+                        <i data-lucide="external-link" class="w-4 h-4"></i>
+                        Buka File
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', function () {
                 const cannedResponseSelect = document.getElementById('cannedResponseSelect');
                 const replyMessage = document.getElementById('ticketReplyMessage');
+                const lightbox = document.getElementById('ticketImageLightbox');
+                const lightboxPreview = document.getElementById('ticketImageLightboxPreview');
+                const lightboxName = document.getElementById('ticketImageLightboxName');
+                const lightboxLink = document.getElementById('ticketImageLightboxLink');
+                const lightboxClose = document.getElementById('ticketImageLightboxClose');
 
-                if (!cannedResponseSelect || !replyMessage) {
+                if (cannedResponseSelect && replyMessage) {
+                    cannedResponseSelect.addEventListener('change', function () {
+                        const selectedOption = cannedResponseSelect.options[cannedResponseSelect.selectedIndex];
+                        const templateMessage = selectedOption?.getAttribute('data-message');
+
+                        if (!templateMessage) {
+                            return;
+                        }
+
+                        replyMessage.value = templateMessage;
+                        replyMessage.focus();
+                    });
+                }
+
+                if (!lightbox || !lightboxPreview || !lightboxName || !lightboxLink || !lightboxClose) {
                     return;
                 }
 
-                cannedResponseSelect.addEventListener('change', function () {
-                    const selectedOption = cannedResponseSelect.options[cannedResponseSelect.selectedIndex];
-                    const templateMessage = selectedOption?.getAttribute('data-message');
+                function closeLightbox() {
+                    lightbox.classList.add('hidden');
+                    lightbox.classList.remove('flex');
+                    lightboxPreview.setAttribute('src', '');
+                    lightboxPreview.setAttribute('alt', '');
+                }
 
-                    if (!templateMessage) {
-                        return;
-                    }
+                document.querySelectorAll('.ticket-image-trigger').forEach(function (trigger) {
+                    trigger.addEventListener('click', function () {
+                        const imageUrl = trigger.getAttribute('data-image-url');
+                        const imageName = trigger.getAttribute('data-image-name') || 'Lampiran gambar';
 
-                    replyMessage.value = templateMessage;
-                    replyMessage.focus();
+                        if (!imageUrl) {
+                            return;
+                        }
+
+                        lightboxPreview.setAttribute('src', imageUrl);
+                        lightboxPreview.setAttribute('alt', imageName);
+                        lightboxName.textContent = imageName;
+                        lightboxLink.setAttribute('href', imageUrl);
+                        lightbox.classList.remove('hidden');
+                        lightbox.classList.add('flex');
+                    });
                 });
+
+                lightboxClose.addEventListener('click', closeLightbox);
+
+                lightbox.addEventListener('click', function (event) {
+                    if (event.target === lightbox) {
+                        closeLightbox();
+                    }
+                });
+
+                document.addEventListener('keydown', function (event) {
+                    if (event.key === 'Escape' && !lightbox.classList.contains('hidden')) {
+                        closeLightbox();
+                    }
+                });
+
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
             });
         </script>
     @endpush
