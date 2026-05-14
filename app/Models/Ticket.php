@@ -17,6 +17,7 @@ class Ticket extends Model
         'ticket_number',
         'subject',
         'category',
+        'queue',
         'priority',
         'status',
         'message',

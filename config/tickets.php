@@ -1,6 +1,19 @@
 <?php
 
 return [
+    'queues' => [
+        'noc' => 'NOC',
+        'technical' => 'Technical Support',
+        'billing' => 'Billing',
+        'provisioning' => 'Provisioning',
+        'general' => 'General Support',
+    ],
+    'category_queue_map' => [
+        'connectivity' => 'noc',
+        'technical' => 'technical',
+        'billing' => 'billing',
+        'general' => 'general',
+    ],
     'canned_responses' => [
         'investigating' => [
             'label' => 'Sedang Investigasi',

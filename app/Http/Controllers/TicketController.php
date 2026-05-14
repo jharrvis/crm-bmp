@@ -28,6 +28,8 @@ class TicketController extends Controller
 
     public function index(Request $request)
     {
+        $ticketQueues = config('tickets.queues', []);
+
         $query = Ticket::query()
             ->with(['client.primaryContact', 'subscription.package.service', 'assignedUser'])
             ->withCount([
@@ -58,6 +60,10 @@ class TicketController extends Controller
 
         if ($request->filled('category')) {
             $query->where('category', $request->string('category'));
+        }
+
+        if ($request->filled('queue')) {
+            $query->where('queue', $request->string('queue'));
         }
 
         if ($request->filled('priority')) {
@@ -95,7 +101,7 @@ class TicketController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('tickets.index', compact('tickets', 'clients', 'staffUsers'));
+        return view('tickets.index', compact('tickets', 'clients', 'staffUsers', 'ticketQueues'));
     }
 
     public function store(Request $request): RedirectResponse|JsonResponse
@@ -105,6 +111,7 @@ class TicketController extends Controller
             'subscription_id' => 'nullable|exists:subscriptions,id',
             'subject' => 'required|string|max:255',
             'category' => ['required', Rule::in(['connectivity', 'billing', 'technical', 'general'])],
+            'queue' => ['nullable', Rule::in(array_keys(config('tickets.queues', [])))],
             'priority' => ['required', Rule::in(['low', 'normal', 'high', 'urgent'])],
             'assigned_to' => 'nullable|exists:users,id',
             'message' => 'required|string',
@@ -138,6 +145,7 @@ class TicketController extends Controller
                 'ticket_number' => Ticket::generateTicketNumber(),
                 'subject' => $validated['subject'],
                 'category' => $validated['category'],
+                'queue' => $validated['queue'] ?? $this->defaultQueueForCategory($validated['category']),
                 'priority' => $validated['priority'],
                 'status' => 'open',
                 'message' => $validated['message'],
@@ -171,6 +179,7 @@ class TicketController extends Controller
                 $request->user(),
                 [
                     'status' => $ticket->status,
+                    'queue' => $ticket->queue,
                     'priority' => $ticket->priority,
                     'assigned_to' => $ticket->assigned_to,
                 ]
@@ -213,17 +222,21 @@ class TicketController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('tickets.show', compact('ticket', 'staffUsers'));
+        $ticketQueues = config('tickets.queues', []);
+
+        return view('tickets.show', compact('ticket', 'staffUsers', 'ticketQueues'));
     }
 
     public function update(Request $request, Ticket $ticket): RedirectResponse|JsonResponse
     {
         $previousStatus = $ticket->status;
+        $previousQueue = $ticket->queue;
         $previousPriority = $ticket->priority;
         $previousAssignedTo = $ticket->assigned_to;
 
         $validated = $request->validate([
             'status' => ['required', Rule::in(['open', 'in_progress', 'waiting_client', 'resolved', 'closed'])],
+            'queue' => ['nullable', Rule::in(array_keys(config('tickets.queues', [])))],
             'priority' => ['required', Rule::in(['low', 'normal', 'high', 'urgent'])],
             'assigned_to' => 'nullable|exists:users,id',
         ]);
@@ -249,6 +262,10 @@ class TicketController extends Controller
             $activityMessages[] = "status: {$previousStatus} -> {$ticket->status}";
         }
 
+        if ($previousQueue !== $ticket->queue) {
+            $activityMessages[] = "queue: " . ($previousQueue ?: 'unassigned') . " -> " . ($ticket->queue ?: 'unassigned');
+        }
+
         if ($previousPriority !== $ticket->priority) {
             $activityMessages[] = "priority: {$previousPriority} -> {$ticket->priority}";
         }
@@ -268,11 +285,13 @@ class TicketController extends Controller
                 [
                     'from' => [
                         'status' => $previousStatus,
+                        'queue' => $previousQueue,
                         'priority' => $previousPriority,
                         'assigned_to' => $previousAssignedTo,
                     ],
                     'to' => [
                         'status' => $ticket->status,
+                        'queue' => $ticket->queue,
                         'priority' => $ticket->priority,
                         'assigned_to' => $ticket->assigned_to,
                     ],
@@ -392,5 +411,10 @@ class TicketController extends Controller
                 'size_bytes' => (int) $file->getSize(),
             ]);
         }
+    }
+
+    private function defaultQueueForCategory(string $category): ?string
+    {
+        return config('tickets.category_queue_map.' . $category);
     }
 }

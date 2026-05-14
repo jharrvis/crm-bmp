@@ -24,6 +24,7 @@
                         <h3 class="text-xl font-bold text-slate-800 dark:text-white">{{ $ticket->subject }}</h3>
                         <div class="flex flex-wrap gap-2 text-xs">
                             <span class="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold">{{ ucfirst($ticket->category) }}</span>
+                            <span class="px-2.5 py-1 rounded-full bg-cyan-100 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300 font-bold">{{ $ticketQueues[$ticket->queue] ?? strtoupper($ticket->queue ?? '-') }}</span>
                             <span class="px-2.5 py-1 rounded-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold">{{ strtoupper($ticket->priority) }}</span>
                         </div>
                     </div>
@@ -176,6 +177,16 @@
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
                                 @foreach(['low', 'normal', 'high', 'urgent'] as $priority)
                                     <option value="{{ $priority }}" {{ $ticket->priority === $priority ? 'selected' : '' }}>{{ ucfirst($priority) }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Queue Department</label>
+                            <select name="queue"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Tidak dipilih</option>
+                                @foreach($ticketQueues as $value => $label)
+                                    <option value="{{ $value }}" {{ $ticket->queue === $value ? 'selected' : '' }}>{{ $label }}</option>
                                 @endforeach
                             </select>
                         </div>

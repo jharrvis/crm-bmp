@@ -54,13 +54,23 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
                         <div>
                             <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Kategori <span class="text-red-500">*</span></label>
                             <select name="category" required
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
                                 @foreach(['connectivity' => 'Connectivity', 'billing' => 'Billing', 'technical' => 'Technical', 'general' => 'General'] as $value => $label)
                                     <option value="{{ $value }}" {{ old('category', 'technical') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Queue Department</label>
+                            <select name="queue"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Otomatis dari kategori</option>
+                                @foreach($ticketQueues as $value => $label)
+                                    <option value="{{ $value }}" {{ old('queue') === $value ? 'selected' : '' }}>{{ $label }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -155,6 +165,16 @@
                     </select>
                 </div>
                 <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Filter Queue</label>
+                    <select name="queue"
+                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Semua Queue</option>
+                        @foreach($ticketQueues as $value => $label)
+                            <option value="{{ $value }}" {{ request('queue') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Filter Priority</label>
                     <select name="priority"
                         class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
@@ -220,6 +240,7 @@
                                 <th class="p-4">Client</th>
                                 <th class="p-4">Subjek</th>
                                 <th class="p-4">Kategori</th>
+                                <th class="p-4">Queue</th>
                                 <th class="p-4">Status</th>
                                 <th class="p-4">Priority</th>
                                 <th class="p-4">Assigned</th>
@@ -251,6 +272,11 @@
                                 <td class="p-4">
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
                                         {{ ucfirst($ticket->category) }}
+                                    </span>
+                                </td>
+                                <td class="p-4">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300">
+                                        {{ $ticketQueues[$ticket->queue] ?? strtoupper($ticket->queue ?? '-') }}
                                     </span>
                                 </td>
                                 <td class="p-4">
@@ -302,6 +328,16 @@
                                                 @foreach(['open', 'in_progress', 'waiting_client', 'resolved', 'closed'] as $status)
                                                     <option value="{{ $status }}" {{ $ticket->status === $status ? 'selected' : '' }}>
                                                         Status: {{ ucfirst(str_replace('_', ' ', $status)) }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+
+                                            <select name="queue"
+                                                class="w-full rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-800 text-xs font-medium text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                                <option value="">Queue: Tidak dipilih</option>
+                                                @foreach($ticketQueues as $value => $label)
+                                                    <option value="{{ $value }}" {{ $ticket->queue === $value ? 'selected' : '' }}>
+                                                        Queue: {{ $label }}
                                                     </option>
                                                 @endforeach
                                             </select>
