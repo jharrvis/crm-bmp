@@ -8,6 +8,7 @@ use App\Models\Subscription;
 use App\Models\Ticket;
 use App\Models\TicketReply;
 use App\Models\TicketReplyAttachment;
+use App\Services\TicketActivityService;
 use App\Services\TicketNotificationService;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -20,7 +21,8 @@ use Illuminate\Validation\Rule;
 class TicketController extends Controller
 {
     public function __construct(
-        private readonly TicketNotificationService $ticketNotificationService
+        private readonly TicketNotificationService $ticketNotificationService,
+        private readonly TicketActivityService $ticketActivityService
     ) {
     }
 
@@ -162,6 +164,18 @@ class TicketController extends Controller
                 ],
             ]);
 
+            $this->ticketActivityService->recordStaff(
+                $ticket,
+                'created',
+                'Ticket dibuat oleh staff.',
+                $request->user(),
+                [
+                    'status' => $ticket->status,
+                    'priority' => $ticket->priority,
+                    'assigned_to' => $ticket->assigned_to,
+                ]
+            );
+
             return $ticket;
         });
 
@@ -188,6 +202,8 @@ class TicketController extends Controller
             'client.primaryContact',
             'subscription.package.service',
             'assignedUser',
+            'activities.user',
+            'activities.portalAccount.client',
             'replies.attachments',
             'replies.portalAccount.client',
             'replies.user',
@@ -203,6 +219,8 @@ class TicketController extends Controller
     public function update(Request $request, Ticket $ticket): RedirectResponse|JsonResponse
     {
         $previousStatus = $ticket->status;
+        $previousPriority = $ticket->priority;
+        $previousAssignedTo = $ticket->assigned_to;
 
         $validated = $request->validate([
             'status' => ['required', Rule::in(['open', 'in_progress', 'waiting_client', 'resolved', 'closed'])],
@@ -224,6 +242,43 @@ class TicketController extends Controller
             : null;
 
         $ticket->update($updates);
+
+        $activityMessages = [];
+
+        if ($previousStatus !== $ticket->status) {
+            $activityMessages[] = "status: {$previousStatus} -> {$ticket->status}";
+        }
+
+        if ($previousPriority !== $ticket->priority) {
+            $activityMessages[] = "priority: {$previousPriority} -> {$ticket->priority}";
+        }
+
+        if ((int) $previousAssignedTo !== (int) $ticket->assigned_to) {
+            $previousAssigneeName = $ticket->getRelationValue('assignedUser')?->name;
+            $newAssignee = $ticket->assignedUser()->first();
+            $activityMessages[] = 'assignee: ' . ($previousAssignedTo ? ($previousAssigneeName ?? 'staff sebelumnya') : 'unassigned') . ' -> ' . ($newAssignee?->name ?? 'unassigned');
+        }
+
+        if ($activityMessages !== []) {
+            $this->ticketActivityService->recordStaff(
+                $ticket,
+                'updated',
+                'Ticket diperbarui (' . implode(', ', $activityMessages) . ').',
+                $request->user(),
+                [
+                    'from' => [
+                        'status' => $previousStatus,
+                        'priority' => $previousPriority,
+                        'assigned_to' => $previousAssignedTo,
+                    ],
+                    'to' => [
+                        'status' => $ticket->status,
+                        'priority' => $ticket->priority,
+                        'assigned_to' => $ticket->assigned_to,
+                    ],
+                ]
+            );
+        }
 
         ClientPortalNotification::create([
             'client_id' => $ticket->client_id,
@@ -297,6 +352,17 @@ class TicketController extends Controller
 
             $this->ticketNotificationService->sendClientReplyPosted($ticket);
         }
+
+        $this->ticketActivityService->recordStaff(
+            $ticket,
+            $reply->is_internal ? 'internal_note' : 'reply',
+            $reply->is_internal ? 'Staff menambahkan catatan internal.' : 'Staff mengirim balasan ke client.',
+            $request->user(),
+            [
+                'reply_id' => $reply->id,
+                'has_attachments' => $reply->attachments()->exists(),
+            ]
+        );
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([

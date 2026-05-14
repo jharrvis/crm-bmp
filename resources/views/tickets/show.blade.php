@@ -219,6 +219,30 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-white">Activity Log</h3>
+                    <div class="mt-5 space-y-4">
+                        @forelse($ticket->activities as $activity)
+                            <div class="relative pl-5">
+                                <div class="absolute left-0 top-1.5 w-2.5 h-2.5 rounded-full {{ $activity->actor_type === 'staff' ? 'bg-blue-500' : 'bg-emerald-500' }}"></div>
+                                <div class="text-sm font-semibold text-slate-800 dark:text-white">
+                                    {{ $activity->description }}
+                                </div>
+                                <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                    {{ $activity->actor_type === 'staff'
+                                        ? ($activity->user?->name ?? 'Staff')
+                                        : ($activity->portalAccount?->client?->name ?? 'Client') }}
+                                    • {{ $activity->created_at?->format('d M Y H:i') }}
+                                </div>
+                            </div>
+                        @empty
+                            <div class="text-sm text-slate-500 dark:text-slate-400">
+                                Belum ada activity log.
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
             </div>
         </div>
     </div>

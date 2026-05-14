@@ -63,6 +63,11 @@ class Ticket extends Model
         return $this->hasMany(TicketReply::class);
     }
 
+    public function activities()
+    {
+        return $this->hasMany(TicketActivity::class)->latest();
+    }
+
     public static function generateTicketNumber(): string
     {
         $prefix = 'TCK-' . now()->format('ymd') . '-';

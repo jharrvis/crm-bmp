@@ -9,6 +9,7 @@ use App\Models\Subscription;
 use App\Models\Ticket;
 use App\Models\TicketReply;
 use App\Models\TicketReplyAttachment;
+use App\Services\TicketActivityService;
 use App\Services\TicketNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,7 +20,8 @@ use Illuminate\Validation\Rule;
 class ClientPortalTicketController extends Controller
 {
     public function __construct(
-        private readonly TicketNotificationService $ticketNotificationService
+        private readonly TicketNotificationService $ticketNotificationService,
+        private readonly TicketActivityService $ticketActivityService
     ) {
     }
 
@@ -115,6 +117,17 @@ class ClientPortalTicketController extends Controller
 
         $ticket->load(['subscription.package.service', 'replies.attachments', 'replies.portalAccount']);
 
+        $this->ticketActivityService->recordClient(
+            $ticket,
+            'created',
+            'Client membuat ticket baru dari portal.',
+            $account,
+            [
+                'status' => $ticket->status,
+                'priority' => $ticket->priority,
+            ]
+        );
+
         $this->ticketNotificationService->sendStaffTicketCreated($ticket);
 
         return response()->json([
@@ -188,6 +201,17 @@ class ClientPortalTicketController extends Controller
 
         $reply->load(['attachments', 'portalAccount', 'user']);
 
+        $this->ticketActivityService->recordClient(
+            $ticket,
+            'reply',
+            'Client mengirim balasan baru dari portal.',
+            $account,
+            [
+                'reply_id' => $reply->id,
+                'has_attachments' => $reply->attachments()->exists(),
+            ]
+        );
+
         $this->ticketNotificationService->sendStaffClientReply($ticket);
 
         return response()->json([
@@ -228,6 +252,16 @@ class ClientPortalTicketController extends Controller
                 'client_last_read_at' => now(),
             ])->save();
         });
+
+        $this->ticketActivityService->recordClient(
+            $ticket,
+            'reopened',
+            'Client membuka kembali ticket dari portal.',
+            $account,
+            [
+                'reason' => $validated['reason'],
+            ]
+        );
 
         $this->ticketNotificationService->sendStaffTicketReopened($ticket);
 
