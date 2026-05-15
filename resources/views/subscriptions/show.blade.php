@@ -1223,11 +1223,11 @@
                                                 <h4 class="text-sm font-bold text-slate-700 dark:text-slate-200">PPN 11%</h4>
                                                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Jika aktif, PPN dihitung 11% dari harga jual.</p>
                                             </div>
-                                            <label class="inline-flex items-center gap-3 cursor-pointer">
-                                                <input type="checkbox" id="uses_ppn" name="uses_ppn" value="1" class="sr-only peer">
+                                            <label class="tax-toggle inline-flex items-center gap-3 cursor-pointer">
                                                 <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Gunakan PPN</span>
-                                                <span class="relative h-7 w-12 rounded-full bg-slate-300 transition-colors peer-checked:bg-emerald-500">
-                                                    <span class="absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-transform peer-checked:translate-x-5"></span>
+                                                <input type="checkbox" id="uses_ppn" name="uses_ppn" value="1" class="sr-only">
+                                                <span class="tax-toggle-track tax-toggle-track--emerald">
+                                                    <span class="tax-toggle-thumb"></span>
                                                 </span>
                                             </label>
                                         </div>
@@ -1241,11 +1241,11 @@
                                                 <h4 class="text-sm font-bold text-slate-700 dark:text-slate-200">PPh23</h4>
                                                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Jika aktif, PPh23 dihitung 2% dari harga jual dan menjadi potongan tagihan.</p>
                                             </div>
-                                            <label class="inline-flex items-center gap-3 cursor-pointer">
-                                                <input type="checkbox" id="uses_pph23" name="uses_pph23" value="1" class="sr-only peer">
+                                            <label class="tax-toggle inline-flex items-center gap-3 cursor-pointer">
                                                 <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Gunakan PPh23</span>
-                                                <span class="relative h-7 w-12 rounded-full bg-slate-300 transition-colors peer-checked:bg-amber-500">
-                                                    <span class="absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-transform peer-checked:translate-x-5"></span>
+                                                <input type="checkbox" id="uses_pph23" name="uses_pph23" value="1" class="sr-only">
+                                                <span class="tax-toggle-track tax-toggle-track--amber">
+                                                    <span class="tax-toggle-thumb"></span>
                                                 </span>
                                             </label>
                                         </div>
@@ -1595,6 +1595,53 @@
                 background: rgba(30, 64, 175, 0.22);
                 color: #93c5fd;
                 box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.16);
+            }
+
+            .tax-toggle {
+                user-select: none;
+            }
+
+            .tax-toggle-track {
+                position: relative;
+                display: inline-flex;
+                align-items: center;
+                width: 3.25rem;
+                height: 1.875rem;
+                padding: 0.25rem;
+                border-radius: 9999px;
+                background: #cbd5e1;
+                transition: background-color 0.2s ease;
+                flex-shrink: 0;
+            }
+
+            .tax-toggle-thumb {
+                width: 1.375rem;
+                height: 1.375rem;
+                border-radius: 9999px;
+                background: #ffffff;
+                box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
+                transition: transform 0.2s ease;
+            }
+
+            .tax-toggle input:focus-visible + .tax-toggle-track {
+                outline: 2px solid rgba(59, 130, 246, 0.35);
+                outline-offset: 2px;
+            }
+
+            .tax-toggle input:checked + .tax-toggle-track--emerald {
+                background: #10b981;
+            }
+
+            .tax-toggle input:checked + .tax-toggle-track--amber {
+                background: #f59e0b;
+            }
+
+            .tax-toggle input:checked + .tax-toggle-track .tax-toggle-thumb {
+                transform: translateX(1.375rem);
+            }
+
+            .dark .tax-toggle-track {
+                background: #475569;
             }
         </style>
 
