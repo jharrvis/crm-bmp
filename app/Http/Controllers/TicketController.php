@@ -32,16 +32,55 @@ class TicketController extends Controller
     public function index(Request $request)
     {
         $ticketQueues = config('tickets.queues', []);
+        $view = $request->string('view', 'all')->toString();
+
+        if (! in_array($view, ['all', 'need_response', 'urgent', 'unassigned', 'waiting_client'], true)) {
+            $view = 'all';
+        }
 
         $query = Ticket::query()
             ->with(['client.primaryContact', 'subscription.package.service', 'assignedUser'])
             ->withCount([
+                'replies',
                 'replies as unread_staff_replies_count' => fn ($replyQuery) => $replyQuery
                     ->where('author_type', 'client')
                     ->where('is_internal', false)
                     ->whereRaw('ticket_replies.created_at > COALESCE(tickets.staff_last_read_at, tickets.created_at)'),
             ])
             ->latest();
+
+        if ($view === 'need_response') {
+            $query->where(function ($builder) {
+                $builder
+                    ->whereIn('status', ['open', 'in_progress'])
+                    ->orWhere(function ($replyBuilder) {
+                        $replyBuilder
+                            ->whereHas('replies', fn ($replyQuery) => $replyQuery
+                                ->where('author_type', 'client')
+                                ->where('is_internal', false))
+                            ->whereRaw('EXISTS (
+                                SELECT 1
+                                FROM ticket_replies
+                                WHERE ticket_replies.ticket_id = tickets.id
+                                    AND ticket_replies.author_type = ?
+                                    AND ticket_replies.is_internal = 0
+                                    AND ticket_replies.created_at > COALESCE(tickets.staff_last_read_at, tickets.created_at)
+                            )', ['client']);
+                    });
+            });
+        }
+
+        if ($view === 'urgent') {
+            $query->where('priority', 'urgent');
+        }
+
+        if ($view === 'unassigned') {
+            $query->whereNull('assigned_to');
+        }
+
+        if ($view === 'waiting_client') {
+            $query->where('status', 'waiting_client');
+        }
 
         if ($request->filled('q')) {
             $keyword = trim((string) $request->string('q'));
@@ -103,8 +142,16 @@ class TicketController extends Controller
         $staffUsers = User::role(['Owner', 'Admin', 'Employee'])
             ->orderBy('name')
             ->get();
+        $summaryCounts = [
+            'total' => Ticket::query()->count(),
+            'open' => Ticket::query()->where('status', 'open')->count(),
+            'in_progress' => Ticket::query()->where('status', 'in_progress')->count(),
+            'waiting_client' => Ticket::query()->where('status', 'waiting_client')->count(),
+            'urgent' => Ticket::query()->where('priority', 'urgent')->count(),
+            'unassigned' => Ticket::query()->whereNull('assigned_to')->count(),
+        ];
 
-        return view('tickets.index', compact('tickets', 'clients', 'staffUsers', 'ticketQueues'));
+        return view('tickets.index', compact('tickets', 'clients', 'staffUsers', 'ticketQueues', 'summaryCounts', 'view'));
     }
 
     public function store(Request $request): RedirectResponse|JsonResponse

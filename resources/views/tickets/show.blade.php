@@ -1,27 +1,64 @@
 <x-app-layout>
     <div class="space-y-6">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-                <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Detail Tiket</h2>
-                <div class="flex items-center gap-2 mt-1">
-                    <span class="font-mono text-sm font-bold text-slate-500">{{ $ticket->ticket_number }}</span>
-                    <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                        {{ ucfirst(str_replace('_', ' ', $ticket->status)) }}
-                    </span>
+        <div class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6 md:p-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Ticket Detail</p>
+                    <h2 class="mt-2 text-2xl font-bold text-slate-800 dark:text-white">{{ $ticket->subject }}</h2>
+                    <div class="flex items-center gap-2 mt-3 flex-wrap">
+                        <span class="font-mono text-sm font-bold text-slate-500">{{ $ticket->ticket_number }}</span>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                            {{ ucfirst(str_replace('_', ' ', $ticket->status)) }}
+                        </span>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-cyan-100 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300">
+                            {{ $ticketQueues[$ticket->queue] ?? strtoupper($ticket->queue ?? '-') }}
+                        </span>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400">
+                            {{ strtoupper($ticket->priority) }}
+                        </span>
+                    </div>
+                </div>
+                <a href="{{ route('tickets.index') }}"
+                    class="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-600 transition-all flex items-center gap-2">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    Kembali
+                </a>
+            </div>
+
+            <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+                <div class="rounded-2xl bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-700 p-4">
+                    <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400">Pelanggan</p>
+                    <p class="mt-2 font-bold text-slate-800 dark:text-white">{{ $ticket->client->name }}</p>
+                    <p class="text-sm text-slate-500">{{ $ticket->client->client_code }}</p>
+                </div>
+                <div class="rounded-2xl bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-700 p-4">
+                    <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400">Kontak</p>
+                    <p class="mt-2 font-bold text-slate-800 dark:text-white">{{ $ticket->client->primaryContact?->name ?? '-' }}</p>
+                    <p class="text-sm text-slate-500">{{ $ticket->client->primaryContact?->phone ?? '-' }}</p>
+                </div>
+                <div class="rounded-2xl bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-700 p-4">
+                    <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400">Langganan</p>
+                    <p class="mt-2 font-bold text-slate-800 dark:text-white">{{ $ticket->subscription?->subscription_code ?? '-' }}</p>
+                    <p class="text-sm text-slate-500">{{ $ticket->subscription?->package?->name ?? '-' }}</p>
+                </div>
+                <div class="rounded-2xl bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-700 p-4">
+                    <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400">Assignee</p>
+                    <p class="mt-2 font-bold text-slate-800 dark:text-white">{{ $ticket->assignedUser?->name ?? 'Belum di-assign' }}</p>
+                    <p class="text-sm text-slate-500">{{ ucfirst(str_replace('_', ' ', $ticket->status)) }}</p>
+                </div>
+                <div class="rounded-2xl bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-700 p-4">
+                    <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400">Usia Ticket</p>
+                    <p class="mt-2 font-bold text-slate-800 dark:text-white">{{ $ticket->created_at?->diffForHumans() ?? '-' }}</p>
+                    <p class="text-sm text-slate-500">Updated {{ $ticket->updated_at?->diffForHumans() ?? '-' }}</p>
                 </div>
             </div>
-            <a href="{{ route('tickets.index') }}"
-                class="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-600 transition-all flex items-center gap-2">
-                <i data-lucide="arrow-left" class="w-4 h-4"></i>
-                Kembali
-            </a>
         </div>
 
         <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
             <div class="xl:col-span-8 space-y-6">
                 <div class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6 md:p-8">
                     <div class="flex flex-col gap-2">
-                        <h3 class="text-xl font-bold text-slate-800 dark:text-white">{{ $ticket->subject }}</h3>
+                        <h3 class="text-xl font-bold text-slate-800 dark:text-white">Ringkasan Ticket</h3>
                         <div class="flex flex-wrap gap-2 text-xs">
                             <span class="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold">{{ ucfirst($ticket->category) }}</span>
                             <span class="px-2.5 py-1 rounded-full bg-cyan-100 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300 font-bold">{{ $ticketQueues[$ticket->queue] ?? strtoupper($ticket->queue ?? '-') }}</span>
@@ -29,22 +66,8 @@
                         </div>
                     </div>
 
-                    <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="rounded-2xl bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-700 p-4">
-                            <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400">Pelanggan</p>
-                            <p class="mt-2 font-bold text-slate-800 dark:text-white">{{ $ticket->client->name }}</p>
-                            <p class="text-sm text-slate-500">{{ $ticket->client->client_code }}</p>
-                        </div>
-                        <div class="rounded-2xl bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-700 p-4">
-                            <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400">Kontak Utama</p>
-                            <p class="mt-2 font-bold text-slate-800 dark:text-white">{{ $ticket->client->primaryContact?->name ?? '-' }}</p>
-                            <p class="text-sm text-slate-500">{{ $ticket->client->primaryContact?->phone ?? '-' }}</p>
-                        </div>
-                        <div class="rounded-2xl bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-700 p-4">
-                            <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400">Langganan</p>
-                            <p class="mt-2 font-bold text-slate-800 dark:text-white">{{ $ticket->subscription?->subscription_code ?? '-' }}</p>
-                            <p class="text-sm text-slate-500">{{ $ticket->subscription?->package?->name ?? '-' }}</p>
-                        </div>
+                    <div class="mt-6 rounded-[1.5rem] border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/30 p-5">
+                        <p class="text-sm leading-7 text-slate-700 dark:text-slate-200 whitespace-pre-line">{{ $ticket->message }}</p>
                     </div>
                 </div>
 
@@ -156,49 +179,54 @@
                 </div>
             </div>
 
-            <div class="xl:col-span-4 space-y-6">
+            <div class="xl:col-span-4 space-y-6 xl:sticky xl:top-24 self-start">
                 <div class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6">
-                    <h3 class="text-lg font-bold text-slate-800 dark:text-white">Tindakan</h3>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800 dark:text-white">Tindakan</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Update status, queue, priority, dan assignee ticket.</p>
+                    </div>
                     <form method="POST" action="{{ route('tickets.update', $ticket) }}" class="mt-5 space-y-4">
                         @csrf
                         @method('PUT')
-                        <div>
-                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Status</label>
-                            <select name="status"
-                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
-                                @foreach(['open', 'in_progress', 'waiting_client', 'resolved', 'closed'] as $status)
-                                    <option value="{{ $status }}" {{ $ticket->status === $status ? 'selected' : '' }}>{{ ucfirst(str_replace('_', ' ', $status)) }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Priority</label>
-                            <select name="priority"
-                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
-                                @foreach(['low', 'normal', 'high', 'urgent'] as $priority)
-                                    <option value="{{ $priority }}" {{ $ticket->priority === $priority ? 'selected' : '' }}>{{ ucfirst($priority) }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Queue Department</label>
-                            <select name="queue"
-                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="">Tidak dipilih</option>
-                                @foreach($ticketQueues as $value => $label)
-                                    <option value="{{ $value }}" {{ $ticket->queue === $value ? 'selected' : '' }}>{{ $label }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Assign Staff</label>
-                            <select name="assigned_to"
-                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="">Belum di-assign</option>
-                                @foreach($staffUsers as $user)
-                                    <option value="{{ $user->id }}" {{ $ticket->assigned_to === $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
-                                @endforeach
-                            </select>
+                        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-4">
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Status</label>
+                                <select name="status"
+                                    class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                    @foreach(['open', 'in_progress', 'waiting_client', 'resolved', 'closed'] as $status)
+                                        <option value="{{ $status }}" {{ $ticket->status === $status ? 'selected' : '' }}>{{ ucfirst(str_replace('_', ' ', $status)) }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Priority</label>
+                                <select name="priority"
+                                    class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                    @foreach(['low', 'normal', 'high', 'urgent'] as $priority)
+                                        <option value="{{ $priority }}" {{ $ticket->priority === $priority ? 'selected' : '' }}>{{ ucfirst($priority) }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Queue Department</label>
+                                <select name="queue"
+                                    class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Tidak dipilih</option>
+                                    @foreach($ticketQueues as $value => $label)
+                                        <option value="{{ $value }}" {{ $ticket->queue === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Assign Staff</label>
+                                <select name="assigned_to"
+                                    class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Belum di-assign</option>
+                                    @foreach($staffUsers as $user)
+                                        <option value="{{ $user->id }}" {{ $ticket->assigned_to === $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
                         <div class="flex justify-end">
                             <button type="submit"
@@ -210,49 +238,65 @@
                 </div>
 
                 <div class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6">
-                    <h3 class="text-lg font-bold text-slate-800 dark:text-white">Timeline</h3>
-                    <div class="mt-5 space-y-3 text-sm">
-                        <div class="flex items-center justify-between gap-4">
-                            <span class="text-slate-500 dark:text-slate-400">Dibuat</span>
-                            <span class="font-medium text-slate-800 dark:text-white">{{ $ticket->created_at?->format('d M Y H:i') ?? '-' }}</span>
+                    <details open class="group">
+                        <summary class="flex cursor-pointer list-none items-center justify-between gap-3">
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-800 dark:text-white">Timeline</h3>
+                                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Milestone utama perjalanan ticket.</p>
+                            </div>
+                            <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 transition-transform group-open:rotate-180"></i>
+                        </summary>
+                        <div class="mt-5 space-y-3 text-sm">
+                            <div class="flex items-center justify-between gap-4">
+                                <span class="text-slate-500 dark:text-slate-400">Dibuat</span>
+                                <span class="font-medium text-slate-800 dark:text-white">{{ $ticket->created_at?->format('d M Y H:i') ?? '-' }}</span>
+                            </div>
+                            <div class="flex items-center justify-between gap-4">
+                                <span class="text-slate-500 dark:text-slate-400">First response</span>
+                                <span class="font-medium text-slate-800 dark:text-white">{{ $ticket->first_response_at?->format('d M Y H:i') ?? '-' }}</span>
+                            </div>
+                            <div class="flex items-center justify-between gap-4">
+                                <span class="text-slate-500 dark:text-slate-400">Resolved</span>
+                                <span class="font-medium text-slate-800 dark:text-white">{{ $ticket->resolved_at?->format('d M Y H:i') ?? '-' }}</span>
+                            </div>
+                            <div class="flex items-center justify-between gap-4">
+                                <span class="text-slate-500 dark:text-slate-400">Closed</span>
+                                <span class="font-medium text-slate-800 dark:text-white">{{ $ticket->closed_at?->format('d M Y H:i') ?? '-' }}</span>
+                            </div>
                         </div>
-                        <div class="flex items-center justify-between gap-4">
-                            <span class="text-slate-500 dark:text-slate-400">First response</span>
-                            <span class="font-medium text-slate-800 dark:text-white">{{ $ticket->first_response_at?->format('d M Y H:i') ?? '-' }}</span>
-                        </div>
-                        <div class="flex items-center justify-between gap-4">
-                            <span class="text-slate-500 dark:text-slate-400">Resolved</span>
-                            <span class="font-medium text-slate-800 dark:text-white">{{ $ticket->resolved_at?->format('d M Y H:i') ?? '-' }}</span>
-                        </div>
-                        <div class="flex items-center justify-between gap-4">
-                            <span class="text-slate-500 dark:text-slate-400">Closed</span>
-                            <span class="font-medium text-slate-800 dark:text-white">{{ $ticket->closed_at?->format('d M Y H:i') ?? '-' }}</span>
-                        </div>
-                    </div>
+                    </details>
                 </div>
 
                 <div class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6">
-                    <h3 class="text-lg font-bold text-slate-800 dark:text-white">Activity Log</h3>
-                    <div class="mt-5 space-y-4">
-                        @forelse($ticket->activities as $activity)
-                            <div class="relative pl-5">
-                                <div class="absolute left-0 top-1.5 w-2.5 h-2.5 rounded-full {{ $activity->actor_type === 'staff' ? 'bg-blue-500' : 'bg-emerald-500' }}"></div>
-                                <div class="text-sm font-semibold text-slate-800 dark:text-white">
-                                    {{ $activity->description }}
-                                </div>
-                                <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                    {{ $activity->actor_type === 'staff'
-                                        ? ($activity->user?->name ?? 'Staff')
-                                        : ($activity->portalAccount?->client?->name ?? 'Client') }}
-                                    • {{ $activity->created_at?->format('d M Y H:i') }}
-                                </div>
+                    <details class="group">
+                        <summary class="flex cursor-pointer list-none items-center justify-between gap-3">
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-800 dark:text-white">Activity Log</h3>
+                                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Riwayat tindakan administratif ticket.</p>
                             </div>
-                        @empty
-                            <div class="text-sm text-slate-500 dark:text-slate-400">
-                                Belum ada activity log.
-                            </div>
-                        @endforelse
-                    </div>
+                            <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 transition-transform group-open:rotate-180"></i>
+                        </summary>
+                        <div class="mt-5 space-y-4">
+                            @forelse($ticket->activities as $activity)
+                                <div class="relative pl-5">
+                                    <div class="absolute left-0 top-1.5 w-2.5 h-2.5 rounded-full {{ $activity->actor_type === 'staff' ? 'bg-blue-500' : 'bg-emerald-500' }}"></div>
+                                    <div class="text-sm font-semibold text-slate-800 dark:text-white">
+                                        {{ $activity->description }}
+                                    </div>
+                                    <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                        {{ $activity->actor_type === 'staff'
+                                            ? ($activity->user?->name ?? 'Staff')
+                                            : ($activity->portalAccount?->client?->name ?? 'Client') }}
+                                        • {{ $activity->created_at?->format('d M Y H:i') }}
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="text-sm text-slate-500 dark:text-slate-400">
+                                    Belum ada activity log.
+                                </div>
+                            @endforelse
+                        </div>
+                    </details>
                 </div>
             </div>
         </div>
