@@ -22,6 +22,8 @@ class Subscription extends Model
         'price_at_subscription',
         'custom_price',
         'billing_period_months',
+        'uses_ppn',
+        'ppn_amount',
         'discount_percent',
         'discount_notes',
         'notes',
@@ -33,6 +35,8 @@ class Subscription extends Model
         'terminated_at' => 'date',
         'price_at_subscription' => 'decimal:2',
         'custom_price' => 'decimal:2',
+        'uses_ppn' => 'boolean',
+        'ppn_amount' => 'decimal:2',
         'discount_percent' => 'decimal:2',
     ];
 
@@ -79,12 +83,22 @@ class Subscription extends Model
     public function getEffectivePriceAttribute(): float
     {
         $basePrice = $this->custom_price ?? ($this->package?->price * $this->billing_period_months) ?? 0;
+        $ppnAmount = $this->uses_ppn
+            ? (float) ($this->ppn_amount ?? round($this->calculatePpnAmount($basePrice), 2))
+            : 0.0;
 
-        if ($this->discount_percent) {
-            $discount = $basePrice * ($this->discount_percent / 100);
-            return $basePrice - $discount;
-        }
+        return (float) $basePrice + $ppnAmount;
+    }
 
-        return $basePrice;
+    public function getBasePriceAttribute(): float
+    {
+        return (float) ($this->custom_price ?? ($this->package?->price * $this->billing_period_months) ?? 0);
+    }
+
+    public static function calculatePpnAmount(float $basePrice): float
+    {
+        $dpp = $basePrice * (11 / 12);
+
+        return $dpp * 0.12;
     }
 }

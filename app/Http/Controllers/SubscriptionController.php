@@ -58,6 +58,7 @@ class SubscriptionController extends Controller
             'package_id' => 'required|exists:packages,id',
             'installed_at' => 'required|date',
             'status' => 'required|string|in:pending,active',
+            'uses_ppn' => 'nullable|boolean',
         ]);
 
         $package = Package::with('service')->findOrFail($request->package_id);
@@ -98,6 +99,12 @@ class SubscriptionController extends Controller
         try {
             $client = Client::findOrFail($request->client_id);
             $code = $this->generateSubscriptionCode($client, $package);
+            $billingPeriodMonths = (int) ($request->billing_period_months ?? 1);
+            $basePrice = (float) ($request->filled('custom_price')
+                ? $request->custom_price
+                : ($package->price * $billingPeriodMonths));
+            $usesPpn = $request->boolean('uses_ppn');
+            $ppnAmount = $usesPpn ? Subscription::calculatePpnAmount($basePrice) : null;
 
             // Calculate billing details (simple logic)
             $billingDay = \Carbon\Carbon::parse($request->installed_at)->day;
@@ -116,9 +123,11 @@ class SubscriptionController extends Controller
                 'next_billing_date' => $nextBilling,
                 'price_at_subscription' => $package->price, // Lock price
                 'custom_price' => $request->custom_price,
-                'billing_period_months' => $request->billing_period_months ?? 1,
-                'discount_percent' => $request->discount_percent,
-                'discount_notes' => $request->discount_notes,
+                'billing_period_months' => $billingPeriodMonths,
+                'uses_ppn' => $usesPpn,
+                'ppn_amount' => $ppnAmount,
+                'discount_percent' => null,
+                'discount_notes' => null,
                 'notes' => $request->notes
             ]);
 
@@ -255,6 +264,7 @@ class SubscriptionController extends Controller
         $request->validate([
             'status' => 'required|string|in:pending,active,suspended,terminated',
             'installed_at' => 'required|date',
+            'uses_ppn' => 'nullable|boolean',
         ]);
 
         $package = $subscription->package; // Assume package doesn't change for update (usually upgrade is different process)
@@ -264,14 +274,23 @@ class SubscriptionController extends Controller
 
         DB::beginTransaction();
         try {
+            $billingPeriodMonths = (int) ($request->billing_period_months ?? 1);
+            $basePrice = (float) ($request->filled('custom_price')
+                ? $request->custom_price
+                : (($subscription->package->price ?? 0) * $billingPeriodMonths));
+            $usesPpn = $request->boolean('uses_ppn');
+            $ppnAmount = $usesPpn ? Subscription::calculatePpnAmount($basePrice) : null;
+
             $subscription->update([
                 'status' => $request->status,
                 'installed_at' => $request->installed_at,
                 // Recalculate billing dates if needed? 
                 'custom_price' => $request->custom_price,
-                'billing_period_months' => $request->billing_period_months ?? 1,
-                'discount_percent' => $request->discount_percent,
-                'discount_notes' => $request->discount_notes,
+                'billing_period_months' => $billingPeriodMonths,
+                'uses_ppn' => $usesPpn,
+                'ppn_amount' => $ppnAmount,
+                'discount_percent' => null,
+                'discount_notes' => null,
                 'notes' => $request->notes
             ]);
 

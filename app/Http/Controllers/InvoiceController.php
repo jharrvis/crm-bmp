@@ -124,7 +124,7 @@ class InvoiceController extends Controller
                     'invoice_number' => Invoice::generateInvoiceNumber($branchCode),
                     'invoice_date' => now(),
                     'due_date' => now()->addDays(7), // Due in 7 days
-                    'total_amount' => $sub->price_at_subscription,
+                    'total_amount' => $sub->effective_price,
                     'status' => 'unpaid',
                     'notes' => 'Tagihan Bulanan Otomatis',
                 ]);
@@ -134,9 +134,9 @@ class InvoiceController extends Controller
                     'invoice_id' => $invoice->id,
                     'subscription_id' => $sub->id,
                     'description' => "Langganan " . $sub->package->name . " (Periode " . now()->format('F Y') . ")",
-                    'amount' => $sub->price_at_subscription,
+                    'amount' => $sub->effective_price,
                     'qty' => 1,
-                    'total' => $sub->price_at_subscription,
+                    'total' => $sub->effective_price,
                 ]);
 
                 $generatedCount++;

@@ -201,12 +201,19 @@
                                 </div>
                             @endif
 
-                            @if($subscription->discount_percent)
-                                <div>
-                                    <p class="text-xs opacity-70 uppercase tracking-wider mb-1">Diskon</p>
-                                    <p class="text-lg font-bold">{{ $subscription->discount_percent }}%</p>
-                                </div>
-                            @endif
+                            <div>
+                                <p class="text-xs opacity-70 uppercase tracking-wider mb-1">PPN</p>
+                                <p class="text-lg font-bold">
+                                    {{ $subscription->uses_ppn ? 'Rp ' . number_format((float) $subscription->ppn_amount, 0, ',', '.') : 'Tidak digunakan' }}
+                                </p>
+                            </div>
+
+                            <div class="pt-3 border-t border-white/20">
+                                <p class="text-xs opacity-70 uppercase tracking-wider mb-1">Total Tagihan</p>
+                                <p class="text-2xl font-bold font-mono">Rp
+                                    {{ number_format($subscription->effective_price, 0, ',', '.') }}
+                                </p>
+                            </div>
                         </div>
                     </div>
 
@@ -1091,120 +1098,171 @@
                         @csrf
                         <input type="hidden" id="dataId" name="id">
 
-                        <!-- Main Subscription Info -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Pilih
-                                    Pelanggan <span class="text-red-500">*</span></label>
-                                <select id="client_id" name="client_id" required
-                                    class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                                    <option value="">-- Pilih Pelanggan --</option>
-                                    @foreach($clients as $client)
-                                        <option value="{{ $client->id }}">{{ $client->name }} ({{ $client->client_code }})
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Pilih
-                                    Paket Layanan <span class="text-red-500">*</span></label>
-                                <select id="package_id" name="package_id" required onchange="handlePackageChange()"
-                                    class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                                    <option value="">-- Pilih Paket --</option>
-                                    @foreach($packages as $pkg)
-                                        <option value="{{ $pkg->id }}" data-type="{{ $pkg->service->type }}"
-                                            data-price="{{ $pkg->price }}">
-                                            {{ $pkg->name }} (Rp {{ number_format($pkg->price, 0, ',', '.') }})
-                                        </option>
-                                    @endforeach
-                                </select>
+                        <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/30 p-2">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                                <button type="button" id="subscription-tab-general" onclick="switchSubscriptionFormTab('general')"
+                                    class="subscription-form-tab flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-all">
+                                    <i data-lucide="layout-grid" class="w-4 h-4"></i>
+                                    <span>Umum</span>
+                                </button>
+                                <button type="button" id="subscription-tab-billing" onclick="switchSubscriptionFormTab('billing')"
+                                    class="subscription-form-tab flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-all">
+                                    <i data-lucide="receipt-text" class="w-4 h-4"></i>
+                                    <span>Billing</span>
+                                </button>
+                                <button type="button" id="subscription-tab-technical" onclick="switchSubscriptionFormTab('technical')"
+                                    class="subscription-form-tab flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-all">
+                                    <i data-lucide="settings-2" class="w-4 h-4"></i>
+                                    <span>Teknis</span>
+                                </button>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Tanggal
-                                    Pemasangan <span class="text-red-500">*</span></label>
-                                <input type="date" id="installed_at" name="installed_at" required
-                                    class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Status
-                                    Layanan <span class="text-red-500">*</span></label>
-                                <select id="status" name="status" required
-                                    class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                                    <option value="pending">Pending (Menunggu Aktivasi)</option>
-                                    <option value="active">Active (Aktif)</option>
-                                    <option value="suspended">Suspended (Isolir)</option>
-                                    <option value="terminated">Terminated (Berhenti)</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Pricing & Billing Section -->
-                        <div class="border-t border-slate-200 dark:border-slate-700 pt-6 mt-2">
-                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">Harga & Billing
-                            </h4>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div id="subscription-panel-general" class="subscription-form-panel space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Harga
-                                        Paket</label>
-                                    <div id="package_price_display"
-                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-100 dark:bg-slate-600 text-slate-600 dark:text-slate-300 font-mono">
-                                        Rp 0
-                                    </div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Pilih
+                                        Pelanggan <span class="text-red-500">*</span></label>
+                                    <select id="client_id" name="client_id" required
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                        <option value="">-- Pilih Pelanggan --</option>
+                                        @foreach($clients as $client)
+                                            <option value="{{ $client->id }}">{{ $client->name }} ({{ $client->client_code }})
+                                            </option>
+                                        @endforeach
+                                    </select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Harga
-                                        Khusus (Deal)
-                                        <span class="text-xs text-slate-400 font-normal">(opsional)</span></label>
-                                    <input type="number" id="custom_price" name="custom_price" step="0.01"
-                                        placeholder="Kosongkan jika pakai harga paket"
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Pilih
+                                        Paket Layanan <span class="text-red-500">*</span></label>
+                                    <select id="package_id" name="package_id" required onchange="handlePackageChange()"
                                         class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                                </div>
-                                <div>
-                                    <label
-                                        class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Siklus
-                                        Tagihan</label>
-                                    <select id="billing_period_months" name="billing_period_months"
-                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                                        <option value="1">Bulanan (1 Bulan)</option>
-                                        <option value="3">Triwulan (3 Bulan)</option>
-                                        <option value="6">Semester (6 Bulan)</option>
-                                        <option value="12">Tahunan (12 Bulan)</option>
+                                        <option value="">-- Pilih Paket --</option>
+                                        @foreach($packages as $pkg)
+                                            <option value="{{ $pkg->id }}" data-type="{{ $pkg->service->type }}"
+                                                data-price="{{ $pkg->price }}">
+                                                {{ $pkg->name }} (Rp {{ number_format($pkg->price, 0, ',', '.') }})
+                                            </option>
+                                        @endforeach
                                     </select>
                                 </div>
                             </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label
-                                        class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Diskon
-                                        (%)
-                                        <span class="text-xs text-slate-400 font-normal">(opsional)</span></label>
-                                    <input type="number" id="discount_percent" name="discount_percent" step="0.01"
-                                        min="0" max="100" placeholder="0"
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Tanggal
+                                        Pemasangan <span class="text-red-500">*</span></label>
+                                    <input type="date" id="installed_at" name="installed_at" required
                                         class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
                                 </div>
                                 <div>
-                                    <label
-                                        class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Alasan
-                                        Diskon
-                                        <span class="text-xs text-slate-400 font-normal">(opsional)</span></label>
-                                    <input type="text" id="discount_notes" name="discount_notes"
-                                        placeholder="Misal: Kontrak 1 tahun, diskon 10%"
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Status
+                                        Layanan <span class="text-red-500">*</span></label>
+                                    <select id="status" name="status" required
                                         class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                        <option value="pending">Pending (Menunggu Aktivasi)</option>
+                                        <option value="active">Active (Aktif)</option>
+                                        <option value="suspended">Suspended (Isolir)</option>
+                                        <option value="terminated">Terminated (Berhenti)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Catatan
+                                    Tambahan</label>
+                                <input type="text" id="notes" name="notes"
+                                    class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                            </div>
+                        </div>
+
+                        <div id="subscription-panel-billing" class="subscription-form-panel hidden space-y-6">
+                            <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/30 p-5 space-y-5">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Harga
+                                            Paket</label>
+                                        <div id="package_price_display"
+                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-100 dark:bg-slate-600 text-slate-600 dark:text-slate-300 font-mono">
+                                            Rp 0
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Harga
+                                            Khusus (Deal)
+                                            <span class="text-xs text-slate-400 font-normal">(opsional)</span></label>
+                                        <input type="number" id="custom_price" name="custom_price" step="0.01"
+                                            placeholder="Kosongkan jika pakai harga paket"
+                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                    </div>
+                                    <div>
+                                        <label
+                                            class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Siklus
+                                            Tagihan</label>
+                                        <select id="billing_period_months" name="billing_period_months"
+                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                            <option value="1">Bulanan (1 Bulan)</option>
+                                            <option value="3">Triwulan (3 Bulan)</option>
+                                            <option value="6">Semester (6 Bulan)</option>
+                                            <option value="12">Tahunan (12 Bulan)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-[1.1fr_0.9fr] gap-6">
+                                    <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 space-y-4">
+                                        <div class="flex items-start justify-between gap-4">
+                                            <div>
+                                                <h4 class="text-sm font-bold text-slate-700 dark:text-slate-200">PPN</h4>
+                                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Jika aktif, PPN dihitung dengan rumus DPP = 11/12 harga jual lalu PPN = 12% x DPP.</p>
+                                            </div>
+                                            <label class="inline-flex items-center gap-3 cursor-pointer">
+                                                <input type="checkbox" id="uses_ppn" name="uses_ppn" value="1" class="sr-only peer">
+                                                <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Gunakan PPN</span>
+                                                <span class="relative h-7 w-12 rounded-full bg-slate-300 transition-colors peer-checked:bg-emerald-500">
+                                                    <span class="absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-transform peer-checked:translate-x-5"></span>
+                                                </span>
+                                            </label>
+                                        </div>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nominal PPN</label>
+                                                <input type="text" id="ppn_amount_display" value="Rp 0" disabled
+                                                    class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-mono disabled:opacity-100">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">DPP (11/12 Harga Jual)</label>
+                                                <input type="text" id="dpp_amount_display" value="Rp 0" disabled
+                                                    class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-mono disabled:opacity-100">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="rounded-2xl border border-blue-200 dark:border-blue-900/40 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-slate-800 dark:to-slate-900 p-4 space-y-3">
+                                        <div class="flex items-center justify-between text-sm">
+                                            <span class="text-slate-500 dark:text-slate-400">Harga jual</span>
+                                            <span id="billing_base_price" class="font-mono font-semibold text-slate-800 dark:text-slate-100">Rp 0</span>
+                                        </div>
+                                        <div class="flex items-center justify-between text-sm">
+                                            <span class="text-slate-500 dark:text-slate-400">PPN</span>
+                                            <span id="billing_ppn_price" class="font-mono font-semibold text-slate-800 dark:text-slate-100">Rp 0</span>
+                                        </div>
+                                        <div class="border-t border-blue-200/70 dark:border-slate-700 pt-3 flex items-center justify-between">
+                                            <span class="text-sm font-bold text-slate-700 dark:text-slate-200">Total tagihan</span>
+                                            <span id="billing_total_price" class="font-mono text-lg font-bold text-blue-700 dark:text-blue-300">Rp 0</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Technical Details Section -->
-                        <div id="technical-details"
-                            class="border-t border-slate-200 dark:border-slate-700 pt-6 mt-2 hidden">
-                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">Detail Teknis
-                            </h4>
+                        <div id="subscription-panel-technical" class="subscription-form-panel hidden space-y-6">
+                            <div id="technical-details"
+                                class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/30 p-5 hidden">
+                                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">Detail Teknis
+                                </h4>
 
-                            <!-- Connectivity Fields -->
-                            <div id="fields-connectivity" class="hidden space-y-4">
+                                <div id="fields-connectivity" class="hidden space-y-4">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <label
@@ -1386,54 +1444,52 @@
                                         </div>
                                     </div>
                                 </div>
-                        </div>
+                            </div>
 
-                        <!-- Hosting Fields -->
-                        <div id="fields-hosting" class="hidden space-y-4">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div id="div-hosting-server">
-                                    <label
-                                        class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Hosting
-                                        Server</label>
-                                    <select id="hosting_server_id" name="hosting_server_id"
-                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                                        <option value="">-- Pilih Server Hosting --</option>
-                                        @foreach($servers as $server)
-                                            <option value="{{ $server->id }}">{{ $server->name }}</option>
-                                        @endforeach
-                                    </select>
+                            <div id="fields-hosting" class="hidden space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div id="div-hosting-server">
+                                        <label
+                                            class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Hosting
+                                            Server</label>
+                                        <select id="hosting_server_id" name="hosting_server_id"
+                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                            <option value="">-- Pilih Server Hosting --</option>
+                                            @foreach($servers as $server)
+                                                <option value="{{ $server->id }}">{{ $server->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nama
+                                            Domain</label>
+                                        <input type="text" name="domain" id="domain" placeholder="example.com"
+                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nama
-                                        Domain</label>
-                                    <input type="text" name="domain" id="domain" placeholder="example.com"
-                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label
+                                            class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Username
+                                            (Panel)</label>
+                                        <input type="text" name="username" id="username"
+                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                    </div>
+                                    <div>
+                                        <label
+                                            class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Password</label>
+                                        <input type="password" name="password" id="password"
+                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                    </div>
                                 </div>
                             </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label
-                                        class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Username
-                                        (Panel)</label>
-                                    <input type="text" name="username" id="username"
-                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                                </div>
-                                <div>
-                                    <label
-                                        class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Password</label>
-                                    <input type="password" name="password" id="password"
-                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                                </div>
+
+                            <div id="technical-empty-state" class="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center">
+                                <p class="text-sm font-semibold text-slate-600 dark:text-slate-300">Pilih paket layanan terlebih dahulu.</p>
+                                <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Form teknis akan menyesuaikan otomatis untuk internet atau hosting.</p>
                             </div>
                         </div>
-
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Catatan
-                        Tambahan</label>
-                    <input type="text" id="notes" name="notes"
-                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                </div>
-                </form>
+                    </form>
             </div>
 
             <!-- Modal Footer -->
@@ -1506,6 +1562,18 @@
             .dark .zabbix-interface-option:hover {
                 background-color: rgba(51, 65, 85, 0.45);
             }
+
+            .subscription-form-tab.is-active {
+                background: linear-gradient(135deg, #dbeafe 0%, #ecfeff 100%);
+                color: #1d4ed8;
+                box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.15);
+            }
+
+            .dark .subscription-form-tab.is-active {
+                background: rgba(30, 64, 175, 0.22);
+                color: #93c5fd;
+                box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.16);
+            }
         </style>
 
         <script>
@@ -1514,6 +1582,7 @@
                 let clientChoice;
                 let zabbixGraphOptions = [];
                 let selectedZabbixInterfaces = [];
+                let activeSubscriptionFormTab = 'general';
                 const zabbixRoutes = {
                     groups: '{{ route('zabbix-monitors.groups') }}',
                     hosts: '{{ route('zabbix-monitors.hosts') }}',
@@ -1531,6 +1600,8 @@
                     });
 
                     initializeZabbixSelectors();
+                    initializeSubscriptionBillingListeners();
+                    resetSubscriptionFormTabs();
                 });
 
                 function initializeZabbixSelectors() {
@@ -1761,13 +1832,16 @@
                     const detailsSection = document.getElementById('technical-details');
                     const fieldsConn = document.getElementById('fields-connectivity');
                     const fieldsHost = document.getElementById('fields-hosting');
+                    const technicalEmptyState = document.getElementById('technical-empty-state');
 
                     if (fieldsConn) fieldsConn.classList.add('hidden');
                     if (fieldsHost) fieldsHost.classList.add('hidden');
                     if (detailsSection) detailsSection.classList.add('hidden');
+                    if (technicalEmptyState) technicalEmptyState.classList.remove('hidden');
 
                     if (serviceType) {
                         if (detailsSection) detailsSection.classList.remove('hidden');
+                        if (technicalEmptyState) technicalEmptyState.classList.add('hidden');
                         if (serviceType === 'connectivity') {
                             if (fieldsConn) fieldsConn.classList.remove('hidden');
                             toggleMetroForm();
@@ -1783,6 +1857,8 @@
                             }
                         }
                     }
+
+                    updateBillingPreview();
                 };
 
                 window.toggleMetroForm = function() {
@@ -1803,6 +1879,72 @@
                     }
                 };
 
+                function initializeSubscriptionBillingListeners() {
+                    ['custom_price', 'billing_period_months', 'package_id'].forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            el.addEventListener('input', updateBillingPreview);
+                            el.addEventListener('change', updateBillingPreview);
+                        }
+                    });
+
+                    const ppnToggle = document.getElementById('uses_ppn');
+                    if (ppnToggle) {
+                        ppnToggle.addEventListener('change', updateBillingPreview);
+                    }
+                }
+
+                function calculateBillingNumbers() {
+                    const packageSelect = document.getElementById('package_id');
+                    const selectedOption = packageSelect.options[packageSelect.selectedIndex];
+                    const packagePrice = Number(selectedOption ? (selectedOption.getAttribute('data-price') || 0) : 0);
+                    const billingPeriodMonths = Number(document.getElementById('billing_period_months').value || 1);
+                    const customPrice = Number(document.getElementById('custom_price').value || 0);
+                    const basePrice = customPrice > 0 ? customPrice : (packagePrice * billingPeriodMonths);
+                    const usesPpn = document.getElementById('uses_ppn').checked;
+                    const dppAmount = usesPpn ? (basePrice * (11 / 12)) : 0;
+                    const ppnAmount = usesPpn ? (dppAmount * 0.12) : 0;
+                    const totalAmount = basePrice + ppnAmount;
+
+                    return { basePrice, dppAmount, ppnAmount, totalAmount };
+                }
+
+                function formatCurrency(value) {
+                    return 'Rp ' + Number(value || 0).toLocaleString('id-ID', {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                    });
+                }
+
+                function updateBillingPreview() {
+                    const { basePrice, dppAmount, ppnAmount, totalAmount } = calculateBillingNumbers();
+
+                    document.getElementById('billing_base_price').textContent = formatCurrency(basePrice);
+                    document.getElementById('billing_ppn_price').textContent = formatCurrency(ppnAmount);
+                    document.getElementById('billing_total_price').textContent = formatCurrency(totalAmount);
+                    document.getElementById('ppn_amount_display').value = formatCurrency(ppnAmount);
+                    document.getElementById('dpp_amount_display').value = formatCurrency(dppAmount);
+                }
+
+                window.switchSubscriptionFormTab = function (tabName) {
+                    activeSubscriptionFormTab = tabName;
+                    ['general', 'billing', 'technical'].forEach(name => {
+                        const panel = document.getElementById(`subscription-panel-${name}`);
+                        const tab = document.getElementById(`subscription-tab-${name}`);
+                        if (panel) panel.classList.toggle('hidden', name !== tabName);
+                        if (tab) {
+                            tab.classList.toggle('is-active', name === tabName);
+                            tab.classList.toggle('text-slate-500', name !== tabName);
+                            tab.classList.toggle('dark:text-slate-400', name !== tabName);
+                        }
+                    });
+                    lucide.createIcons();
+                };
+
+                function resetSubscriptionFormTabs() {
+                    window.switchSubscriptionFormTab('general');
+                }
+
                 window.openModal = function (isEdit = false) {
                     const modal = document.getElementById('formModal');
                     const backdrop = document.getElementById('formModalBackdrop');
@@ -1818,6 +1960,8 @@
                         }, 350);
                     }, 10);
 
+                    updateBillingPreview();
+                    resetSubscriptionFormTabs();
                     lucide.createIcons();
                 };
 
@@ -1907,11 +2051,11 @@
                             // Fill Pricing Fields
                             document.getElementById('custom_price').value = data.custom_price || '';
                             document.getElementById('billing_period_months').value = data.billing_period_months || 1;
-                            document.getElementById('discount_percent').value = data.discount_percent || '';
-                            document.getElementById('discount_notes').value = data.discount_notes || '';
+                            document.getElementById('uses_ppn').checked = Boolean(data.uses_ppn);
 
                             // Trigger Change to show fields
                             handlePackageChange();
+                            updateBillingPreview();
 
                             // Fill Details based on type
                             if (data.connectivity) {
@@ -1962,6 +2106,8 @@
                             if (data.domain) {
                                 document.getElementById('domain').value = data.domain.domain_name || '';
                             }
+
+                            resetSubscriptionFormTabs();
                         });
                 };
 
