@@ -59,6 +59,7 @@ class SubscriptionController extends Controller
             'installed_at' => 'required|date',
             'status' => 'required|string|in:pending,active',
             'uses_ppn' => 'nullable|boolean',
+            'uses_pph23' => 'nullable|boolean',
         ]);
 
         $package = Package::with('service')->findOrFail($request->package_id);
@@ -105,6 +106,8 @@ class SubscriptionController extends Controller
                 : ($package->price * $billingPeriodMonths));
             $usesPpn = $request->boolean('uses_ppn');
             $ppnAmount = $usesPpn ? Subscription::calculatePpnAmount($basePrice) : null;
+            $usesPph23 = $request->boolean('uses_pph23');
+            $pph23Amount = $usesPph23 ? Subscription::calculatePph23Amount($basePrice) : null;
 
             // Calculate billing details (simple logic)
             $billingDay = \Carbon\Carbon::parse($request->installed_at)->day;
@@ -126,6 +129,8 @@ class SubscriptionController extends Controller
                 'billing_period_months' => $billingPeriodMonths,
                 'uses_ppn' => $usesPpn,
                 'ppn_amount' => $ppnAmount,
+                'uses_pph23' => $usesPph23,
+                'pph23_amount' => $pph23Amount,
                 'discount_percent' => null,
                 'discount_notes' => null,
                 'notes' => $request->notes
@@ -265,6 +270,7 @@ class SubscriptionController extends Controller
             'status' => 'required|string|in:pending,active,suspended,terminated',
             'installed_at' => 'required|date',
             'uses_ppn' => 'nullable|boolean',
+            'uses_pph23' => 'nullable|boolean',
         ]);
 
         $package = $subscription->package; // Assume package doesn't change for update (usually upgrade is different process)
@@ -280,6 +286,8 @@ class SubscriptionController extends Controller
                 : (($subscription->package->price ?? 0) * $billingPeriodMonths));
             $usesPpn = $request->boolean('uses_ppn');
             $ppnAmount = $usesPpn ? Subscription::calculatePpnAmount($basePrice) : null;
+            $usesPph23 = $request->boolean('uses_pph23');
+            $pph23Amount = $usesPph23 ? Subscription::calculatePph23Amount($basePrice) : null;
 
             $subscription->update([
                 'status' => $request->status,
@@ -289,6 +297,8 @@ class SubscriptionController extends Controller
                 'billing_period_months' => $billingPeriodMonths,
                 'uses_ppn' => $usesPpn,
                 'ppn_amount' => $ppnAmount,
+                'uses_pph23' => $usesPph23,
+                'pph23_amount' => $pph23Amount,
                 'discount_percent' => null,
                 'discount_notes' => null,
                 'notes' => $request->notes

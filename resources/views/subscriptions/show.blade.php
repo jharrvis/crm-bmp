@@ -202,9 +202,16 @@
                             @endif
 
                             <div>
-                                <p class="text-xs opacity-70 uppercase tracking-wider mb-1">PPN</p>
+                                <p class="text-xs opacity-70 uppercase tracking-wider mb-1">PPN 11%</p>
                                 <p class="text-lg font-bold">
                                     {{ $subscription->uses_ppn ? 'Rp ' . number_format((float) $subscription->ppn_amount, 0, ',', '.') : 'Tidak digunakan' }}
+                                </p>
+                            </div>
+
+                            <div>
+                                <p class="text-xs opacity-70 uppercase tracking-wider mb-1">PPh23</p>
+                                <p class="text-lg font-bold">
+                                    {{ $subscription->uses_pph23 ? 'Rp ' . number_format((float) $subscription->pph23_amount, 0, ',', '.') : 'Tidak digunakan' }}
                                 </p>
                             </div>
 
@@ -1213,8 +1220,8 @@
                                     <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 space-y-4">
                                         <div class="flex items-start justify-between gap-4">
                                             <div>
-                                                <h4 class="text-sm font-bold text-slate-700 dark:text-slate-200">PPN</h4>
-                                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Jika aktif, PPN dihitung dengan rumus DPP = 11/12 harga jual lalu PPN = 12% x DPP.</p>
+                                                <h4 class="text-sm font-bold text-slate-700 dark:text-slate-200">PPN 11%</h4>
+                                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Jika aktif, PPN dihitung 11% dari harga jual.</p>
                                             </div>
                                             <label class="inline-flex items-center gap-3 cursor-pointer">
                                                 <input type="checkbox" id="uses_ppn" name="uses_ppn" value="1" class="sr-only peer">
@@ -1224,17 +1231,28 @@
                                                 </span>
                                             </label>
                                         </div>
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nominal PPN 11%</label>
+                                            <input type="text" id="ppn_amount_display" value="Rp 0" disabled
+                                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-mono disabled:opacity-100">
+                                        </div>
+                                        <div class="border-t border-slate-200 dark:border-slate-700 pt-4 flex items-start justify-between gap-4">
                                             <div>
-                                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nominal PPN</label>
-                                                <input type="text" id="ppn_amount_display" value="Rp 0" disabled
-                                                    class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-mono disabled:opacity-100">
+                                                <h4 class="text-sm font-bold text-slate-700 dark:text-slate-200">PPh23</h4>
+                                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Jika aktif, PPh23 dihitung 2% dari harga jual dan menjadi potongan tagihan.</p>
                                             </div>
-                                            <div>
-                                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">DPP (11/12 Harga Jual)</label>
-                                                <input type="text" id="dpp_amount_display" value="Rp 0" disabled
-                                                    class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-mono disabled:opacity-100">
-                                            </div>
+                                            <label class="inline-flex items-center gap-3 cursor-pointer">
+                                                <input type="checkbox" id="uses_pph23" name="uses_pph23" value="1" class="sr-only peer">
+                                                <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Gunakan PPh23</span>
+                                                <span class="relative h-7 w-12 rounded-full bg-slate-300 transition-colors peer-checked:bg-amber-500">
+                                                    <span class="absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-transform peer-checked:translate-x-5"></span>
+                                                </span>
+                                            </label>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nominal PPh23</label>
+                                            <input type="text" id="pph23_amount_display" value="Rp 0" disabled
+                                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-mono disabled:opacity-100">
                                         </div>
                                     </div>
 
@@ -1244,8 +1262,12 @@
                                             <span id="billing_base_price" class="font-mono font-semibold text-slate-800 dark:text-slate-100">Rp 0</span>
                                         </div>
                                         <div class="flex items-center justify-between text-sm">
-                                            <span class="text-slate-500 dark:text-slate-400">PPN</span>
+                                            <span class="text-slate-500 dark:text-slate-400">PPN 11%</span>
                                             <span id="billing_ppn_price" class="font-mono font-semibold text-slate-800 dark:text-slate-100">Rp 0</span>
+                                        </div>
+                                        <div class="flex items-center justify-between text-sm">
+                                            <span class="text-slate-500 dark:text-slate-400">PPh23</span>
+                                            <span id="billing_pph23_price" class="font-mono font-semibold text-amber-700 dark:text-amber-300">Rp 0</span>
                                         </div>
                                         <div class="border-t border-blue-200/70 dark:border-slate-700 pt-3 flex items-center justify-between">
                                             <span class="text-sm font-bold text-slate-700 dark:text-slate-200">Total tagihan</span>
@@ -1888,10 +1910,12 @@
                         }
                     });
 
-                    const ppnToggle = document.getElementById('uses_ppn');
-                    if (ppnToggle) {
-                        ppnToggle.addEventListener('change', updateBillingPreview);
-                    }
+                    ['uses_ppn', 'uses_pph23'].forEach(id => {
+                        const toggle = document.getElementById(id);
+                        if (toggle) {
+                            toggle.addEventListener('change', updateBillingPreview);
+                        }
+                    });
                 }
 
                 function calculateBillingNumbers() {
@@ -1902,11 +1926,12 @@
                     const customPrice = Number(document.getElementById('custom_price').value || 0);
                     const basePrice = customPrice > 0 ? customPrice : (packagePrice * billingPeriodMonths);
                     const usesPpn = document.getElementById('uses_ppn').checked;
-                    const dppAmount = usesPpn ? (basePrice * (11 / 12)) : 0;
-                    const ppnAmount = usesPpn ? (dppAmount * 0.12) : 0;
-                    const totalAmount = basePrice + ppnAmount;
+                    const usesPph23 = document.getElementById('uses_pph23').checked;
+                    const ppnAmount = usesPpn ? (basePrice * 0.11) : 0;
+                    const pph23Amount = usesPph23 ? (basePrice * 0.02) : 0;
+                    const totalAmount = basePrice + ppnAmount - pph23Amount;
 
-                    return { basePrice, dppAmount, ppnAmount, totalAmount };
+                    return { basePrice, ppnAmount, pph23Amount, totalAmount };
                 }
 
                 function formatCurrency(value) {
@@ -1917,13 +1942,14 @@
                 }
 
                 function updateBillingPreview() {
-                    const { basePrice, dppAmount, ppnAmount, totalAmount } = calculateBillingNumbers();
+                    const { basePrice, ppnAmount, pph23Amount, totalAmount } = calculateBillingNumbers();
 
                     document.getElementById('billing_base_price').textContent = formatCurrency(basePrice);
                     document.getElementById('billing_ppn_price').textContent = formatCurrency(ppnAmount);
+                    document.getElementById('billing_pph23_price').textContent = formatCurrency(pph23Amount);
                     document.getElementById('billing_total_price').textContent = formatCurrency(totalAmount);
                     document.getElementById('ppn_amount_display').value = formatCurrency(ppnAmount);
-                    document.getElementById('dpp_amount_display').value = formatCurrency(dppAmount);
+                    document.getElementById('pph23_amount_display').value = formatCurrency(pph23Amount);
                 }
 
                 window.switchSubscriptionFormTab = function (tabName) {
@@ -2052,6 +2078,7 @@
                             document.getElementById('custom_price').value = data.custom_price || '';
                             document.getElementById('billing_period_months').value = data.billing_period_months || 1;
                             document.getElementById('uses_ppn').checked = Boolean(data.uses_ppn);
+                            document.getElementById('uses_pph23').checked = Boolean(data.uses_pph23);
 
                             // Trigger Change to show fields
                             handlePackageChange();

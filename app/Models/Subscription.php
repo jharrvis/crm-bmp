@@ -24,6 +24,8 @@ class Subscription extends Model
         'billing_period_months',
         'uses_ppn',
         'ppn_amount',
+        'uses_pph23',
+        'pph23_amount',
         'discount_percent',
         'discount_notes',
         'notes',
@@ -37,6 +39,8 @@ class Subscription extends Model
         'custom_price' => 'decimal:2',
         'uses_ppn' => 'boolean',
         'ppn_amount' => 'decimal:2',
+        'uses_pph23' => 'boolean',
+        'pph23_amount' => 'decimal:2',
         'discount_percent' => 'decimal:2',
     ];
 
@@ -86,8 +90,11 @@ class Subscription extends Model
         $ppnAmount = $this->uses_ppn
             ? (float) ($this->ppn_amount ?? round($this->calculatePpnAmount($basePrice), 2))
             : 0.0;
+        $pph23Amount = $this->uses_pph23
+            ? (float) ($this->pph23_amount ?? round($this->calculatePph23Amount($basePrice), 2))
+            : 0.0;
 
-        return (float) $basePrice + $ppnAmount;
+        return ((float) $basePrice + $ppnAmount) - $pph23Amount;
     }
 
     public function getBasePriceAttribute(): float
@@ -97,8 +104,11 @@ class Subscription extends Model
 
     public static function calculatePpnAmount(float $basePrice): float
     {
-        $dpp = $basePrice * (11 / 12);
+        return $basePrice * 0.11;
+    }
 
-        return $dpp * 0.12;
+    public static function calculatePph23Amount(float $basePrice): float
+    {
+        return $basePrice * 0.02;
     }
 }
