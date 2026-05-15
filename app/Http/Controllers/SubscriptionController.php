@@ -14,7 +14,6 @@ use App\Models\Vendor;
 use App\Services\ZabbixService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class SubscriptionController extends Controller
 {
@@ -97,10 +96,8 @@ class SubscriptionController extends Controller
 
         DB::beginTransaction();
         try {
-            // Generate Code: SUB-{CLIENT}-{SEQUENCE}
             $client = Client::findOrFail($request->client_id);
-            $count = Subscription::where('client_id', $client->id)->count() + 1;
-            $code = sprintf("SUB-%s-%03d", $client->client_code, $count); // e.g., SUB-C-SMG-0001-001
+            $code = $this->generateSubscriptionCode($client, $package);
 
             // Calculate billing details (simple logic)
             $billingDay = \Carbon\Carbon::parse($request->installed_at)->day;
@@ -446,5 +443,39 @@ class SubscriptionController extends Controller
             ->unique('graphid')
             ->values()
             ->all();
+    }
+
+    protected function generateSubscriptionCode(Client $client, Package $package): string
+    {
+        $serviceCode = strtoupper((string) ($package->service?->code ?? 'SRV'));
+        $basePrefix = $client->client_code . '-' . $serviceCode;
+
+        $latestMatchingCode = Subscription::query()
+            ->where('client_id', $client->id)
+            ->whereHas('package', fn ($query) => $query->where('service_id', $package->service_id))
+            ->where('subscription_code', 'like', $basePrefix . '%')
+            ->select('subscription_code')
+            ->orderByDesc('subscription_code')
+            ->value('subscription_code');
+
+        $nextNumber = 1;
+
+        if ($latestMatchingCode && preg_match('/^' . preg_quote($basePrefix, '/') . '(\d{2})$/', $latestMatchingCode, $matches)) {
+            $nextNumber = ((int) $matches[1]) + 1;
+        } else {
+            $existingCount = Subscription::query()
+                ->where('client_id', $client->id)
+                ->whereHas('package', fn ($query) => $query->where('service_id', $package->service_id))
+                ->count();
+
+            $nextNumber = $existingCount + 1;
+        }
+
+        do {
+            $subscriptionCode = sprintf('%s%02d', $basePrefix, $nextNumber);
+            $nextNumber++;
+        } while (Subscription::query()->where('subscription_code', $subscriptionCode)->exists());
+
+        return $subscriptionCode;
     }
 }
