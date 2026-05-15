@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Models\ClientContact;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 
 use Yajra\DataTables\Facades\DataTables;
 
@@ -54,6 +55,7 @@ class ClientController extends Controller
     {
         $validated = $request->validate([
             'branch_id' => 'required|exists:branches,id',
+            'registered_at' => 'nullable|date',
             'name' => 'required|string|max:255',
             'type' => 'required|string|in:personal,business',
             'identity_number' => 'nullable|string|max:50',
@@ -76,7 +78,8 @@ class ClientController extends Controller
         DB::beginTransaction();
         try {
             $branch = Branch::findOrFail($validated['branch_id']);
-            $client_code = $this->generateClientCode($branch);
+            $validated['registered_at'] = $validated['registered_at'] ?? now()->toDateString();
+            $client_code = $this->generateClientCode($branch, $validated['registered_at']);
 
             $client = Client::create([
                 'client_code' => $client_code,
@@ -145,6 +148,7 @@ class ClientController extends Controller
     {
         $validated = $request->validate([
             'branch_id' => 'required|exists:branches,id',
+            'registered_at' => 'nullable|date',
             'name' => 'required|string|max:255',
             'type' => 'required|string|in:personal,business',
             'identity_number' => 'nullable|string|max:50',
@@ -166,6 +170,8 @@ class ClientController extends Controller
 
         DB::beginTransaction();
         try {
+            $validated['registered_at'] = $validated['registered_at'] ?? $client->registered_at?->toDateString() ?? now()->toDateString();
+
             // Update Client
             $client->update($validated);
 
@@ -236,30 +242,26 @@ class ClientController extends Controller
         return redirect()->route('clients.index')->with('success', 'Klien berhasil dihapus.');
     }
 
-    private function generateClientCode(Branch $branch): string
+    private function generateClientCode(Branch $branch, string|\DateTimeInterface|null $registeredAt = null): string
     {
-        $branchCode = strtoupper((string) $branch->code);
+        $year = Carbon::parse($registeredAt ?? now())->format('y');
+        $prefix = sprintf('%d%s', $branch->id, $year);
+
         $latestMatchingCode = Client::query()
             ->where('branch_id', $branch->id)
-            ->where('client_code', 'like', $branchCode . '%')
+            ->where('client_code', 'like', $prefix . '%')
             ->select('client_code')
             ->orderByDesc('client_code')
             ->value('client_code');
 
         $nextNumber = 1;
 
-        if ($latestMatchingCode && preg_match('/^' . preg_quote($branchCode, '/') . '(\d{5})$/', $latestMatchingCode, $matches)) {
+        if ($latestMatchingCode && preg_match('/^' . preg_quote($prefix, '/') . '(\d{3})$/', $latestMatchingCode, $matches)) {
             $nextNumber = ((int) $matches[1]) + 1;
-        } else {
-            $existingCount = Client::query()
-                ->where('branch_id', $branch->id)
-                ->count();
-
-            $nextNumber = $existingCount + 1;
         }
 
         do {
-            $clientCode = sprintf('%s%05d', $branchCode, $nextNumber);
+            $clientCode = sprintf('%s%03d', $prefix, $nextNumber);
             $nextNumber++;
         } while (Client::query()->where('client_code', $clientCode)->exists());
 

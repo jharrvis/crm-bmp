@@ -13,6 +13,7 @@ class Client extends Model
         'branch_id',
         'user_id',
         'client_code',
+        'registered_at',
         'name',
         'type',
         'identity_number',
@@ -23,6 +24,10 @@ class Client extends Model
         'longitude',
         'status',
         'notes',
+    ];
+
+    protected $casts = [
+        'registered_at' => 'date',
     ];
 
     public function branch()

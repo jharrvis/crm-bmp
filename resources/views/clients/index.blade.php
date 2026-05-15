@@ -183,6 +183,13 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label
+                                        class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Tanggal
+                                        Registrasi</label>
+                                    <input type="date" id="registered_at" name="registered_at"
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                                </div>
+                                <div>
+                                    <label
                                         class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Status</label>
                                     <select id="status" name="status" required
                                         class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
@@ -483,6 +490,7 @@
                         document.getElementById('submitText').innerText = 'Simpan Data';
                         form.reset();
                         document.getElementById('dataId').value = '';
+                        document.getElementById('registered_at').value = new Date().toISOString().split('T')[0];
 
                         // Reset Contacts: Add one empty row
                         document.getElementById('contacts-container').innerHTML = '';
@@ -625,6 +633,7 @@
                     document.getElementById('postal_code').value = item.postal_code || '';
                     document.getElementById('latitude').value = item.latitude || '';
                     document.getElementById('longitude').value = item.longitude || '';
+                    document.getElementById('registered_at').value = item.registered_at || '';
                     document.getElementById('status').value = item.status;
                     document.getElementById('notes').value = item.notes || '';
 
