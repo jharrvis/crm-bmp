@@ -157,28 +157,13 @@
         </div>
 
         <div class="mt-12 border-t border-slate-200 pt-8">
-            <div class="mx-auto max-w-md text-center text-slate-900">
-                <div class="text-xl font-extrabold">BMP.NET</div>
-                @if($branch?->address)
-                    @foreach(preg_split("/\r\n|\n|\r/", $branch->address) as $addressLine)
-                        @if(trim($addressLine) !== '')
-                            <div class="text-sm font-semibold">{{ $addressLine }}</div>
-                        @endif
-                    @endforeach
-                @endif
-                @if($branch?->phone)
-                    <div class="text-sm font-semibold">Telp. {{ $branch->phone }}</div>
-                @endif
-                <div class="text-sm font-semibold">www.bmp.net.id</div>
-            </div>
-
-            <div class="mt-8 border-t-4 border-blue-800 pt-5">
+            <div class="border-t-4 border-blue-800 pt-5">
                 <div class="space-y-2 text-sm text-slate-900">
                     @foreach(($global_branches ?? collect())->sortBy('name') as $footerBranch)
                         @php
                             $branchEmail = $footerBranch->code ? 'cs@' . strtolower($footerBranch->code) . '.bmp.net.id' : 'cs@bmp.net.id';
                         @endphp
-                        <div class="grid grid-cols-[100px_1fr] gap-x-3 md:grid-cols-[100px_1fr_210px_1fr] md:items-start">
+                        <div class="grid grid-cols-[100px_1fr] gap-x-3 md:grid-cols-[120px_minmax(0,2.35fr)_180px_1.35fr] md:items-start">
                             <div class="font-extrabold">{{ $footerBranch->name }}</div>
                             <div>{{ $footerBranch->address ?: '-' }}</div>
                             <div class="font-semibold">Tel : {{ $footerBranch->phone ?: '-' }}</div>
