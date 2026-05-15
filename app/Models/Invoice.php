@@ -83,11 +83,11 @@ class Invoice extends Model
         $words = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
 
         if ($value === 0) {
-            return ' nol';
+            return 'nol';
         }
 
         if ($value < 12) {
-            return ' ' . $words[$value];
+            return $words[$value];
         }
 
         if ($value < 20) {
@@ -95,34 +95,42 @@ class Invoice extends Model
         }
 
         if ($value < 100) {
-            return $this->spellNumber((int) floor($value / 10)) . ' puluh' . $this->spellNumber($value % 10);
+            $remainder = $value % 10;
+            return $this->spellNumber((int) floor($value / 10)) . ' puluh' . ($remainder > 0 ? ' ' . $this->spellNumber($remainder) : '');
         }
 
         if ($value < 200) {
-            return ' seratus' . $this->spellNumber($value - 100);
+            $remainder = $value - 100;
+            return 'seratus' . ($remainder > 0 ? ' ' . $this->spellNumber($remainder) : '');
         }
 
         if ($value < 1000) {
-            return $this->spellNumber((int) floor($value / 100)) . ' ratus' . $this->spellNumber($value % 100);
+            $remainder = $value % 100;
+            return $this->spellNumber((int) floor($value / 100)) . ' ratus' . ($remainder > 0 ? ' ' . $this->spellNumber($remainder) : '');
         }
 
         if ($value < 2000) {
-            return ' seribu' . $this->spellNumber($value - 1000);
+            $remainder = $value - 1000;
+            return 'seribu' . ($remainder > 0 ? ' ' . $this->spellNumber($remainder) : '');
         }
 
         if ($value < 1000000) {
-            return $this->spellNumber((int) floor($value / 1000)) . ' ribu' . $this->spellNumber($value % 1000);
+            $remainder = $value % 1000;
+            return $this->spellNumber((int) floor($value / 1000)) . ' ribu' . ($remainder > 0 ? ' ' . $this->spellNumber($remainder) : '');
         }
 
         if ($value < 1000000000) {
-            return $this->spellNumber((int) floor($value / 1000000)) . ' juta' . $this->spellNumber($value % 1000000);
+            $remainder = $value % 1000000;
+            return $this->spellNumber((int) floor($value / 1000000)) . ' juta' . ($remainder > 0 ? ' ' . $this->spellNumber($remainder) : '');
         }
 
         if ($value < 1000000000000) {
-            return $this->spellNumber((int) floor($value / 1000000000)) . ' miliar' . $this->spellNumber($value % 1000000000);
+            $remainder = $value % 1000000000;
+            return $this->spellNumber((int) floor($value / 1000000000)) . ' miliar' . ($remainder > 0 ? ' ' . $this->spellNumber($remainder) : '');
         }
 
-        return $this->spellNumber((int) floor($value / 1000000000000)) . ' triliun' . $this->spellNumber($value % 1000000000000);
+        $remainder = $value % 1000000000000;
+        return $this->spellNumber((int) floor($value / 1000000000000)) . ' triliun' . ($remainder > 0 ? ' ' . $this->spellNumber($remainder) : '');
     }
 
     // Generate Invoice Number helper

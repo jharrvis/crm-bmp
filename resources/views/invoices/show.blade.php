@@ -10,6 +10,7 @@
         @media print {
             body {
                 -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
 
             .no-print {
@@ -19,127 +20,144 @@
     </style>
 </head>
 
-<body class="bg-gray-100 font-sans text-slate-800">
+<body class="bg-slate-100 font-sans text-slate-900">
     @php
         $branch = $invoice->resolveBranch();
         $billingSummary = $invoice->calculateBillingSummary();
     @endphp
 
-    <div class="max-w-3xl mx-auto bg-white shadow-lg my-10 p-10 rounded-xl" id="invoice">
+    <div id="invoice" class="mx-auto my-8 max-w-5xl rounded-3xl bg-white px-8 py-10 shadow-xl md:px-12">
+        <div class="flex items-start justify-between gap-8">
+            <div class="pt-1">
+                <div class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">The Internet Service Provider</div>
+                <div class="mt-2 flex items-end gap-1 leading-none">
+                    <span class="text-6xl font-black italic tracking-tight text-blue-700">bmp</span>
+                    <span class="text-6xl font-black italic tracking-tight text-red-600">net</span>
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="text-3xl italic text-blue-900" style="font-family: 'Brush Script MT', cursive;">get Connected!</div>
+                <div class="mt-8 text-6xl font-black tracking-tight text-slate-900">Invoice</div>
+            </div>
+        </div>
 
-        <div class="flex justify-between items-start mb-10 border-b pb-8">
+        <div class="mt-12 grid grid-cols-1 gap-10 md:grid-cols-[1.15fr_0.85fr]">
             <div>
-                <h1 class="text-4xl font-bold text-slate-800 mb-2">INVOICE</h1>
-                <p class="text-slate-500 text-sm">No. Inv: <span
-                        class="font-mono font-bold text-slate-800">{{ $invoice->invoice_number }}</span></p>
-                <p class="text-slate-500 text-sm">Tanggal: {{ $invoice->invoice_date->format('d F Y') }}</p>
-                <p class="text-slate-500 text-sm">Jatuh Tempo: <span
-                        class="text-red-600 font-bold">{{ $invoice->due_date->format('d F Y') }}</span></p>
-
-                <div class="mt-4">
-                    @if($invoice->status == 'paid')
-                        <span
-                            class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold border border-green-200 uppercase tracking-wide">LUNAS
-                            / PAID</span>
-                    @elseif($invoice->status == 'unpaid')
-                        <span
-                            class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold border border-red-200 uppercase tracking-wide">BELUM
-                            LUNAS / UNPAID</span>
-                    @endif
-                </div>
-            </div>
-            <div class="text-right max-w-xs">
-                <div class="font-bold text-xl text-blue-600 mb-1">{{ $branch?->name ?? 'BMPNET' }}</div>
-                <div class="text-sm text-slate-500">
+                <div class="text-3xl font-extrabold text-slate-900">{{ $branch?->name ?? 'BMPNET' }}</div>
+                <div class="mt-3 space-y-1 text-2xl font-semibold leading-relaxed text-slate-800">
                     @if($branch?->address)
-                        {!! nl2br(e($branch->address)) !!}<br>
+                        @foreach(preg_split("/\r\n|\n|\r/", $branch->address) as $addressLine)
+                            @if(trim($addressLine) !== '')
+                                <div>{{ $addressLine }}</div>
+                            @endif
+                        @endforeach
                     @endif
-                    billing@bmpnet.id
                     @if($branch?->phone)
-                        | {{ $branch->phone }}
+                        <div>{{ $branch->phone }}</div>
                     @endif
+                </div>
+            </div>
+
+            <div class="space-y-7">
+                <div class="grid grid-cols-[140px_1fr] gap-x-4 gap-y-2 text-lg">
+                    <div class="font-bold text-slate-800">Inv No</div>
+                    <div class="text-right font-semibold text-slate-700">{{ $invoice->invoice_number }}</div>
+
+                    <div class="font-bold text-slate-800">Date</div>
+                    <div class="text-right font-semibold text-slate-700">{{ $invoice->invoice_date->format('d-M-Y') }}</div>
+
+                    <div class="font-bold text-slate-800">Due Date</div>
+                    <div class="text-right font-semibold text-slate-700">{{ $invoice->due_date->format('d-M-Y') }}</div>
+
+                    <div class="font-bold text-slate-800">PO. No</div>
+                    <div class="text-right font-semibold text-slate-500">-</div>
+                </div>
+
+                <div>
+                    <div class="bg-slate-100 px-3 py-1 text-base font-bold text-slate-800">Bill To :</div>
+                    <div class="mt-2 text-lg leading-relaxed text-slate-800">
+                        <div class="font-bold">{{ $invoice->client->name }}</div>
+                        @if($invoice->client->address)
+                            <div>{{ $invoice->client->address }}</div>
+                        @endif
+                        @if($invoice->client->city)
+                            <div>{{ $invoice->client->city }}</div>
+                        @endif
+                        <div class="font-medium">{{ $invoice->client->client_code }}</div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="mb-10">
-            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Ditagihkan Kepada:</h3>
-            <div class="font-bold text-lg">{{ $invoice->client->name }}</div>
-            <div class="text-slate-600 text-sm max-w-xs">
-                {{ $invoice->client->address }}<br>
-                {{ $invoice->client->city }}
-            </div>
-            <div class="text-slate-500 text-sm mt-1">{{ $invoice->client->client_code }}</div>
-        </div>
-
-        <div class="mb-10">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="text-xs font-bold text-slate-500 uppercase border-b-2 border-slate-200">
-                        <th class="py-3">Deskripsi</th>
-                        <th class="py-3 text-center">Qty</th>
-                        <th class="py-3 text-right">Harga Satuan</th>
-                        <th class="py-3 text-right">Total</th>
+        <div class="mt-12 overflow-hidden rounded-2xl border border-slate-200">
+            <table class="w-full border-collapse">
+                <thead class="bg-slate-50">
+                    <tr class="text-left text-sm font-bold uppercase tracking-[0.18em] text-slate-600">
+                        <th class="px-5 py-4 w-16 border-b border-slate-200">No.</th>
+                        <th class="px-5 py-4 border-b border-slate-200">Description</th>
+                        <th class="px-5 py-4 w-24 border-b border-slate-200 text-center">QYT</th>
+                        <th class="px-5 py-4 w-48 border-b border-slate-200 text-right">Price</th>
+                        <th class="px-5 py-4 w-48 border-b border-slate-200 text-right">Total</th>
                     </tr>
                 </thead>
-                <tbody class="text-sm">
-                    @foreach($invoice->items as $item)
-                        <tr class="border-b border-slate-100">
-                            <td class="py-4 font-medium">{{ $item->description }}</td>
-                            <td class="py-4 text-center">{{ $item->qty }}</td>
-                            <td class="py-4 text-right">Rp {{ number_format($item->billing_base_amount, 0, ',', '.') }}</td>
-                            <td class="py-4 text-right font-bold">Rp {{ number_format($item->billing_line_total, 0, ',', '.') }}</td>
+                <tbody class="text-base text-slate-800">
+                    @foreach($invoice->items as $index => $item)
+                        <tr>
+                            <td class="px-5 py-4 align-top border-b border-slate-100">{{ $index + 1 }}</td>
+                            <td class="px-5 py-4 align-top border-b border-slate-100">{{ $item->description }}</td>
+                            <td class="px-5 py-4 align-top border-b border-slate-100 text-center">{{ $item->qty }}</td>
+                            <td class="px-5 py-4 align-top border-b border-slate-100 text-right">{{ number_format($item->billing_base_amount, 0, ',', '.') }}</td>
+                            <td class="px-5 py-4 align-top border-b border-slate-100 text-right">{{ number_format($item->billing_line_total, 0, ',', '.') }}</td>
                         </tr>
                     @endforeach
                 </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="3" class="pt-6 text-right font-bold text-slate-600">Harga Jual</td>
-                        <td class="pt-6 text-right font-bold text-slate-700">Rp
-                            {{ number_format($billingSummary['subtotal'], 0, ',', '.') }}</td>
-                    </tr>
-                    @if($billingSummary['ppn_amount'] > 0)
-                        <tr>
-                            <td colspan="3" class="pt-3 text-right font-bold text-slate-600">PPN 11%</td>
-                            <td class="pt-3 text-right font-bold text-slate-700">Rp
-                                {{ number_format($billingSummary['ppn_amount'], 0, ',', '.') }}</td>
-                        </tr>
-                    @endif
-                    @if($billingSummary['pph23_amount'] > 0)
-                        <tr>
-                            <td colspan="3" class="pt-3 text-right font-bold text-slate-600">PPh23 2%</td>
-                            <td class="pt-3 text-right font-bold text-amber-700">Rp
-                                {{ number_format($billingSummary['pph23_amount'], 0, ',', '.') }}</td>
-                        </tr>
-                    @endif
-                    <tr>
-                        <td colspan="3" class="pt-4 text-right font-bold text-slate-600">Total Tagihan</td>
-                        <td class="pt-4 text-right font-bold text-xl text-blue-600">Rp
-                            {{ number_format($billingSummary['total_amount'], 0, ',', '.') }}</td>
-                    </tr>
-                </tfoot>
             </table>
         </div>
 
-        <div class="border-t pt-8 text-slate-500 text-sm">
-            <div class="mb-6">
-                <p class="font-bold mb-2 text-slate-700">Amount in words / Terbilang</p>
-                <p class="italic text-base text-slate-700">{{ $invoice->amount_in_words }}</p>
+        <div class="mt-8 grid grid-cols-1 gap-8 md:grid-cols-[1fr_380px]">
+            <div class="pt-3">
+                <div class="text-xl font-bold text-slate-800">Amount in words / Terbilang</div>
+                <div class="mt-3 max-w-2xl text-2xl italic leading-relaxed text-slate-900">
+                    {{ $invoice->amount_in_words }}
+                </div>
+                <div class="mt-8 text-sm text-slate-500">
+                    {{ $invoice->notes ?? 'Terima kasih telah berlangganan layanan kami.' }}
+                </div>
             </div>
 
-            <p class="font-bold mb-2 text-slate-700">Catatan:</p>
-            <p class="italic mb-4">{{ $invoice->notes ?? 'Terima kasih telah berlangganan layanan kami.' }}</p>
+            <div class="rounded-2xl border border-slate-200">
+                <div class="grid grid-cols-[1fr_170px] text-lg">
+                    <div class="border-b border-slate-200 px-5 py-3 font-bold text-slate-800">Harga Jual</div>
+                    <div class="border-b border-slate-200 px-5 py-3 text-right font-semibold text-slate-800">
+                        {{ number_format($billingSummary['subtotal'], 0, ',', '.') }}
+                    </div>
 
-            <p class="text-xs">
-                Harap lakukan pembayaran sebelum tanggal jatuh tempo. Transfer ke BCA 1234567890 a.n BMPNET.
-            </p>
+                    @if($billingSummary['ppn_amount'] > 0)
+                        <div class="border-b border-slate-200 px-5 py-3 font-bold text-slate-800">PPN 11%</div>
+                        <div class="border-b border-slate-200 px-5 py-3 text-right font-semibold text-slate-800">
+                            {{ number_format($billingSummary['ppn_amount'], 0, ',', '.') }}
+                        </div>
+                    @endif
+
+                    @if($billingSummary['pph23_amount'] > 0)
+                        <div class="border-b border-slate-200 px-5 py-3 font-bold text-slate-800">PPh23 2%</div>
+                        <div class="border-b border-slate-200 px-5 py-3 text-right font-semibold text-slate-800">
+                            {{ number_format($billingSummary['pph23_amount'], 0, ',', '.') }}
+                        </div>
+                    @endif
+
+                    <div class="px-5 py-4 text-2xl font-extrabold text-slate-900">Total Tagihan</div>
+                    <div class="px-5 py-4 text-right text-2xl font-extrabold text-slate-900">
+                        {{ number_format($billingSummary['total_amount'], 0, ',', '.') }}
+                    </div>
+                </div>
+            </div>
         </div>
-
     </div>
 
-    <div class="fixed bottom-5 right-5 no-print flex gap-2">
+    <div class="no-print fixed bottom-5 right-5">
         <button onclick="window.print()"
-            class="bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg font-bold hover:bg-blue-700 transition-colors flex items-center gap-2">
+            class="flex items-center gap-2 rounded-full bg-blue-700 px-5 py-3 font-bold text-white shadow-lg transition-colors hover:bg-blue-800">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="6 9 6 2 18 2 18 9"></polyline>
@@ -149,7 +167,6 @@
             Cetak PDF
         </button>
     </div>
-
 </body>
 
 </html>
