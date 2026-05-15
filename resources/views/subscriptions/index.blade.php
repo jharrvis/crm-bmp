@@ -183,7 +183,6 @@
                                                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Jika aktif, PPN dihitung 11% dari harga jual.</p>
                                             </div>
                                             <label class="tax-toggle inline-flex items-center gap-3 cursor-pointer">
-                                                <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Gunakan PPN</span>
                                                 <input type="checkbox" id="uses_ppn" name="uses_ppn" value="1" class="sr-only">
                                                 <span class="tax-toggle-track tax-toggle-track--emerald">
                                                     <span class="tax-toggle-thumb"></span>
@@ -201,7 +200,6 @@
                                                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Jika aktif, PPh23 dihitung 2% dari harga jual dan menjadi potongan tagihan.</p>
                                             </div>
                                             <label class="tax-toggle inline-flex items-center gap-3 cursor-pointer">
-                                                <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Gunakan PPh23</span>
                                                 <input type="checkbox" id="uses_pph23" name="uses_pph23" value="1" class="sr-only">
                                                 <span class="tax-toggle-track tax-toggle-track--amber">
                                                     <span class="tax-toggle-thumb"></span>
