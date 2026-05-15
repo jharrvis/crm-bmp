@@ -29,4 +29,44 @@ class InvoiceItem extends Model
     {
         return $this->belongsTo(Subscription::class);
     }
+
+    public function getBillingBaseAmountAttribute(): float
+    {
+        if (!$this->subscription) {
+            return (float) $this->amount;
+        }
+
+        $baseAmount = (float) $this->subscription->base_price;
+        $effectiveAmount = (float) $this->subscription->effective_price;
+        $storedAmount = (float) $this->amount;
+
+        if (abs($storedAmount - $effectiveAmount) < 0.01) {
+            return $baseAmount;
+        }
+
+        return $storedAmount;
+    }
+
+    public function getBillingLineTotalAttribute(): float
+    {
+        return $this->billing_base_amount * max(1, (int) $this->qty);
+    }
+
+    public function getBillingPpnAmountAttribute(): float
+    {
+        if (!$this->subscription || !$this->subscription->uses_ppn) {
+            return 0.0;
+        }
+
+        return (float) ($this->subscription->ppn_amount ?? 0) * max(1, (int) $this->qty);
+    }
+
+    public function getBillingPph23AmountAttribute(): float
+    {
+        if (!$this->subscription || !$this->subscription->uses_pph23) {
+            return 0.0;
+        }
+
+        return (float) ($this->subscription->pph23_amount ?? 0) * max(1, (int) $this->qty);
+    }
 }

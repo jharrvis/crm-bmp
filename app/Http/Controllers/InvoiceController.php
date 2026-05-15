@@ -134,9 +134,9 @@ class InvoiceController extends Controller
                     'invoice_id' => $invoice->id,
                     'subscription_id' => $sub->id,
                     'description' => "Langganan " . $sub->package->name . " (Periode " . now()->format('F Y') . ")",
-                    'amount' => $sub->effective_price,
+                    'amount' => $sub->base_price,
                     'qty' => 1,
-                    'total' => $sub->effective_price,
+                    'total' => $sub->base_price,
                 ]);
 
                 $generatedCount++;
@@ -156,7 +156,7 @@ class InvoiceController extends Controller
      */
     public function show(Invoice $invoice)
     {
-        $invoice->load(['client', 'items']);
+        $invoice->load(['client.branch', 'items.subscription.client.branch', 'items.subscription.package']);
         return view('invoices.show', compact('invoice'));
     }
 

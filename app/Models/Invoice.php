@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Invoice extends Model
 {
@@ -32,6 +33,96 @@ class Invoice extends Model
     public function items()
     {
         return $this->hasMany(InvoiceItem::class);
+    }
+
+    public function resolveBranch(): ?Branch
+    {
+        foreach ($this->items as $item) {
+            $branch = $item->subscription?->client?->branch;
+
+            if ($branch) {
+                return $branch;
+            }
+        }
+
+        return $this->client?->branch;
+    }
+
+    public function calculateBillingSummary(): array
+    {
+        $subtotal = 0.0;
+        $ppnAmount = 0.0;
+        $pph23Amount = 0.0;
+
+        foreach ($this->items as $item) {
+            $subtotal += $item->billing_line_total;
+            $ppnAmount += $item->billing_ppn_amount;
+            $pph23Amount += $item->billing_pph23_amount;
+        }
+
+        $calculatedTotal = $subtotal + $ppnAmount - $pph23Amount;
+        $storedTotal = (float) $this->total_amount;
+        $totalAmount = abs($storedTotal - $calculatedTotal) < 0.01 ? $calculatedTotal : $storedTotal;
+
+        return [
+            'subtotal' => $subtotal,
+            'ppn_amount' => $ppnAmount,
+            'pph23_amount' => $pph23Amount,
+            'total_amount' => $totalAmount,
+        ];
+    }
+
+    public function getAmountInWordsAttribute(): string
+    {
+        return Str::title(trim($this->spellNumber((int) round((float) $this->total_amount)))) . ' rupiah';
+    }
+
+    private function spellNumber(int $value): string
+    {
+        $value = abs($value);
+        $words = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
+
+        if ($value === 0) {
+            return ' nol';
+        }
+
+        if ($value < 12) {
+            return ' ' . $words[$value];
+        }
+
+        if ($value < 20) {
+            return $this->spellNumber($value - 10) . ' belas';
+        }
+
+        if ($value < 100) {
+            return $this->spellNumber((int) floor($value / 10)) . ' puluh' . $this->spellNumber($value % 10);
+        }
+
+        if ($value < 200) {
+            return ' seratus' . $this->spellNumber($value - 100);
+        }
+
+        if ($value < 1000) {
+            return $this->spellNumber((int) floor($value / 100)) . ' ratus' . $this->spellNumber($value % 100);
+        }
+
+        if ($value < 2000) {
+            return ' seribu' . $this->spellNumber($value - 1000);
+        }
+
+        if ($value < 1000000) {
+            return $this->spellNumber((int) floor($value / 1000)) . ' ribu' . $this->spellNumber($value % 1000);
+        }
+
+        if ($value < 1000000000) {
+            return $this->spellNumber((int) floor($value / 1000000)) . ' juta' . $this->spellNumber($value % 1000000);
+        }
+
+        if ($value < 1000000000000) {
+            return $this->spellNumber((int) floor($value / 1000000000)) . ' miliar' . $this->spellNumber($value % 1000000000);
+        }
+
+        return $this->spellNumber((int) floor($value / 1000000000000)) . ' triliun' . $this->spellNumber($value % 1000000000000);
     }
 
     // Generate Invoice Number helper

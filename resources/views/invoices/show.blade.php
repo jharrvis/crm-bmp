@@ -20,10 +20,13 @@
 </head>
 
 <body class="bg-gray-100 font-sans text-slate-800">
+    @php
+        $branch = $invoice->resolveBranch();
+        $billingSummary = $invoice->calculateBillingSummary();
+    @endphp
 
     <div class="max-w-3xl mx-auto bg-white shadow-lg my-10 p-10 rounded-xl" id="invoice">
 
-        <!-- Header -->
         <div class="flex justify-between items-start mb-10 border-b pb-8">
             <div>
                 <h1 class="text-4xl font-bold text-slate-800 mb-2">INVOICE</h1>
@@ -45,17 +48,20 @@
                     @endif
                 </div>
             </div>
-            <div class="text-right">
-                <div class="font-bold text-xl text-blue-600 mb-1">BMPNET</div>
+            <div class="text-right max-w-xs">
+                <div class="font-bold text-xl text-blue-600 mb-1">{{ $branch?->name ?? 'BMPNET' }}</div>
                 <div class="text-sm text-slate-500">
-                    Jl. Jenderal Sudirman No. 123<br>
-                    Salatiga, Jawa Tengah<br>
-                    billing@bmpnet.id | 0298-123456
+                    @if($branch?->address)
+                        {!! nl2br(e($branch->address)) !!}<br>
+                    @endif
+                    billing@bmpnet.id
+                    @if($branch?->phone)
+                        | {{ $branch->phone }}
+                    @endif
                 </div>
             </div>
         </div>
 
-        <!-- Bill To -->
         <div class="mb-10">
             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Ditagihkan Kepada:</h3>
             <div class="font-bold text-lg">{{ $invoice->client->name }}</div>
@@ -66,7 +72,6 @@
             <div class="text-slate-500 text-sm mt-1">{{ $invoice->client->client_code }}</div>
         </div>
 
-        <!-- Table -->
         <div class="mb-10">
             <table class="w-full text-left border-collapse">
                 <thead>
@@ -82,23 +87,46 @@
                         <tr class="border-b border-slate-100">
                             <td class="py-4 font-medium">{{ $item->description }}</td>
                             <td class="py-4 text-center">{{ $item->qty }}</td>
-                            <td class="py-4 text-right">Rp {{ number_format($item->amount, 0, ',', '.') }}</td>
-                            <td class="py-4 text-right font-bold">Rp {{ number_format($item->total, 0, ',', '.') }}</td>
+                            <td class="py-4 text-right">Rp {{ number_format($item->billing_base_amount, 0, ',', '.') }}</td>
+                            <td class="py-4 text-right font-bold">Rp {{ number_format($item->billing_line_total, 0, ',', '.') }}</td>
                         </tr>
                     @endforeach
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="3" class="pt-6 text-right font-bold text-slate-600">Grand Total</td>
-                        <td class="pt-6 text-right font-bold text-xl text-blue-600">Rp
-                            {{ number_format($invoice->total_amount, 0, ',', '.') }}</td>
+                        <td colspan="3" class="pt-6 text-right font-bold text-slate-600">Harga Jual</td>
+                        <td class="pt-6 text-right font-bold text-slate-700">Rp
+                            {{ number_format($billingSummary['subtotal'], 0, ',', '.') }}</td>
+                    </tr>
+                    @if($billingSummary['ppn_amount'] > 0)
+                        <tr>
+                            <td colspan="3" class="pt-3 text-right font-bold text-slate-600">PPN 11%</td>
+                            <td class="pt-3 text-right font-bold text-slate-700">Rp
+                                {{ number_format($billingSummary['ppn_amount'], 0, ',', '.') }}</td>
+                        </tr>
+                    @endif
+                    @if($billingSummary['pph23_amount'] > 0)
+                        <tr>
+                            <td colspan="3" class="pt-3 text-right font-bold text-slate-600">PPh23 2%</td>
+                            <td class="pt-3 text-right font-bold text-amber-700">Rp
+                                {{ number_format($billingSummary['pph23_amount'], 0, ',', '.') }}</td>
+                        </tr>
+                    @endif
+                    <tr>
+                        <td colspan="3" class="pt-4 text-right font-bold text-slate-600">Total Tagihan</td>
+                        <td class="pt-4 text-right font-bold text-xl text-blue-600">Rp
+                            {{ number_format($billingSummary['total_amount'], 0, ',', '.') }}</td>
                     </tr>
                 </tfoot>
             </table>
         </div>
 
-        <!-- Footer / Notes -->
         <div class="border-t pt-8 text-slate-500 text-sm">
+            <div class="mb-6">
+                <p class="font-bold mb-2 text-slate-700">Amount in words / Terbilang</p>
+                <p class="italic text-base text-slate-700">{{ $invoice->amount_in_words }}</p>
+            </div>
+
             <p class="font-bold mb-2 text-slate-700">Catatan:</p>
             <p class="italic mb-4">{{ $invoice->notes ?? 'Terima kasih telah berlangganan layanan kami.' }}</p>
 
