@@ -29,22 +29,24 @@
     <div id="invoice" class="mx-auto my-8 max-w-5xl rounded-3xl bg-white px-8 py-10 shadow-xl md:px-12">
         <div class="flex items-start justify-between gap-8">
             <div class="pt-1">
-                <div class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">The Internet Service Provider</div>
-                <div class="mt-2 flex items-end gap-1 leading-none">
-                    <span class="text-6xl font-black italic tracking-tight text-blue-700">bmp</span>
-                    <span class="text-6xl font-black italic tracking-tight text-red-600">net</span>
+                <div class="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-500">Logo Kiri</div>
+                <div class="mt-2 flex h-20 w-48 items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 text-sm font-semibold text-slate-400">
+                    Placeholder Logo
                 </div>
             </div>
             <div class="text-right">
-                <div class="text-3xl italic text-blue-900" style="font-family: 'Brush Script MT', cursive;">get Connected!</div>
-                <div class="mt-8 text-6xl font-black tracking-tight text-slate-900">Invoice</div>
+                <div class="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-500">Logo Kanan</div>
+                <div class="mt-2 ml-auto flex h-20 w-48 items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 text-sm font-semibold text-slate-400">
+                    Placeholder Logo
+                </div>
+                <div class="mt-6 text-5xl font-black tracking-tight text-slate-900">Invoice</div>
             </div>
         </div>
 
-        <div class="mt-12 grid grid-cols-1 gap-10 md:grid-cols-[1.15fr_0.85fr]">
+        <div class="mt-10 grid grid-cols-1 gap-8 md:grid-cols-[1.15fr_0.85fr]">
             <div>
-                <div class="text-3xl font-extrabold text-slate-900">{{ $branch?->name ?? 'BMPNET' }}</div>
-                <div class="mt-3 space-y-1 text-2xl font-semibold leading-relaxed text-slate-800">
+                <div class="text-2xl font-extrabold text-slate-900">{{ $branch?->name ?? 'BMPNET' }}</div>
+                <div class="mt-3 space-y-1 text-base font-semibold leading-relaxed text-slate-800">
                     @if($branch?->address)
                         @foreach(preg_split("/\r\n|\n|\r/", $branch->address) as $addressLine)
                             @if(trim($addressLine) !== '')
@@ -59,7 +61,7 @@
             </div>
 
             <div class="space-y-7">
-                <div class="grid grid-cols-[140px_1fr] gap-x-4 gap-y-2 text-lg">
+                <div class="grid grid-cols-[110px_1fr] gap-x-4 gap-y-2 text-sm">
                     <div class="font-bold text-slate-800">Inv No</div>
                     <div class="text-right font-semibold text-slate-700">{{ $invoice->invoice_number }}</div>
 
@@ -74,8 +76,8 @@
                 </div>
 
                 <div>
-                    <div class="bg-slate-100 px-3 py-1 text-base font-bold text-slate-800">Bill To :</div>
-                    <div class="mt-2 text-lg leading-relaxed text-slate-800">
+                    <div class="bg-slate-100 px-3 py-1 text-sm font-bold text-slate-800">Bill To :</div>
+                    <div class="mt-2 text-sm leading-relaxed text-slate-800">
                         <div class="font-bold">{{ $invoice->client->name }}</div>
                         @if($invoice->client->address)
                             <div>{{ $invoice->client->address }}</div>
@@ -92,7 +94,7 @@
         <div class="mt-12 overflow-hidden rounded-2xl border border-slate-200">
             <table class="w-full border-collapse">
                 <thead class="bg-slate-50">
-                    <tr class="text-left text-sm font-bold uppercase tracking-[0.18em] text-slate-600">
+                    <tr class="text-left text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">
                         <th class="px-5 py-4 w-16 border-b border-slate-200">No.</th>
                         <th class="px-5 py-4 border-b border-slate-200">Description</th>
                         <th class="px-5 py-4 w-24 border-b border-slate-200 text-center">QYT</th>
@@ -100,7 +102,7 @@
                         <th class="px-5 py-4 w-48 border-b border-slate-200 text-right">Total</th>
                     </tr>
                 </thead>
-                <tbody class="text-base text-slate-800">
+                <tbody class="text-sm text-slate-800">
                     @foreach($invoice->items as $index => $item)
                         <tr>
                             <td class="px-5 py-4 align-top border-b border-slate-100">{{ $index + 1 }}</td>
@@ -114,10 +116,10 @@
             </table>
         </div>
 
-        <div class="mt-8 grid grid-cols-1 gap-8 md:grid-cols-[1fr_380px]">
+        <div class="mt-8 grid grid-cols-1 gap-8 md:grid-cols-[1fr_340px]">
             <div class="pt-3">
-                <div class="text-xl font-bold text-slate-800">Amount in words / Terbilang</div>
-                <div class="mt-3 max-w-2xl text-2xl italic leading-relaxed text-slate-900">
+                <div class="text-base font-bold text-slate-800">Amount in words / Terbilang</div>
+                <div class="mt-3 max-w-2xl text-lg italic leading-relaxed text-slate-900">
                     {{ $invoice->amount_in_words }}
                 </div>
                 <div class="mt-8 text-sm text-slate-500">
@@ -126,7 +128,7 @@
             </div>
 
             <div class="rounded-2xl border border-slate-200">
-                <div class="grid grid-cols-[1fr_170px] text-lg">
+                <div class="grid grid-cols-[1fr_150px] text-sm">
                     <div class="border-b border-slate-200 px-5 py-3 font-bold text-slate-800">Harga Jual</div>
                     <div class="border-b border-slate-200 px-5 py-3 text-right font-semibold text-slate-800">
                         {{ number_format($billingSummary['subtotal'], 0, ',', '.') }}
@@ -146,10 +148,43 @@
                         </div>
                     @endif
 
-                    <div class="px-5 py-4 text-2xl font-extrabold text-slate-900">Total Tagihan</div>
-                    <div class="px-5 py-4 text-right text-2xl font-extrabold text-slate-900">
+                    <div class="px-5 py-4 text-lg font-extrabold text-slate-900">Total Tagihan</div>
+                    <div class="px-5 py-4 text-right text-lg font-extrabold text-slate-900">
                         {{ number_format($billingSummary['total_amount'], 0, ',', '.') }}
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-12 border-t border-slate-200 pt-8">
+            <div class="mx-auto max-w-md text-center text-slate-900">
+                <div class="text-xl font-extrabold">BMP.NET</div>
+                @if($branch?->address)
+                    @foreach(preg_split("/\r\n|\n|\r/", $branch->address) as $addressLine)
+                        @if(trim($addressLine) !== '')
+                            <div class="text-sm font-semibold">{{ $addressLine }}</div>
+                        @endif
+                    @endforeach
+                @endif
+                @if($branch?->phone)
+                    <div class="text-sm font-semibold">Telp. {{ $branch->phone }}</div>
+                @endif
+                <div class="text-sm font-semibold">www.bmp.net.id</div>
+            </div>
+
+            <div class="mt-8 border-t-4 border-blue-800 pt-5">
+                <div class="space-y-2 text-sm text-slate-900">
+                    @foreach(($global_branches ?? collect())->sortBy('name') as $footerBranch)
+                        @php
+                            $branchEmail = $footerBranch->code ? 'cs@' . strtolower($footerBranch->code) . '.bmp.net.id' : 'cs@bmp.net.id';
+                        @endphp
+                        <div class="grid grid-cols-[100px_1fr] gap-x-3 md:grid-cols-[100px_1fr_210px_1fr] md:items-start">
+                            <div class="font-extrabold">{{ $footerBranch->name }}</div>
+                            <div>{{ $footerBranch->address ?: '-' }}</div>
+                            <div class="font-semibold">Tel : {{ $footerBranch->phone ?: '-' }}</div>
+                            <div>e-mail : {{ $branchEmail }}</div>
+                        </div>
+                    @endforeach
                 </div>
             </div>
         </div>
