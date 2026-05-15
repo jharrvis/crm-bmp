@@ -7,7 +7,6 @@ use App\Models\Branch;
 use App\Models\ClientContact;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 use Yajra\DataTables\Facades\DataTables;
 
@@ -76,15 +75,8 @@ class ClientController extends Controller
 
         DB::beginTransaction();
         try {
-            // Generate Client Code
             $branch = Branch::findOrFail($validated['branch_id']);
-            $count = Client::where('branch_id', $branch->id)->count() + 1;
-            $client_code = sprintf("C-%s-%04d", strtoupper(Str::slug($branch->name)), $count);
-            // Ensure unique just in case
-            while (Client::where('client_code', $client_code)->exists()) {
-                $count++;
-                $client_code = sprintf("C-%s-%04d", strtoupper(Str::slug($branch->name)), $count);
-            }
+            $client_code = $this->generateClientCode($branch);
 
             $client = Client::create([
                 'client_code' => $client_code,
@@ -242,5 +234,35 @@ class ClientController extends Controller
             ]);
         }
         return redirect()->route('clients.index')->with('success', 'Klien berhasil dihapus.');
+    }
+
+    private function generateClientCode(Branch $branch): string
+    {
+        $branchCode = strtoupper((string) $branch->code);
+        $latestMatchingCode = Client::query()
+            ->where('branch_id', $branch->id)
+            ->where('client_code', 'like', $branchCode . '%')
+            ->select('client_code')
+            ->orderByDesc('client_code')
+            ->value('client_code');
+
+        $nextNumber = 1;
+
+        if ($latestMatchingCode && preg_match('/^' . preg_quote($branchCode, '/') . '(\d{5})$/', $latestMatchingCode, $matches)) {
+            $nextNumber = ((int) $matches[1]) + 1;
+        } else {
+            $existingCount = Client::query()
+                ->where('branch_id', $branch->id)
+                ->count();
+
+            $nextNumber = $existingCount + 1;
+        }
+
+        do {
+            $clientCode = sprintf('%s%05d', $branchCode, $nextNumber);
+            $nextNumber++;
+        } while (Client::query()->where('client_code', $clientCode)->exists());
+
+        return $clientCode;
     }
 }
