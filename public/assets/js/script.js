@@ -291,8 +291,50 @@ function showToast(message, type = 'success') {
 
 // Confirm Modal System
 let confirmCallback = null;
+let confirmPromiseResolve = null;
+let confirmMode = 'callback';
+
+function ensureConfirmModal() {
+    if (document.getElementById('confirmModal')) {
+        return;
+    }
+
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = `
+        <div id="confirmModal" class="fixed inset-0 z-[70] hidden">
+            <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity opacity-0" id="confirmBackdrop"></div>
+            <div class="absolute inset-0 flex items-center justify-center p-4">
+                <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-sm transform scale-95 opacity-0 transition-all duration-300" id="confirmPanel">
+                    <div class="p-6 text-center">
+                        <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i data-lucide="alert-triangle" class="w-8 h-8"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800 dark:text-white mb-2" id="confirmTitle">Konfirmasi</h3>
+                        <p class="text-slate-500 dark:text-slate-400 text-sm mb-6" id="confirmText">Apakah Anda yakin ingin melanjutkan?</p>
+                        <div class="flex gap-3 justify-center">
+                            <button type="button" onclick="hideConfirmModal()" class="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                                Batal
+                            </button>
+                            <button id="confirmYesBtn" type="button" class="px-5 py-2.5 rounded-xl font-bold bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-200 dark:shadow-none transition-all flex items-center gap-2 disabled:opacity-50">
+                                <svg id="confirmSpinner" class="animate-spin h-5 w-5 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span id="confirmBtnText">Ya, Lanjutkan!</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(wrapper.firstElementChild);
+}
 
 function showConfirmModal(title, text, callback) {
+    ensureConfirmModal();
+    confirmMode = 'callback';
     confirmCallback = callback;
     const modal = document.getElementById('confirmModal');
     const backdrop = document.getElementById('confirmBackdrop');
@@ -307,6 +349,14 @@ function showConfirmModal(title, text, callback) {
     // Setup confirm button handler
     if (confirmYesBtn) {
         confirmYesBtn.onclick = () => {
+            if (confirmMode === 'promise') {
+                const resolver = confirmPromiseResolve;
+                confirmPromiseResolve = null;
+                closeConfirmModal();
+                if (resolver) resolver(true);
+                return;
+            }
+
             if (confirmCallback) confirmCallback();
         };
     }
@@ -320,6 +370,17 @@ function showConfirmModal(title, text, callback) {
 
     // Re-init lucide icons
     if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function confirmAction(title, text) {
+    ensureConfirmModal();
+    confirmMode = 'promise';
+    confirmCallback = null;
+
+    return new Promise((resolve) => {
+        confirmPromiseResolve = resolve;
+        showConfirmModal(title, text, null);
+    });
 }
 
 function closeConfirmModal() {
@@ -336,11 +397,20 @@ function closeConfirmModal() {
     setTimeout(() => {
         modal.classList.add('hidden');
         confirmCallback = null;
+        confirmMode = 'callback';
     }, 300);
 }
 
 // Alias for backwards compatibility
 function hideConfirmModal() {
+    if (confirmMode === 'promise' && confirmPromiseResolve) {
+        const resolver = confirmPromiseResolve;
+        confirmPromiseResolve = null;
+        closeConfirmModal();
+        resolver(false);
+        return;
+    }
+
     closeConfirmModal();
 }
 
@@ -393,6 +463,49 @@ function closeModal(modalId) {
         modal.classList.add('hidden');
     }, 300);
 }
+
+document.addEventListener('click', function (event) {
+    const backdrop = document.getElementById('confirmBackdrop');
+
+    if (backdrop && event.target === backdrop) {
+        hideConfirmModal();
+    }
+});
+
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && !document.getElementById('confirmModal')?.classList.contains('hidden')) {
+        hideConfirmModal();
+    }
+});
+
+document.addEventListener('submit', function (event) {
+    const form = event.target;
+
+    if (!(form instanceof HTMLFormElement) || !form.dataset.confirmText) {
+        return;
+    }
+
+    if (form.dataset.confirmSubmitted === 'true') {
+        form.dataset.confirmSubmitted = 'false';
+        return;
+    }
+
+    event.preventDefault();
+
+    confirmAction(
+        form.dataset.confirmTitle || 'Konfirmasi',
+        form.dataset.confirmText
+    ).then((confirmed) => {
+        if (!confirmed) {
+            return;
+        }
+
+        form.dataset.confirmSubmitted = 'true';
+        form.requestSubmit();
+    });
+});
+
+window.confirmAction = confirmAction;
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {

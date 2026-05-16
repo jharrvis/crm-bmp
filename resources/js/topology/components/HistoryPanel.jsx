@@ -31,8 +31,11 @@ const HistoryPanel = ({ subscriptionId, apiBaseUrl, csrfToken, canEdit, onRestor
         }
     };
 
-    const handleRestore = (historyId) => {
-        if (confirm('Restore ke versi ini? Perubahan yang belum disimpan akan hilang.')) {
+    const handleRestore = async (historyId) => {
+        const confirmed = window.confirmAction
+            ? await window.confirmAction('Restore Versi?', 'Restore ke versi ini? Perubahan yang belum disimpan akan hilang.')
+            : window.confirm('Restore ke versi ini? Perubahan yang belum disimpan akan hilang.');
+        if (confirmed) {
             onRestore(historyId);
         }
     };

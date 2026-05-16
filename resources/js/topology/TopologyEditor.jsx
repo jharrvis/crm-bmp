@@ -365,9 +365,12 @@ const TopologyEditor = ({ subscriptionId, apiBaseUrl, canEdit }) => {
         [nodes, canEdit, setNodes, setEdges, isLocked, getEdgeOptions]
     );
 
-    const clearCanvas = useCallback(() => {
+    const clearCanvas = useCallback(async () => {
         if (!canEdit || isLocked) return;
-        if (confirm('Hapus semua elemen? Tindakan ini tidak dapat dibatalkan.')) {
+        const confirmed = window.confirmAction
+            ? await window.confirmAction('Kosongkan Kanvas?', 'Hapus semua elemen? Tindakan ini tidak dapat dibatalkan.')
+            : window.confirm('Hapus semua elemen? Tindakan ini tidak dapat dibatalkan.');
+        if (confirmed) {
             setNodes([]);
             setEdges([]);
             setHasChanges(true);

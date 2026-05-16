@@ -81,7 +81,8 @@
                                             </button>
 
                                             <form method="POST" action="{{ route('ticket-canned-responses.destroy', $response) }}"
-                                                onsubmit="return confirm('Hapus template ini?')">
+                                                data-confirm-title="Hapus Template?"
+                                                data-confirm-text="Hapus template ini?">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit"

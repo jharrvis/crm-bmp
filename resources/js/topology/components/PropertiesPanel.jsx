@@ -86,8 +86,11 @@ const PropertiesPanel = ({ node, onUpdate, onDelete, onClose }) => {
         onUpdate(node.id, formData);
     };
 
-    const handleDelete = () => {
-        if (confirm('Hapus device ini?')) {
+    const handleDelete = async () => {
+        const confirmed = window.confirmAction
+            ? await window.confirmAction('Hapus Device?', 'Hapus device ini?')
+            : window.confirm('Hapus device ini?');
+        if (confirmed) {
             onDelete(node.id);
         }
     };

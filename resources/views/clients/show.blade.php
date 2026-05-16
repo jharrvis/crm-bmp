@@ -614,10 +614,11 @@
             const hasPortalAccount = @json((bool) $client->portalAccount);
             let portalOtpHideTimer = null;
 
-            function switchTab(tabName) {
+            async function switchTab(tabName) {
                 // If in edit mode and switching tabs, cancel edit
                 if (isEditMode && tabName !== 'info' && tabName !== 'contacts') {
-                    if (!confirm('You have unsaved changes. Cancel edit mode?')) {
+                    const confirmed = await window.confirmAction('Batalkan Edit?', 'Ada perubahan yang belum disimpan. Batalkan mode edit?');
+                    if (!confirmed) {
                         return;
                     }
                     cancelEdit();
@@ -789,8 +790,9 @@
                     });
             }
 
-            function revokePortalSessions() {
-                if (!confirm('Cabut semua sesi portal client yang sedang aktif?')) return;
+            async function revokePortalSessions() {
+                const confirmed = await window.confirmAction('Cabut Sesi Portal?', 'Cabut semua sesi portal client yang sedang aktif?');
+                if (!confirmed) return;
 
                 fetch(`${baseUrl}/clients/${clientId}/portal-account/revoke-sessions`, {
                     method: 'POST',
@@ -816,8 +818,9 @@
                     });
             }
 
-            function generatePortalOtp() {
-                if (!confirm('Buat OTP manual untuk client ini? OTP sebelumnya yang belum dipakai akan kedaluwarsa.')) return;
+            async function generatePortalOtp() {
+                const confirmed = await window.confirmAction('Generate OTP Manual?', 'Buat OTP manual untuk client ini? OTP sebelumnya yang belum dipakai akan kedaluwarsa.');
+                if (!confirmed) return;
 
                 fetch(`${baseUrl}/clients/${clientId}/portal-account/generate-otp`, {
                     method: 'POST',
@@ -1018,8 +1021,9 @@
                     });
             }
 
-            function deleteContact(id) {
-                if (!confirm('Apakah Anda yakin ingin menghapus kontak ini?')) return;
+            async function deleteContact(id) {
+                const confirmed = await window.confirmAction('Hapus Kontak?', 'Apakah Anda yakin ingin menghapus kontak ini?');
+                if (!confirmed) return;
 
                 fetch(`${baseUrl}/clients/${clientId}/contacts/${id}`, {
                     method: 'POST',

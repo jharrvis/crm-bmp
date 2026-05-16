@@ -121,9 +121,10 @@
                 });
             });
 
-            function generateInvoices() {
+            async function generateInvoices() {
                 const btn = document.getElementById('btnGenerate');
-                if (!confirm('Generate invoice otomatis untuk pelanggan aktif bulan ini?')) return;
+                const confirmed = await window.confirmAction('Generate Invoice?', 'Generate invoice otomatis untuk pelanggan aktif bulan ini?');
+                if (!confirmed) return;
 
                 btn.disabled = true;
                 btn.innerHTML = '<i class="animate-spin" data-lucide="loader-2"></i> Generating...';
@@ -155,8 +156,9 @@
                     });
             }
 
-            function markAsPaid(id, number) {
-                if (!confirm(`Tandai invoice ${number} sebagai LUNAS?`)) return;
+            async function markAsPaid(id, number) {
+                const confirmed = await window.confirmAction('Tandai Lunas?', `Tandai invoice ${number} sebagai LUNAS?`);
+                if (!confirmed) return;
 
                 fetch(`/invoices/${id}`, {
                     method: 'PUT',
@@ -177,8 +179,9 @@
                     });
             }
 
-            function deleteInvoice(id) {
-                if (!confirm('Hapus invoice ini? Data tidak bisa dikembalikan.')) return;
+            async function deleteInvoice(id) {
+                const confirmed = await window.confirmAction('Hapus Invoice?', 'Hapus invoice ini? Data tidak bisa dikembalikan.');
+                if (!confirmed) return;
 
                 fetch(`/invoices/${id}`, {
                     method: 'DELETE',
