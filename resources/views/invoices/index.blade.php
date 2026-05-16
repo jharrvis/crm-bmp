@@ -183,21 +183,25 @@
                 const confirmed = await window.confirmAction('Hapus Invoice?', 'Hapus invoice ini? Data tidak bisa dikembalikan.');
                 if (!confirmed) return;
 
-                fetch(`/invoices/${id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': "{{ csrf_token() }}",
-                        'Accept': 'application/json'
-                    }
-                })
-                    .then(r => r.json())
-                    .then(res => {
-                        if (res.success) {
-                            window.location.reload();
-                        } else {
-                            alert('Gagal menghapus.');
-                        }
-                    });
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/invoices/${id}`;
+                form.classList.add('hidden');
+
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_token';
+                csrfInput.value = "{{ csrf_token() }}";
+
+                const methodInput = document.createElement('input');
+                methodInput.type = 'hidden';
+                methodInput.name = '_method';
+                methodInput.value = 'DELETE';
+
+                form.appendChild(csrfInput);
+                form.appendChild(methodInput);
+                document.body.appendChild(form);
+                form.submit();
             }
         </script>
     @endpush
