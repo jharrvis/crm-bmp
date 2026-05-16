@@ -12,6 +12,14 @@ use Carbon\Carbon;
 
 class InvoiceController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:invoices.view')->only(['index', 'show']);
+        $this->middleware('permission:invoices.create')->only(['create', 'store', 'generate']);
+        $this->middleware('permission:invoices.update')->only(['update']);
+        $this->middleware('permission:invoices.delete')->only(['destroy']);
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -126,7 +134,7 @@ class InvoiceController extends Controller
                     'due_date' => now()->addDays(7), // Due in 7 days
                     'total_amount' => $sub->effective_price,
                     'status' => 'unpaid',
-                    'notes' => 'Tagihan Bulanan Otomatis',
+                    'notes' => null,
                 ]);
 
                 // Create Item

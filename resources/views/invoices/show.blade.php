@@ -199,7 +199,6 @@
                         @if($invoice->client->city)
                             <div>{{ $invoice->client->city }}</div>
                         @endif
-                        <div class="font-medium">{{ $invoice->client->client_code }}</div>
                     </div>
                 </div>
             </div>
@@ -236,9 +235,11 @@
                 <div class="print-terbilang-body mt-3 max-w-2xl text-lg italic leading-relaxed text-slate-900">
                     {{ $invoice->amount_in_words }}
                 </div>
-                <div class="mt-8 text-sm text-slate-500">
-                    {{ $invoice->notes ?? 'Terima kasih telah berlangganan layanan kami.' }}
-                </div>
+                @if(filled($invoice->notes) && $invoice->notes !== 'Tagihan Bulanan Otomatis')
+                    <div class="mt-8 text-sm text-slate-500">
+                        {{ $invoice->notes }}
+                    </div>
+                @endif
             </div>
 
             <div class="rounded-2xl border border-slate-200">

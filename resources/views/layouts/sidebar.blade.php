@@ -5,13 +5,14 @@
         <span class="font-medium text-sm menu-text transition-opacity duration-200">Dashboard Utama</span>
     </a>
 
-    {{-- CORE BUSINESS GROUP (Admin & Employee) --}}
-    @role('Owner|Admin|Employee')
+    {{-- CORE BUSINESS GROUP --}}
+    @if(auth()->user()->hasAnyRole(['Owner', 'Admin', 'Employee', 'Billing', 'NOC', 'CS', 'Sales', 'Finance']))
     <div class="pt-4 pb-2 menu-text">
         <p class="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Operasional</p>
     </div>
 
     <!-- Data Pelanggan -->
+    @can('clients.view')
     @php
         $isClientActive = request()->routeIs('clients.*');
     @endphp
@@ -44,8 +45,10 @@
             @endif
         </div>
     </div>
+    @endcan
 
     <!-- Layanan Pelanggan (Subscriptions) -->
+    @can('subscriptions.view')
     @php
         $isSubActive = request()->routeIs('subscriptions.*');
     @endphp
@@ -78,21 +81,27 @@
             @endif
         </div>
     </div>
+    @endcan
 
     <!-- Tagihan (Invoices) -->
+    @can('invoices.view')
     <a href="{{ route('invoices.index') }}"
         class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all group whitespace-nowrap {{ request()->routeIs('invoices.*') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
         <i data-lucide="receipt" class="w-5 h-5 shrink-0 transition-colors"></i>
         <span class="font-medium text-sm menu-text transition-opacity duration-200">Tagihan</span>
     </a>
+    @endcan
 
+    @can('tickets.view')
     <a href="{{ route('tickets.index') }}"
         class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all group whitespace-nowrap {{ request()->routeIs('tickets.*') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
         <i data-lucide="ticket" class="w-5 h-5 shrink-0 transition-colors"></i>
         <span class="font-medium text-sm menu-text transition-opacity duration-200">Tiket Support</span>
     </a>
+    @endcan
 
     <!-- Produk & Layanan -->
+    @if(auth()->user()->can('services.view') || auth()->user()->can('packages.view'))
     <div class="pt-4 pb-2 menu-text">
         <p class="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Produk & Layanan</p>
     </div>
@@ -114,12 +123,15 @@
         </button>
         <div class="submenu-content flex flex-col pl-12 lg:group-hover:pl-2 space-y-1 mt-1 overflow-hidden transition-all duration-300 {{ $isProductActive ? 'submenu-open' : '' }}"
             style="{{ $isProductActive ? 'max-height: 500px;' : 'max-height: 0;' }}">
+            @can('services.view')
             <a href="{{ route('services.index') }}"
                 class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('services.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
                 Master Layanan
             </a>
+            @endcan
 
             <!-- Manajemen Paket Sub-group -->
+            @can('packages.view')
             <div class="pt-2 pb-1">
                 <p class="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Paket Layanan</p>
             </div>
@@ -140,9 +152,11 @@
                 class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->query('type') == 'custom' ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
                 Layanan Custom
             </a>
+            @endcan
         </div>
     </div>
-    @endrole
+    @endif
+    @endif
 
     {{-- MASTER DATA GROUP (Owner & Admin) --}}
     @role('Owner|Admin')

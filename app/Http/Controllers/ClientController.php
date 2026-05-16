@@ -13,6 +13,14 @@ use Yajra\DataTables\Facades\DataTables;
 
 class ClientController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:clients.view')->only(['index', 'show']);
+        $this->middleware('permission:clients.create')->only(['create', 'store']);
+        $this->middleware('permission:clients.update')->only(['edit', 'update']);
+        $this->middleware('permission:clients.delete')->only(['destroy']);
+    }
+
     /**
      * Display a listing of the resource.
      */

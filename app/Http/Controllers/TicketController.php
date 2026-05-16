@@ -27,6 +27,9 @@ class TicketController extends Controller
         private readonly TicketActivityService $ticketActivityService,
         private readonly TicketCannedResponseRenderer $ticketCannedResponseRenderer
     ) {
+        $this->middleware('permission:tickets.view')->only(['index', 'show']);
+        $this->middleware('permission:tickets.create')->only(['store']);
+        $this->middleware('permission:tickets.update')->only(['update', 'bulkUpdate', 'reply']);
     }
 
     public function index(Request $request)
@@ -139,7 +142,7 @@ class TicketController extends Controller
             ->with(['subscriptions.package.service'])
             ->orderBy('name')
             ->get();
-        $staffUsers = User::role(['Owner', 'Admin', 'Employee'])
+        $staffUsers = User::role(['Owner', 'Admin', 'Employee', 'Billing', 'NOC', 'CS', 'Sales', 'Finance'])
             ->orderBy('name')
             ->get();
         $summaryCounts = [
@@ -268,7 +271,7 @@ class TicketController extends Controller
             'replies.user',
         ]);
 
-        $staffUsers = User::role(['Owner', 'Admin', 'Employee'])
+        $staffUsers = User::role(['Owner', 'Admin', 'Employee', 'Billing', 'NOC', 'CS', 'Sales', 'Finance'])
             ->orderBy('name')
             ->get();
 

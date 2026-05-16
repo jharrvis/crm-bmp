@@ -29,7 +29,7 @@ class ClientPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasRole(['Owner', 'Admin', 'Employee']);
+        return $user->can('clients.create');
     }
 
     /**
@@ -37,7 +37,7 @@ class ClientPolicy
      */
     public function update(User $user, Client $client): bool
     {
-        return $user->hasRole(['Owner', 'Admin', 'Employee']);
+        return $user->can('clients.update');
     }
 
     /**
@@ -45,7 +45,7 @@ class ClientPolicy
      */
     public function delete(User $user, Client $client): bool
     {
-        return $user->hasRole(['Owner', 'Admin']);
+        return $user->can('clients.delete');
     }
 
     /**
@@ -53,7 +53,7 @@ class ClientPolicy
      */
     public function restore(User $user, Client $client): bool
     {
-        return $user->hasRole(['Owner', 'Admin']);
+        return $user->can('clients.delete');
     }
 
     /**

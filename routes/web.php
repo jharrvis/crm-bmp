@@ -32,7 +32,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // Master Data: Products & Services (Owner, Admin, & Employee)
-    Route::middleware(['role:Owner|Admin|Employee'])->group(function () {
+    Route::middleware(['role:Owner|Admin|Employee|Billing|NOC|CS|Sales|Finance'])->group(function () {
         Route::resource('services', \App\Http\Controllers\ServiceController::class);
         Route::post('packages/sync', [\App\Http\Controllers\PackageController::class, 'syncPackages'])->name('packages.sync');
         Route::resource('packages', \App\Http\Controllers\PackageController::class);

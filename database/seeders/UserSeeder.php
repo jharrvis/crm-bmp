@@ -22,6 +22,11 @@ class UserSeeder extends Seeder
         $roleOwner = Role::firstOrCreate(['name' => 'Owner']);
         $roleAdmin = Role::firstOrCreate(['name' => 'Admin']);
         $roleEmployee = Role::firstOrCreate(['name' => 'Employee']);
+        Role::firstOrCreate(['name' => 'Billing']);
+        Role::firstOrCreate(['name' => 'NOC']);
+        Role::firstOrCreate(['name' => 'CS']);
+        Role::firstOrCreate(['name' => 'Sales']);
+        Role::firstOrCreate(['name' => 'Finance']);
         $roleClient = Role::firstOrCreate(['name' => 'Client']);
 
         // Create Owner User
@@ -65,4 +70,3 @@ class UserSeeder extends Seeder
         $client->assignRole($roleClient);
     }
 }
-

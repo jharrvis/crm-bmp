@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Storage;
 
 class EmployeeController extends Controller
 {
+    private const STAFF_ROLE_NAMES = ['Owner', 'Admin', 'Employee', 'Billing', 'NOC', 'CS', 'Sales', 'Finance'];
+
     /**
      * Display a listing of the resource.
      */
@@ -21,14 +23,14 @@ class EmployeeController extends Controller
      */
     public function index()
     {
-        $employees = User::role(['Owner', 'Admin', 'Employee'])
+        $employees = User::role(self::STAFF_ROLE_NAMES)
             ->with(['branch', 'division', 'roles'])
             ->latest()
             ->get();
 
         $branches = Branch::all();
         $divisions = Division::all();
-        $roles = Role::whereIn('name', ['Owner', 'Admin', 'Employee'])->get();
+        $roles = Role::whereIn('name', self::STAFF_ROLE_NAMES)->get();
 
         return view('employees.index', compact('employees', 'branches', 'divisions', 'roles'));
     }
@@ -40,7 +42,7 @@ class EmployeeController extends Controller
     {
         $branches = Branch::all();
         $divisions = Division::all();
-        $roles = Role::whereIn('name', ['Owner', 'Admin', 'Employee'])->get();
+        $roles = Role::whereIn('name', self::STAFF_ROLE_NAMES)->get();
         return view('employees.create', compact('branches', 'divisions', 'roles'));
     }
 
@@ -109,7 +111,7 @@ class EmployeeController extends Controller
     {
         $branches = Branch::all();
         $divisions = Division::all();
-        $roles = Role::whereIn('name', ['Owner', 'Admin', 'Employee'])->get();
+        $roles = Role::whereIn('name', self::STAFF_ROLE_NAMES)->get();
         return view('employees.edit', compact('employee', 'branches', 'divisions', 'roles'));
     }
 

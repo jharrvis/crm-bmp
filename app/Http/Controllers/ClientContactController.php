@@ -9,6 +9,11 @@ use Illuminate\Support\Facades\DB;
 
 class ClientContactController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:clients.update');
+    }
+
     /**
      * Store a newly created contact.
      */

@@ -36,6 +36,7 @@ class PermissionSeeder extends Seeder
             'subscriptions' => ['view', 'create', 'update', 'delete', 'suspend', 'activate'],
             'invoices' => ['view', 'create', 'update', 'delete', 'send', 'mark_paid'],
             'payments' => ['view', 'create', 'update', 'delete', 'verify'],
+            'financial_reports' => ['view'],
 
             // Support
             'tickets' => ['view', 'create', 'update', 'delete', 'assign', 'close'],
@@ -60,12 +61,23 @@ class PermissionSeeder extends Seeder
         $roleDescriptions = [
             'Owner' => 'Super Administrator dengan akses penuh ke semua fitur',
             'Admin' => 'Administrator dengan akses manajemen operasional',
-            'Employee' => 'Karyawan dengan akses terbatas sesuai divisi',
+            'Employee' => 'Role legacy karyawan umum dengan akses operasional dasar',
+            'Billing' => 'Tim billing dan keuangan operasional',
+            'NOC' => 'Tim Network Operation Center untuk koneksi dan gangguan teknis',
+            'CS' => 'Customer service untuk pelanggan dan koordinasi layanan',
+            'Sales' => 'Tim sales untuk akuisisi pelanggan dan penawaran layanan',
+            'Finance' => 'Tim finance untuk laporan dan kontrol keuangan',
             'Client' => 'Pelanggan dengan akses portal pelanggan',
         ];
 
         foreach ($roleDescriptions as $roleName => $description) {
-            Role::where('name', $roleName)->update([
+            Role::firstOrCreate([
+                'name' => $roleName,
+                'guard_name' => 'web',
+            ], [
+                'description' => $description,
+                'is_system' => true,
+            ])->update([
                 'description' => $description,
                 'is_system' => true,
             ]);
@@ -112,6 +124,89 @@ class PermissionSeeder extends Seeder
             'work_orders.update',
         ];
         $employeeRole->givePermissionTo($employeePermissions);
+
+        $billingRole = Role::findByName('Billing');
+        $billingRole->syncPermissions([
+            'clients.view',
+            'subscriptions.view',
+            'invoices.view',
+            'invoices.create',
+            'invoices.update',
+            'invoices.send',
+            'invoices.mark_paid',
+            'payments.view',
+            'payments.create',
+            'payments.update',
+            'payments.verify',
+            'financial_reports.view',
+            'tickets.view',
+            'tickets.create',
+            'tickets.update',
+        ]);
+
+        $nocRole = Role::findByName('NOC');
+        $nocRole->syncPermissions([
+            'clients.view',
+            'subscriptions.view',
+            'subscriptions.update',
+            'subscriptions.suspend',
+            'subscriptions.activate',
+            'routers.view',
+            'routers.connect',
+            'servers.view',
+            'tickets.view',
+            'tickets.update',
+            'tickets.assign',
+            'tickets.close',
+            'work_orders.view',
+            'work_orders.create',
+            'work_orders.update',
+            'work_orders.assign',
+            'work_orders.complete',
+        ]);
+
+        $csRole = Role::findByName('CS');
+        $csRole->syncPermissions([
+            'clients.view',
+            'clients.create',
+            'clients.update',
+            'subscriptions.view',
+            'subscriptions.create',
+            'subscriptions.update',
+            'invoices.view',
+            'tickets.view',
+            'tickets.create',
+            'tickets.update',
+        ]);
+
+        $salesRole = Role::findByName('Sales');
+        $salesRole->syncPermissions([
+            'clients.view',
+            'clients.create',
+            'clients.update',
+            'subscriptions.view',
+            'subscriptions.create',
+            'services.view',
+            'packages.view',
+            'tickets.view',
+            'tickets.create',
+        ]);
+
+        $financeRole = Role::findByName('Finance');
+        $financeRole->syncPermissions([
+            'clients.view',
+            'subscriptions.view',
+            'invoices.view',
+            'invoices.create',
+            'invoices.update',
+            'invoices.send',
+            'invoices.mark_paid',
+            'payments.view',
+            'payments.create',
+            'payments.update',
+            'payments.verify',
+            'financial_reports.view',
+        ]);
 
         // Client role - minimal permissions (portal only)
         $clientRole = Role::findByName('Client');

@@ -161,7 +161,7 @@ class TicketNotificationService
             return collect([$ticket->assignedUser]);
         }
 
-        return User::role(['Owner', 'Admin', 'Employee'])
+        return User::role(['Owner', 'Admin', 'Employee', 'Billing', 'NOC', 'CS', 'Sales', 'Finance'])
             ->whereNotNull('email')
             ->orderBy('name')
             ->get();

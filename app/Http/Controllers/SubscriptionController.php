@@ -20,6 +20,10 @@ class SubscriptionController extends Controller
     public function __construct(
         protected ZabbixService $zabbixService
     ) {
+        $this->middleware('permission:subscriptions.view')->only(['index', 'show']);
+        $this->middleware('permission:subscriptions.create')->only(['store']);
+        $this->middleware('permission:subscriptions.update')->only(['update']);
+        $this->middleware('permission:subscriptions.delete')->only(['destroy']);
     }
 
     /**

@@ -8,6 +8,14 @@ use Illuminate\Support\Facades\DB;
 
 class ServiceController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:services.view')->only(['index', 'show']);
+        $this->middleware('permission:services.create')->only(['create', 'store']);
+        $this->middleware('permission:services.update')->only(['edit', 'update']);
+        $this->middleware('permission:services.delete')->only(['destroy']);
+    }
+
     /**
      * Display a listing of the resource.
      */
