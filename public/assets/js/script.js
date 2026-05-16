@@ -334,8 +334,14 @@ function ensureConfirmModal() {
 
 function showConfirmModal(title, text, callback) {
     ensureConfirmModal();
-    confirmMode = 'callback';
-    confirmCallback = callback;
+    if (typeof callback === 'function') {
+        confirmMode = 'callback';
+        confirmCallback = callback;
+        confirmPromiseResolve = null;
+    } else if (confirmMode !== 'promise') {
+        confirmMode = 'callback';
+        confirmCallback = null;
+    }
     const modal = document.getElementById('confirmModal');
     const backdrop = document.getElementById('confirmBackdrop');
     const panel = document.getElementById('confirmPanel');
@@ -379,7 +385,7 @@ function confirmAction(title, text) {
 
     return new Promise((resolve) => {
         confirmPromiseResolve = resolve;
-        showConfirmModal(title, text, null);
+        showConfirmModal(title, text);
     });
 }
 
