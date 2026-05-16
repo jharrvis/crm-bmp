@@ -192,9 +192,25 @@ class InvoiceController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Invoice $invoice)
+    public function destroy(Request $request, Invoice $invoice)
     {
-        $invoice->delete();
-        return response()->json(['success' => true, 'message' => 'Invoice berhasil dihapus.']);
+        try {
+            DB::transaction(function () use ($invoice) {
+                $invoice->items()->delete();
+                $invoice->delete();
+            });
+
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'Invoice berhasil dihapus.']);
+            }
+
+            return redirect()->route('invoices.index')->with('success', 'Invoice berhasil dihapus.');
+        } catch (\Throwable $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Gagal menghapus invoice.'], 500);
+            }
+
+            return redirect()->route('invoices.index')->with('error', 'Gagal menghapus invoice.');
+        }
     }
 }

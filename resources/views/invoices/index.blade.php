@@ -81,19 +81,23 @@
                                             <i data-lucide="printer" class="w-4 h-4"></i>
                                         </a>
 
-                                        @if($invoice->status == 'unpaid')
+                                        @can('invoices.update')
+                                            @if($invoice->status == 'unpaid')
                                             <button onclick="markAsPaid({{ $invoice->id }}, '{{ $invoice->invoice_number }}')"
                                                 class="p-2 hover:bg-green-50 dark:hover:bg-green-900/30 text-green-600 rounded-lg transition-colors"
                                                 title="Tandai Lunas">
                                                 <i data-lucide="check-circle" class="w-4 h-4"></i>
                                             </button>
-                                        @endif
+                                            @endif
+                                        @endcan
 
-                                        <button onclick="deleteInvoice({{ $invoice->id }})"
-                                            class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors"
-                                            title="Hapus">
-                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                        </button>
+                                        @can('invoices.delete')
+                                            <button onclick="deleteInvoice({{ $invoice->id }})"
+                                                class="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 rounded-lg transition-colors"
+                                                title="Hapus">
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            </button>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>
