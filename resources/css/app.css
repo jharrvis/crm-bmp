@@ -9,3 +9,30 @@
         font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
     }
 }
+
+@layer utilities {
+    /* Tone down the overall corner radius across the CRM UI. */
+    .rounded-\[2rem\] {
+        border-radius: 1.25rem !important;
+    }
+
+    .rounded-\[1\.75rem\] {
+        border-radius: 1.125rem !important;
+    }
+
+    .rounded-3xl {
+        border-radius: 1rem !important;
+    }
+
+    .rounded-2xl {
+        border-radius: 0.875rem !important;
+    }
+
+    .rounded-xl {
+        border-radius: 0.75rem !important;
+    }
+
+    .rounded-lg {
+        border-radius: 0.625rem !important;
+    }
+}
