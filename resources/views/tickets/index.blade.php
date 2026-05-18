@@ -78,7 +78,7 @@
                 </div>
             </div>
 
-            <form method="GET" class="px-6 py-5 md:px-8 space-y-4">
+            <form method="GET" id="ticketFilterForm" class="px-6 py-5 md:px-8 space-y-4">
                 <input type="hidden" name="view" value="{{ $view }}">
 
                 <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
@@ -103,10 +103,6 @@
                             class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700/30 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
                             <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
                             Filter
-                        </button>
-                        <button type="submit"
-                            class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">
-                            Terapkan
                         </button>
                     </div>
                 </div>
@@ -371,9 +367,11 @@
                                                     </span>
                                                 @endif
                                             </div>
-                                            <div class="mt-3 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                                                {{ $ticket->assignedUser?->name ?? 'Belum di-assign' }}
-                                            </div>
+                                            @if($ticket->assignedUser)
+                                                <div class="mt-3 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                                                    {{ $ticket->assignedUser->name }}
+                                                </div>
+                                            @endif
                                             <div class="mt-1 text-xs text-slate-500">{{ $ticket->replies_count ?? 0 }} balasan</div>
                                         </td>
                                         <td class="p-4 pr-6 align-top">
@@ -632,8 +630,14 @@
                 const bulkActionBar = document.getElementById('bulkActionBar');
                 const advancedFiltersPanel = document.getElementById('advancedFiltersPanel');
                 const toggleAdvancedFilters = document.getElementById('toggleAdvancedFilters');
+                const ticketFilterForm = document.getElementById('ticketFilterForm');
                 const ticketTableBody = document.getElementById('ticketTableBody');
                 const sortButtons = Array.from(document.querySelectorAll('[data-sort-button]'));
+                const filterSearchInput = ticketFilterForm?.querySelector('input[name="q"]');
+                const autoSubmitFields = ticketFilterForm
+                    ? Array.from(ticketFilterForm.querySelectorAll('select[name], input[type="date"][name]'))
+                    : [];
+                let filterDebounceTimer = null;
                 let currentSort = {
                     key: null,
                     direction: 'asc',
@@ -805,6 +809,23 @@
                 if (toggleAdvancedFilters && advancedFiltersPanel) {
                     toggleAdvancedFilters.addEventListener('click', function () {
                         advancedFiltersPanel.classList.toggle('hidden');
+                    });
+                }
+
+                if (ticketFilterForm && filterSearchInput) {
+                    filterSearchInput.addEventListener('input', function () {
+                        clearTimeout(filterDebounceTimer);
+                        filterDebounceTimer = setTimeout(() => {
+                            ticketFilterForm.submit();
+                        }, 400);
+                    });
+                }
+
+                if (ticketFilterForm && autoSubmitFields.length > 0) {
+                    autoSubmitFields.forEach((field) => {
+                        field.addEventListener('change', function () {
+                            ticketFilterForm.submit();
+                        });
                     });
                 }
 
