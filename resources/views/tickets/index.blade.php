@@ -109,7 +109,7 @@
 
                 <div id="advancedFiltersPanel"
                     class="{{ $advancedFiltersOpen ? '' : 'hidden' }} rounded-[1.5rem] border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/30 p-4 md:p-5">
-                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-7 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
                             <select name="status"
@@ -188,7 +188,7 @@
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                     </div>
-                    <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+                    <div class="mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-slate-200 dark:border-slate-700 pt-4">
                         <p class="text-sm text-slate-500 dark:text-slate-400">{{ $tickets->count() }} tiket tampil</p>
                         <a href="{{ route('tickets.index', request()->only('view')) }}"
                             class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
