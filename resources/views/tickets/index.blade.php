@@ -278,13 +278,6 @@
                                         </button>
                                     </th>
                                     <th class="p-4">
-                                        <button type="button" data-sort-button data-sort-key="client" data-sort-type="text"
-                                            class="inline-flex items-center gap-2 text-left text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
-                                            <span>Client</span>
-                                            <i data-lucide="arrow-up-down" class="w-3.5 h-3.5 sort-icon"></i>
-                                        </button>
-                                    </th>
-                                    <th class="p-4">
                                         <button type="button" data-sort-button data-sort-key="subject" data-sort-type="text"
                                             class="inline-flex items-center gap-2 text-left text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
                                             <span>Issue</span>
@@ -321,27 +314,20 @@
                                             <input type="checkbox" name="ticket_ids[]" value="{{ $ticket->id }}"
                                                 class="bulk-ticket-checkbox rounded border-slate-300 text-blue-600 focus:ring-blue-500">
                                         </td>
-                                        <td class="p-4 align-top min-w-[170px]">
+                                        <td class="p-4 align-top min-w-[250px]">
                                             <div class="font-mono font-bold text-slate-800 dark:text-white">{{ $ticket->ticket_number }}</div>
+                                            <div class="mt-2 text-sm font-semibold text-slate-800 dark:text-white">{{ $ticket->client->name }}</div>
+                                            <div class="mt-1 text-xs text-slate-500">{{ $ticket->client->client_code }}</div>
+                                            <div class="mt-1 text-xs text-slate-500">{{ $ticket->client->primaryContact?->name ?? '-' }}</div>
                                             <div class="mt-2 flex flex-wrap gap-2">
                                                 @if(($ticket->unread_staff_replies_count ?? 0) > 0)
                                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
                                                         {{ $ticket->unread_staff_replies_count }} baru
                                                     </span>
                                                 @endif
-                                                @if(is_null($ticket->assigned_to))
-                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-                                                        Unassigned
-                                                    </span>
-                                                @endif
                                             </div>
                                         </td>
-                                        <td class="p-4 align-top min-w-[220px]">
-                                            <div class="text-sm font-semibold text-slate-800 dark:text-white">{{ $ticket->client->name }}</div>
-                                            <div class="mt-1 text-xs text-slate-500">{{ $ticket->client->client_code }}</div>
-                                            <div class="mt-2 text-xs text-slate-500">{{ $ticket->client->primaryContact?->name ?? '-' }}</div>
-                                        </td>
-                                        <td class="p-4 align-top min-w-[360px]">
+                                        <td class="p-4 align-top min-w-[340px]">
                                             <div class="font-bold text-slate-800 dark:text-white leading-snug">{{ $ticket->subject }}</div>
                                             <div class="mt-2 max-w-[460px] overflow-hidden text-sm text-slate-500 dark:text-slate-400 max-h-11">
                                                 {{ $ticket->message }}
@@ -368,7 +354,7 @@
                                                 Updated {{ $ticket->updated_at?->diffForHumans() }}
                                             </div>
                                         </td>
-                                        <td class="p-4 align-top min-w-[220px]">
+                                        <td class="p-4 align-top min-w-[240px]">
                                             <div class="flex flex-wrap gap-2">
                                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300">
                                                     {{ $ticketQueues[$ticket->queue] ?? strtoupper($ticket->queue ?? '-') }}
@@ -379,6 +365,11 @@
                                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold {{ $priorityClasses[$ticket->priority] ?? 'bg-slate-100 text-slate-700' }}">
                                                     {{ ucfirst($ticket->priority) }}
                                                 </span>
+                                                @if(is_null($ticket->assigned_to))
+                                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                                                        Unassigned
+                                                    </span>
+                                                @endif
                                             </div>
                                             <div class="mt-3 text-sm font-semibold text-slate-700 dark:text-slate-200">
                                                 {{ $ticket->assignedUser?->name ?? 'Belum di-assign' }}
