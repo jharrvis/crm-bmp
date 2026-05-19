@@ -95,7 +95,7 @@
                 <input type="hidden" name="view" value="{{ $view }}">
 
                 <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
-                    <div class="inline-flex w-full xl:w-auto items-center rounded-2xl bg-slate-100 dark:bg-slate-700/60 p-1.5 overflow-x-auto no-scrollbar">
+                    <div class="flex w-full xl:flex-1 xl:min-w-0 xl:flex-wrap items-center rounded-2xl bg-slate-100 dark:bg-slate-700/60 p-1.5 overflow-x-auto no-scrollbar">
                         @foreach($invoiceViews as $value => $item)
                             <a href="{{ route('invoices.index', array_merge(request()->except('page', 'view'), ['view' => $value])) }}"
                                 class="inline-flex shrink-0 items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors {{ $view === $value ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white' }}">
@@ -104,7 +104,7 @@
                             </a>
                         @endforeach
                     </div>
-                    <div class="flex flex-col md:flex-row gap-3 xl:min-w-[620px]">
+                    <div class="flex flex-col md:flex-row gap-3 xl:w-[460px] xl:min-w-[460px] xl:shrink-0">
                         <div class="relative flex-1">
                             <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
                             <input type="text" name="q" value="{{ request('q') }}"
@@ -192,16 +192,9 @@
                                         </button>
                                     </th>
                                     <th class="p-4">
-                                        <button type="button" data-sort-button data-sort-key="invoiceDate" data-sort-type="date"
-                                            class="inline-flex items-center gap-2 text-left text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
-                                            <span>Creation Date</span>
-                                            <i data-lucide="arrow-up-down" class="w-3.5 h-3.5 sort-icon"></i>
-                                        </button>
-                                    </th>
-                                    <th class="p-4">
                                         <button type="button" data-sort-button data-sort-key="dueDate" data-sort-type="date"
                                             class="inline-flex items-center gap-2 text-left text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
-                                            <span>Due Date</span>
+                                            <span>Tanggal</span>
                                             <i data-lucide="arrow-up-down" class="w-3.5 h-3.5 sort-icon"></i>
                                         </button>
                                     </th>
@@ -242,22 +235,20 @@
                                             <div class="text-sm font-semibold text-slate-800 dark:text-white">{{ $invoice->client->name }}</div>
                                             <div class="mt-1 text-xs text-slate-500">{{ $invoice->client->client_code }}</div>
                                         </td>
-                                        <td class="p-4 align-top min-w-[170px]">
+                                        <td class="p-4 align-top min-w-[210px]">
                                             <div class="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                                                {{ $invoice->invoice_date?->format('d M Y') }}
+                                                Inv {{ $invoice->invoice_date?->format('d M Y') }}
+                                            </div>
+                                            <div class="mt-1 text-sm font-semibold {{ $invoice->due_date && $invoice->due_date->isPast() && $invoice->status !== 'paid' ? 'text-red-600 dark:text-red-400' : 'text-slate-700 dark:text-slate-200' }}">
+                                                Due {{ $invoice->due_date?->format('d M Y') }}
                                             </div>
                                         </td>
-                                        <td class="p-4 align-top min-w-[170px]">
-                                            <div class="text-sm font-semibold {{ $invoice->due_date && $invoice->due_date->isPast() && $invoice->status !== 'paid' ? 'text-red-600 dark:text-red-400' : 'text-slate-700 dark:text-slate-200' }}">
-                                                {{ $invoice->due_date?->format('d M Y') }}
-                                            </div>
-                                        </td>
-                                        <td class="p-4 align-top min-w-[170px]">
+                                        <td class="p-4 align-top min-w-[150px]">
                                             <div class="font-bold text-slate-800 dark:text-white">
                                                 Rp {{ number_format($invoice->total_amount, 0, ',', '.') }}
                                             </div>
                                         </td>
-                                        <td class="p-4 align-top min-w-[170px]">
+                                        <td class="p-4 align-top min-w-[140px]">
                                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold {{ $statusClasses[$invoice->status] ?? '' }}">
                                                 {{ $labels[$invoice->status] ?? $invoice->status }}
                                             </span>
