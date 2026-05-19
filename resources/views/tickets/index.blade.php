@@ -84,11 +84,11 @@
                 <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
                     <div class="inline-flex w-full xl:w-auto items-center rounded-2xl bg-slate-100 dark:bg-slate-700/60 p-1.5 overflow-x-auto no-scrollbar">
                         @foreach($ticketViews as $value => $item)
-                            <a href="{{ route('tickets.index', array_merge(request()->except('page', 'view'), ['view' => $value])) }}"
+                            <button type="button" data-view-button data-view="{{ $value }}"
                                 class="inline-flex shrink-0 items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors {{ $view === $value ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white' }}">
                                 <span>{{ $item['label'] }}</span>
                                 <span class="text-xs {{ $view === $value ? 'text-slate-400 dark:text-slate-400' : 'text-slate-400 dark:text-slate-500' }}">{{ $item['count'] }}</span>
-                            </a>
+                            </button>
                         @endforeach
                     </div>
                     <div class="flex flex-col md:flex-row gap-3 xl:min-w-[620px]">
@@ -189,24 +189,22 @@
                         </div>
                     </div>
                     <div class="mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-slate-200 dark:border-slate-700 pt-4">
-                        <p class="text-sm text-slate-500 dark:text-slate-400">{{ $tickets->count() }} tiket tampil</p>
-                        <a href="{{ route('tickets.index', request()->only('view')) }}"
+                        <p id="ticketVisibleCount" class="text-sm text-slate-500 dark:text-slate-400">{{ $tickets->count() }} tiket tampil</p>
+                        <button type="button" id="resetTicketFilters"
                             class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
                             <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                             Reset Filter
-                        </a>
+                        </button>
                     </div>
                 </div>
             </form>
         </div>
 
         <div class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-            @if($tickets->isEmpty())
-                <div class="p-10 text-center text-slate-500 dark:text-slate-400">
-                    Belum ada tiket support pada filter ini.
-                </div>
-            @else
-                <form method="POST" action="{{ route('tickets.bulk-update') }}" id="bulkActionForm">
+            <div id="ticketEmptyState" class="{{ $tickets->isEmpty() ? '' : 'hidden' }} p-10 text-center text-slate-500 dark:text-slate-400">
+                Belum ada tiket support pada filter ini.
+            </div>
+            <form method="POST" action="{{ route('tickets.bulk-update') }}" id="bulkActionForm" class="{{ $tickets->isEmpty() ? 'hidden' : '' }}">
                     @csrf
                     <div id="bulkActionBar"
                         class="hidden sticky top-0 z-20 border-b border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-800/95 backdrop-blur px-4 md:px-6 py-4">
@@ -300,11 +298,23 @@
                             <tbody id="ticketTableBody" class="divide-y divide-slate-100 dark:divide-slate-700">
                                 @foreach($tickets as $ticket)
                                     <tr
+                                        data-row-type="ticket"
+                                        data-view-status="{{ $ticket->status }}"
+                                        data-view-urgent="{{ $ticket->priority === 'urgent' ? '1' : '0' }}"
+                                        data-view-unassigned="{{ is_null($ticket->assigned_to) ? '1' : '0' }}"
+                                        data-view-waiting-client="{{ $ticket->status === 'waiting_client' ? '1' : '0' }}"
+                                        data-view-need-response="{{ (in_array($ticket->status, ['open', 'in_progress'], true) || (($ticket->unread_staff_replies_count ?? 0) > 0)) ? '1' : '0' }}"
+                                        data-search="{{ strtolower($ticket->ticket_number . ' ' . $ticket->subject . ' ' . $ticket->message . ' ' . $ticket->client->name . ' ' . $ticket->client->client_code) }}"
                                         data-ticket="{{ strtolower($ticket->ticket_number) }}"
                                         data-client="{{ strtolower($ticket->client->name) }}"
                                         data-subject="{{ strtolower($ticket->subject) }}"
+                                        data-status="{{ $ticket->status }}"
+                                        data-queue="{{ $ticket->queue }}"
+                                        data-priority="{{ $ticket->priority }}"
+                                        data-category="{{ $ticket->category }}"
+                                        data-client-id="{{ $ticket->client_id }}"
+                                        data-assigned-to="{{ is_null($ticket->assigned_to) ? 'unassigned' : (string) $ticket->assigned_to }}"
                                         data-created="{{ $ticket->created_at?->timestamp ?? 0 }}"
-                                        data-status="{{ strtolower($ticket->status) }}"
                                         class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors {{ $ticket->priority === 'urgent' ? 'bg-red-50/40 dark:bg-red-900/5' : '' }}">
                                         <td class="p-4 pl-6 align-top">
                                             <input type="checkbox" name="ticket_ids[]" value="{{ $ticket->id }}"
@@ -402,7 +412,6 @@
                         </table>
                     </div>
                 </form>
-            @endif
         </div>
     </div>
 
@@ -632,15 +641,32 @@
                 const toggleAdvancedFilters = document.getElementById('toggleAdvancedFilters');
                 const ticketFilterForm = document.getElementById('ticketFilterForm');
                 const ticketTableBody = document.getElementById('ticketTableBody');
+                const ticketEmptyState = document.getElementById('ticketEmptyState');
+                const bulkActionForm = document.getElementById('bulkActionForm');
+                const ticketVisibleCount = document.getElementById('ticketVisibleCount');
+                const resetTicketFilters = document.getElementById('resetTicketFilters');
+                const viewButtons = Array.from(document.querySelectorAll('[data-view-button]'));
                 const sortButtons = Array.from(document.querySelectorAll('[data-sort-button]'));
                 const filterSearchInput = ticketFilterForm?.querySelector('input[name="q"]');
                 const autoSubmitFields = ticketFilterForm
                     ? Array.from(ticketFilterForm.querySelectorAll('select[name], input[type="date"][name]'))
                     : [];
                 let filterDebounceTimer = null;
+                let currentView = new URLSearchParams(window.location.search).get('view') || '{{ $view }}';
                 let currentSort = {
                     key: null,
                     direction: 'asc',
+                };
+                const defaultFilterState = {
+                    q: '',
+                    status: '',
+                    queue: '',
+                    priority: '',
+                    category: '',
+                    client_id: '',
+                    assigned_to: '',
+                    date_from: '',
+                    date_to: '',
                 };
 
                 function openModal(modalId) {
@@ -716,6 +742,41 @@
                     }
                 }
 
+                function syncTicketUrl() {
+                    const params = new URLSearchParams();
+                    const formData = new FormData(ticketFilterForm);
+
+                    if (currentView && currentView !== 'all') {
+                        params.set('view', currentView);
+                    }
+
+                    Object.keys(defaultFilterState).forEach((key) => {
+                        const value = (formData.get(key) || '').toString().trim();
+                        if (value) {
+                            params.set(key, value);
+                        }
+                    });
+
+                    const query = params.toString();
+                    const nextUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname;
+                    window.history.replaceState({}, '', nextUrl);
+                }
+
+                function updateTicketViewButtons() {
+                    viewButtons.forEach((button) => {
+                        const isActive = button.dataset.view === currentView;
+                        button.className = `inline-flex shrink-0 items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors ${
+                            isActive
+                                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                                : 'text-slate-500 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white'
+                        }`;
+                        const count = button.querySelector('span:last-child');
+                        if (count) {
+                            count.className = `text-xs ${isActive ? 'text-slate-400 dark:text-slate-400' : 'text-slate-400 dark:text-slate-500'}`;
+                        }
+                    });
+                }
+
                 function updateSortIcons() {
                     sortButtons.forEach((button) => {
                         const icon = button.querySelector('.sort-icon');
@@ -763,6 +824,78 @@
                     });
 
                     rows.forEach((row) => ticketTableBody.appendChild(row));
+                }
+
+                function applyTicketFilters() {
+                    if (!ticketTableBody || !ticketFilterForm) {
+                        return;
+                    }
+
+                    const formData = new FormData(ticketFilterForm);
+                    const query = (formData.get('q') || '').toString().trim().toLowerCase();
+                    const status = (formData.get('status') || '').toString();
+                    const queue = (formData.get('queue') || '').toString();
+                    const priority = (formData.get('priority') || '').toString();
+                    const category = (formData.get('category') || '').toString();
+                    const clientId = (formData.get('client_id') || '').toString();
+                    const assignedTo = (formData.get('assigned_to') || '').toString();
+                    const dateFrom = (formData.get('date_from') || '').toString();
+                    const dateTo = (formData.get('date_to') || '').toString();
+
+                    const dateFromTs = dateFrom ? new Date(`${dateFrom}T00:00:00`).getTime() / 1000 : null;
+                    const dateToTs = dateTo ? new Date(`${dateTo}T23:59:59`).getTime() / 1000 : null;
+
+                    let visibleCount = 0;
+                    const rows = Array.from(ticketTableBody.querySelectorAll('tr[data-row-type="ticket"]'));
+
+                    rows.forEach((row) => {
+                        const matchesView =
+                            currentView === 'all'
+                            || (currentView === 'urgent' && row.dataset.viewUrgent === '1')
+                            || (currentView === 'unassigned' && row.dataset.viewUnassigned === '1')
+                            || (currentView === 'waiting_client' && row.dataset.viewWaitingClient === '1')
+                            || (currentView === 'need_response' && row.dataset.viewNeedResponse === '1');
+                        const matchesQuery = !query || (row.dataset.search || '').includes(query);
+                        const matchesStatus = !status || row.dataset.status === status;
+                        const matchesQueue = !queue || row.dataset.queue === queue;
+                        const matchesPriority = !priority || row.dataset.priority === priority;
+                        const matchesCategory = !category || row.dataset.category === category;
+                        const matchesClientId = !clientId || row.dataset.clientId === clientId;
+                        const matchesAssignedTo = !assignedTo || row.dataset.assignedTo === assignedTo;
+                        const createdAt = Number(row.dataset.created || 0);
+                        const matchesDateFrom = dateFromTs === null || createdAt >= dateFromTs;
+                        const matchesDateTo = dateToTs === null || createdAt <= dateToTs;
+
+                        const isVisible = matchesView
+                            && matchesQuery
+                            && matchesStatus
+                            && matchesQueue
+                            && matchesPriority
+                            && matchesCategory
+                            && matchesClientId
+                            && matchesAssignedTo
+                            && matchesDateFrom
+                            && matchesDateTo;
+
+                        row.classList.toggle('hidden', !isVisible);
+                        if (isVisible) {
+                            visibleCount++;
+                        }
+                    });
+
+                    if (ticketVisibleCount) {
+                        ticketVisibleCount.textContent = `${visibleCount} tiket tampil`;
+                    }
+
+                    bulkActionForm?.classList.toggle('hidden', visibleCount === 0);
+                    ticketEmptyState?.classList.toggle('hidden', visibleCount !== 0);
+                    if (visibleCount === 0) {
+                        bulkActionBar?.classList.add('hidden');
+                    }
+
+                    syncTicketUrl();
+                    updateTicketViewButtons();
+                    updateBulkSelectionCount();
                 }
 
                 document.querySelectorAll('[data-modal-target]').forEach((trigger) => {
@@ -816,7 +949,7 @@
                     filterSearchInput.addEventListener('input', function () {
                         clearTimeout(filterDebounceTimer);
                         filterDebounceTimer = setTimeout(() => {
-                            ticketFilterForm.submit();
+                            applyTicketFilters();
                         }, 400);
                     });
                 }
@@ -824,8 +957,25 @@
                 if (ticketFilterForm && autoSubmitFields.length > 0) {
                     autoSubmitFields.forEach((field) => {
                         field.addEventListener('change', function () {
-                            ticketFilterForm.submit();
+                            applyTicketFilters();
                         });
+                    });
+                }
+
+                if (viewButtons.length > 0) {
+                    viewButtons.forEach((button) => {
+                        button.addEventListener('click', function () {
+                            currentView = button.dataset.view || 'all';
+                            applyTicketFilters();
+                        });
+                    });
+                }
+
+                if (resetTicketFilters) {
+                    resetTicketFilters.addEventListener('click', function () {
+                        ticketFilterForm.reset();
+                        currentView = 'all';
+                        applyTicketFilters();
                     });
                 }
 
@@ -860,7 +1010,8 @@
                     });
                 }
 
-                updateBulkSelectionCount();
+                updateTicketViewButtons();
+                applyTicketFilters();
                 updateSortIcons();
 
                 @if ($errors->any())

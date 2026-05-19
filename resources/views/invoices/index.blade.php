@@ -97,11 +97,11 @@
                 <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
                     <div class="flex w-full xl:flex-1 xl:min-w-0 xl:flex-wrap items-center rounded-2xl bg-slate-100 dark:bg-slate-700/60 p-1.5 overflow-x-auto no-scrollbar">
                         @foreach($invoiceViews as $value => $item)
-                            <a href="{{ route('invoices.index', array_merge(request()->except('page', 'view'), ['view' => $value])) }}"
+                            <button type="button" data-view-button data-view="{{ $value }}"
                                 class="inline-flex shrink-0 items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors {{ $view === $value ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white' }}">
                                 <span>{{ $item['label'] }}</span>
                                 <span class="text-xs {{ $view === $value ? 'text-slate-400 dark:text-slate-400' : 'text-slate-400 dark:text-slate-500' }}">{{ $item['count'] }}</span>
-                            </a>
+                            </button>
                         @endforeach
                     </div>
                     <div class="flex flex-col md:flex-row gap-3 xl:w-[460px] xl:min-w-[460px] xl:shrink-0">
@@ -157,24 +157,22 @@
                         </div>
                     </div>
                     <div class="mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-slate-200 dark:border-slate-700 pt-4">
-                        <p class="text-sm text-slate-500 dark:text-slate-400">{{ $invoices->count() }} invoice tampil</p>
-                        <a href="{{ route('invoices.index', request()->only('view')) }}"
+                        <p id="invoiceVisibleCount" class="text-sm text-slate-500 dark:text-slate-400">{{ $invoices->count() }} invoice tampil</p>
+                        <button type="button" id="resetInvoiceFilters"
                             class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
                             <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                             Reset Filter
-                        </a>
+                        </button>
                     </div>
                 </div>
             </form>
 
             <div class="border-t border-slate-200 dark:border-slate-700">
-                @if($invoices->isEmpty())
-                    <div class="p-10 text-center text-slate-500 dark:text-slate-400">
-                        Belum ada invoice pada filter ini.
-                    </div>
-                @else
-                    <div class="overflow-x-auto no-scrollbar">
-                        <table class="w-full text-left border-collapse">
+                <div id="invoiceEmptyState" class="{{ $invoices->isEmpty() ? '' : 'hidden' }} p-10 text-center text-slate-500 dark:text-slate-400">
+                    Belum ada invoice pada filter ini.
+                </div>
+                <div id="invoiceTableWrapper" class="{{ $invoices->isEmpty() ? 'hidden' : '' }} overflow-x-auto no-scrollbar">
+                    <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="text-slate-400 text-xs font-bold uppercase tracking-wider border-b border-slate-100 dark:border-slate-700">
                                     <th class="p-4 pl-6">
@@ -218,12 +216,15 @@
                             <tbody id="invoiceTableBody" class="divide-y divide-slate-100 dark:divide-slate-700">
                                 @foreach($invoices as $invoice)
                                     <tr
+                                        data-row-type="invoice"
+                                        data-view-status="{{ $invoice->status }}"
+                                        data-search="{{ strtolower($invoice->invoice_number . ' ' . $invoice->client->name . ' ' . $invoice->client->client_code) }}"
                                         data-invoice="{{ strtolower($invoice->invoice_number) }}"
                                         data-customer="{{ strtolower($invoice->client->name) }}"
                                         data-invoice-date="{{ $invoice->invoice_date?->timestamp ?? 0 }}"
                                         data-due-date="{{ $invoice->due_date?->timestamp ?? 0 }}"
                                         data-total="{{ (float) $invoice->total_amount }}"
-                                        data-status="{{ strtolower($labels[$invoice->status] ?? $invoice->status) }}"
+                                        data-status="{{ $invoice->status }}"
                                         class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors {{ $invoice->status === 'overdue' ? 'bg-red-50/40 dark:bg-red-900/5' : '' }}">
                                         <td class="p-4 pl-6 align-top min-w-[220px]">
                                             <div class="font-mono font-bold text-slate-800 dark:text-white">{{ $invoice->invoice_number }}</div>
@@ -290,9 +291,8 @@
                                     </tr>
                                 @endforeach
                             </tbody>
-                        </table>
-                    </div>
-                @endif
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -308,12 +308,61 @@
                 const advancedFiltersPanel = document.getElementById('advancedFiltersPanel');
                 const toggleAdvancedFilters = document.getElementById('toggleAdvancedFilters');
                 const invoiceTableBody = document.getElementById('invoiceTableBody');
+                const invoiceTableWrapper = document.getElementById('invoiceTableWrapper');
+                const invoiceEmptyState = document.getElementById('invoiceEmptyState');
+                const invoiceVisibleCount = document.getElementById('invoiceVisibleCount');
+                const resetInvoiceFilters = document.getElementById('resetInvoiceFilters');
+                const viewButtons = Array.from(document.querySelectorAll('[data-view-button]'));
                 const sortButtons = Array.from(document.querySelectorAll('[data-sort-button]'));
                 let filterDebounceTimer = null;
+                let currentView = new URLSearchParams(window.location.search).get('view') || '{{ $view }}';
                 let currentSort = {
                     key: null,
                     direction: 'asc',
                 };
+                const defaultFilterState = {
+                    q: '',
+                    status: '',
+                    date_from: '',
+                    date_to: '',
+                    due_from: '',
+                    due_to: '',
+                };
+
+                function syncInvoiceUrl() {
+                    const params = new URLSearchParams();
+                    const formData = new FormData(invoiceFilterForm);
+
+                    if (currentView && currentView !== 'all') {
+                        params.set('view', currentView);
+                    }
+
+                    Object.entries(defaultFilterState).forEach(([key]) => {
+                        const value = (formData.get(key) || '').toString().trim();
+                        if (value) {
+                            params.set(key, value);
+                        }
+                    });
+
+                    const query = params.toString();
+                    const nextUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname;
+                    window.history.replaceState({}, '', nextUrl);
+                }
+
+                function updateInvoiceViewButtons() {
+                    viewButtons.forEach((button) => {
+                        const isActive = button.dataset.view === currentView;
+                        button.className = `inline-flex shrink-0 items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors ${
+                            isActive
+                                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                                : 'text-slate-500 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white'
+                        }`;
+                        const count = button.querySelector('span:last-child');
+                        if (count) {
+                            count.className = `text-xs ${isActive ? 'text-slate-400 dark:text-slate-400' : 'text-slate-400 dark:text-slate-500'}`;
+                        }
+                    });
+                }
 
                 function updateSortIcons() {
                     sortButtons.forEach((button) => {
@@ -364,6 +413,63 @@
                     rows.forEach((row) => invoiceTableBody.appendChild(row));
                 }
 
+                function applyInvoiceFilters() {
+                    if (!invoiceTableBody || !invoiceFilterForm) {
+                        return;
+                    }
+
+                    const formData = new FormData(invoiceFilterForm);
+                    const query = (formData.get('q') || '').toString().trim().toLowerCase();
+                    const status = (formData.get('status') || '').toString();
+                    const dateFrom = (formData.get('date_from') || '').toString();
+                    const dateTo = (formData.get('date_to') || '').toString();
+                    const dueFrom = (formData.get('due_from') || '').toString();
+                    const dueTo = (formData.get('due_to') || '').toString();
+
+                    const invoiceFromTs = dateFrom ? new Date(`${dateFrom}T00:00:00`).getTime() / 1000 : null;
+                    const invoiceToTs = dateTo ? new Date(`${dateTo}T23:59:59`).getTime() / 1000 : null;
+                    const dueFromTs = dueFrom ? new Date(`${dueFrom}T00:00:00`).getTime() / 1000 : null;
+                    const dueToTs = dueTo ? new Date(`${dueTo}T23:59:59`).getTime() / 1000 : null;
+
+                    let visibleCount = 0;
+                    const rows = Array.from(invoiceTableBody.querySelectorAll('tr[data-row-type="invoice"]'));
+
+                    rows.forEach((row) => {
+                        const matchesView = currentView === 'all' || row.dataset.viewStatus === currentView;
+                        const matchesQuery = !query || (row.dataset.search || '').includes(query);
+                        const matchesStatus = !status || row.dataset.status === status;
+                        const invoiceDate = Number(row.dataset.invoiceDate || 0);
+                        const dueDate = Number(row.dataset.dueDate || 0);
+                        const matchesInvoiceFrom = invoiceFromTs === null || invoiceDate >= invoiceFromTs;
+                        const matchesInvoiceTo = invoiceToTs === null || invoiceDate <= invoiceToTs;
+                        const matchesDueFrom = dueFromTs === null || dueDate >= dueFromTs;
+                        const matchesDueTo = dueToTs === null || dueDate <= dueToTs;
+
+                        const isVisible = matchesView
+                            && matchesQuery
+                            && matchesStatus
+                            && matchesInvoiceFrom
+                            && matchesInvoiceTo
+                            && matchesDueFrom
+                            && matchesDueTo;
+
+                        row.classList.toggle('hidden', !isVisible);
+                        if (isVisible) {
+                            visibleCount++;
+                        }
+                    });
+
+                    if (invoiceVisibleCount) {
+                        invoiceVisibleCount.textContent = `${visibleCount} invoice tampil`;
+                    }
+
+                    invoiceTableWrapper?.classList.toggle('hidden', visibleCount === 0);
+                    invoiceEmptyState?.classList.toggle('hidden', visibleCount !== 0);
+
+                    syncInvoiceUrl();
+                    updateInvoiceViewButtons();
+                }
+
                 if (toggleAdvancedFilters && advancedFiltersPanel) {
                     toggleAdvancedFilters.addEventListener('click', function () {
                         advancedFiltersPanel.classList.toggle('hidden');
@@ -374,7 +480,7 @@
                     filterSearchInput.addEventListener('input', function () {
                         clearTimeout(filterDebounceTimer);
                         filterDebounceTimer = setTimeout(() => {
-                            invoiceFilterForm.submit();
+                            applyInvoiceFilters();
                         }, 400);
                     });
                 }
@@ -382,8 +488,25 @@
                 if (invoiceFilterForm && autoSubmitFields.length > 0) {
                     autoSubmitFields.forEach((field) => {
                         field.addEventListener('change', function () {
-                            invoiceFilterForm.submit();
+                            applyInvoiceFilters();
                         });
+                    });
+                }
+
+                if (viewButtons.length > 0) {
+                    viewButtons.forEach((button) => {
+                        button.addEventListener('click', function () {
+                            currentView = button.dataset.view || 'all';
+                            applyInvoiceFilters();
+                        });
+                    });
+                }
+
+                if (resetInvoiceFilters) {
+                    resetInvoiceFilters.addEventListener('click', function () {
+                        invoiceFilterForm.reset();
+                        currentView = 'all';
+                        applyInvoiceFilters();
                     });
                 }
 
@@ -402,6 +525,8 @@
                 }
 
                 updateSortIcons();
+                updateInvoiceViewButtons();
+                applyInvoiceFilters();
 
                 if (window.lucide) {
                     window.lucide.createIcons();

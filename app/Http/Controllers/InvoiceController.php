@@ -31,48 +31,11 @@ class InvoiceController extends Controller
             $view = 'all';
         }
 
-        $query = Invoice::query()
+        $invoices = Invoice::query()
             ->with('client')
             ->latest('invoice_date')
-            ->latest('id');
-
-        if ($view !== 'all') {
-            $query->where('status', $view);
-        }
-
-        if ($request->filled('q')) {
-            $keyword = trim((string) $request->string('q'));
-
-            $query->where(function ($builder) use ($keyword) {
-                $builder
-                    ->where('invoice_number', 'like', '%' . $keyword . '%')
-                    ->orWhereHas('client', fn ($clientQuery) => $clientQuery
-                        ->where('name', 'like', '%' . $keyword . '%')
-                        ->orWhere('client_code', 'like', '%' . $keyword . '%'));
-            });
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->string('status'));
-        }
-
-        if ($request->filled('date_from')) {
-            $query->whereDate('invoice_date', '>=', $request->string('date_from'));
-        }
-
-        if ($request->filled('date_to')) {
-            $query->whereDate('invoice_date', '<=', $request->string('date_to'));
-        }
-
-        if ($request->filled('due_from')) {
-            $query->whereDate('due_date', '>=', $request->string('due_from'));
-        }
-
-        if ($request->filled('due_to')) {
-            $query->whereDate('due_date', '<=', $request->string('due_to'));
-        }
-
-        $invoices = $query->get();
+            ->latest('id')
+            ->get();
 
         $today = Carbon::today();
         $nextThirtyDays = Carbon::today()->addDays(30);

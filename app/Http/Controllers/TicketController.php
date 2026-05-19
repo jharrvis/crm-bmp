@@ -41,7 +41,7 @@ class TicketController extends Controller
             $view = 'all';
         }
 
-        $query = Ticket::query()
+        $tickets = Ticket::query()
             ->with(['client.primaryContact', 'subscription.package.service', 'assignedUser'])
             ->withCount([
                 'replies',
@@ -50,94 +50,8 @@ class TicketController extends Controller
                     ->where('is_internal', false)
                     ->whereRaw('ticket_replies.created_at > COALESCE(tickets.staff_last_read_at, tickets.created_at)'),
             ])
-            ->latest();
-
-        if ($view === 'need_response') {
-            $query->where(function ($builder) {
-                $builder
-                    ->whereIn('status', ['open', 'in_progress'])
-                    ->orWhere(function ($replyBuilder) {
-                        $replyBuilder
-                            ->whereHas('replies', fn ($replyQuery) => $replyQuery
-                                ->where('author_type', 'client')
-                                ->where('is_internal', false))
-                            ->whereRaw('EXISTS (
-                                SELECT 1
-                                FROM ticket_replies
-                                WHERE ticket_replies.ticket_id = tickets.id
-                                    AND ticket_replies.author_type = ?
-                                    AND ticket_replies.is_internal = 0
-                                    AND ticket_replies.created_at > COALESCE(tickets.staff_last_read_at, tickets.created_at)
-                            )', ['client']);
-                    });
-            });
-        }
-
-        if ($view === 'urgent') {
-            $query->where('priority', 'urgent');
-        }
-
-        if ($view === 'unassigned') {
-            $query->whereNull('assigned_to');
-        }
-
-        if ($view === 'waiting_client') {
-            $query->where('status', 'waiting_client');
-        }
-
-        if ($request->filled('q')) {
-            $keyword = trim((string) $request->string('q'));
-
-            $query->where(function ($builder) use ($keyword) {
-                $builder
-                    ->where('ticket_number', 'like', '%' . $keyword . '%')
-                    ->orWhere('subject', 'like', '%' . $keyword . '%')
-                    ->orWhere('message', 'like', '%' . $keyword . '%')
-                    ->orWhereHas('client', fn ($clientQuery) => $clientQuery
-                        ->where('name', 'like', '%' . $keyword . '%')
-                        ->orWhere('client_code', 'like', '%' . $keyword . '%'));
-            });
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->string('status'));
-        }
-
-        if ($request->filled('category')) {
-            $query->where('category', $request->string('category'));
-        }
-
-        if ($request->filled('queue')) {
-            $query->where('queue', $request->string('queue'));
-        }
-
-        if ($request->filled('priority')) {
-            $query->where('priority', $request->string('priority'));
-        }
-
-        if ($request->filled('client_id')) {
-            $query->where('client_id', $request->integer('client_id'));
-        }
-
-        if ($request->filled('assigned_to')) {
-            $assignedTo = $request->string('assigned_to')->toString();
-
-            if ($assignedTo === 'unassigned') {
-                $query->whereNull('assigned_to');
-            } else {
-                $query->where('assigned_to', (int) $assignedTo);
-            }
-        }
-
-        if ($request->filled('date_from')) {
-            $query->whereDate('created_at', '>=', $request->string('date_from'));
-        }
-
-        if ($request->filled('date_to')) {
-            $query->whereDate('created_at', '<=', $request->string('date_to'));
-        }
-
-        $tickets = $query->get();
+            ->latest()
+            ->get();
         $clients = Client::query()
             ->with(['subscriptions.package.service'])
             ->orderBy('name')
