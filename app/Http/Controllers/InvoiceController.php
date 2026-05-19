@@ -6,6 +6,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Subscription;
 use App\Models\Client;
+use App\Models\Package;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -69,10 +70,26 @@ class InvoiceController extends Controller
         ];
 
         $clients = Client::query()
+            ->with([
+                'subscriptions' => function ($query) {
+                    $query->where('status', 'active')
+                        ->with(['package.service'])
+                        ->orderBy('subscription_code');
+                },
+            ])
             ->orderBy('name')
             ->get(['id', 'name', 'client_code']);
 
-        return view('invoices.index', compact('invoices', 'view', 'summaryCounts', 'overviewMetrics', 'clients'));
+        $packages = Package::query()
+            ->with('service')
+            ->where('is_active', true)
+            ->whereHas('service', function ($query) {
+                $query->where('is_active', true);
+            })
+            ->orderBy('name')
+            ->get(['id', 'service_id', 'name', 'price']);
+
+        return view('invoices.index', compact('invoices', 'view', 'summaryCounts', 'overviewMetrics', 'clients', 'packages'));
     }
 
     /**
@@ -95,6 +112,9 @@ class InvoiceController extends Controller
             'client_id' => 'required|exists:clients,id',
             'due_date' => 'required|date',
             'items' => 'required|array|min:1',
+            'items.*.source' => 'nullable|in:subscription,package,manual',
+            'items.*.subscription_id' => 'nullable|exists:subscriptions,id',
+            'items.*.package_id' => 'nullable|exists:packages,id',
             'items.*.description' => 'required|string',
             'items.*.amount' => 'required|numeric|min:0',
             'items.*.qty' => 'required|integer|min:1',
@@ -105,6 +125,7 @@ class InvoiceController extends Controller
 
             $client = Client::findOrFail($request->client_id);
             $branchCode = $client->branch ? $client->branch->code : 'GEN'; // Fallback
+            $clientSubscriptionIds = $client->subscriptions()->pluck('id')->map(fn ($id) => (int) $id)->all();
 
             $invoice = Invoice::create([
                 'client_id' => $client->id,
@@ -120,9 +141,13 @@ class InvoiceController extends Controller
             foreach ($request->items as $item) {
                 $subtotal = $item['amount'] * $item['qty'];
                 $totalAmount += $subtotal;
+                $subscriptionId = isset($item['subscription_id']) && in_array((int) $item['subscription_id'], $clientSubscriptionIds, true)
+                    ? (int) $item['subscription_id']
+                    : null;
 
                 InvoiceItem::create([
                     'invoice_id' => $invoice->id,
+                    'subscription_id' => $subscriptionId,
                     'description' => $item['description'],
                     'amount' => $item['amount'],
                     'qty' => $item['qty'],

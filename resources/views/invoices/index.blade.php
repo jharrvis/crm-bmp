@@ -27,6 +27,49 @@
             'overdue' => ['label' => 'Terlambat', 'count' => $summaryCounts['overdue']],
             'cancelled' => ['label' => 'Batal', 'count' => $summaryCounts['cancelled']],
         ];
+
+        $manualInvoiceClientOptions = $clients->mapWithKeys(function ($client) {
+            return [
+                $client->id => $client->subscriptions->map(function ($subscription) {
+                    $serviceName = $subscription->package?->service?->name;
+                    $packageName = $subscription->package?->name ?? 'Layanan';
+                    $taxLabels = collect([
+                        $subscription->uses_ppn ? 'PPN' : null,
+                        $subscription->uses_pph23 ? 'PPh23' : null,
+                    ])->filter()->implode(' + ');
+
+                    return [
+                        'id' => $subscription->id,
+                        'label' => trim(collect([
+                            $subscription->subscription_code,
+                            $serviceName ? $serviceName . ' - ' . $packageName : $packageName,
+                            'Rp ' . number_format($subscription->base_price, 0, ',', '.'),
+                            $taxLabels ? '(' . $taxLabels . ')' : null,
+                        ])->filter()->implode(' • ')),
+                        'description' => trim(collect([
+                            'Langganan',
+                            $serviceName ? $serviceName . ' - ' . $packageName : $packageName,
+                            $subscription->subscription_code ? '[' . $subscription->subscription_code . ']' : null,
+                        ])->filter()->implode(' ')),
+                        'amount' => (float) $subscription->base_price,
+                    ];
+                })->values()->all(),
+            ];
+        })->all();
+
+        $manualInvoicePackageOptions = $packages->map(function ($package) {
+            $serviceName = $package->service?->name;
+
+            return [
+                'id' => $package->id,
+                'label' => trim(collect([
+                    $serviceName ? $serviceName . ' - ' . $package->name : $package->name,
+                    'Rp ' . number_format($package->price, 0, ',', '.'),
+                ])->filter()->implode(' • ')),
+                'description' => trim(($serviceName ? $serviceName . ' - ' : '') . $package->name),
+                'amount' => (float) $package->price,
+            ];
+        })->values()->all();
     @endphp
 
     <div class="space-y-6">
@@ -350,7 +393,7 @@
                         <div class="flex items-center justify-between gap-3 mb-3">
                             <div>
                                 <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Rincian Item <span class="text-red-500">*</span></label>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Masukkan deskripsi, qty, dan nominal per item.</p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Pilih layanan aktif pelanggan atau katalog layanan lain, lalu sesuaikan deskripsi dan nominal bila perlu.</p>
                             </div>
                             <button type="button" id="addInvoiceItem"
                                 class="inline-flex items-center gap-2 px-3 py-2 rounded-xl font-bold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
@@ -361,18 +404,44 @@
 
                         <div id="invoiceItemsContainer" class="space-y-3">
                             @php
-                                $oldItems = old('items', [['description' => '', 'qty' => 1, 'amount' => '']]);
+                                $oldItems = old('items', [[
+                                    'source' => 'subscription',
+                                    'subscription_id' => '',
+                                    'package_id' => '',
+                                    'description' => '',
+                                    'qty' => 1,
+                                    'amount' => '',
+                                ]]);
                             @endphp
                             @foreach($oldItems as $index => $item)
                                 <div class="invoice-item-row rounded-[1.25rem] border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/30 p-4">
+                                    <input type="hidden" name="items[{{ $index }}][subscription_id]" value="{{ $item['subscription_id'] ?? '' }}" class="invoice-item-subscription-id">
+                                    <input type="hidden" name="items[{{ $index }}][package_id]" value="{{ $item['package_id'] ?? '' }}" class="invoice-item-package-id">
+
                                     <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
-                                        <div class="md:col-span-6">
+                                        <div class="md:col-span-3">
+                                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Sumber Item</label>
+                                            <select name="items[{{ $index }}][source]"
+                                                class="invoice-item-source w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                                <option value="subscription" {{ ($item['source'] ?? 'subscription') === 'subscription' ? 'selected' : '' }}>Layanan Pelanggan</option>
+                                                <option value="package" {{ ($item['source'] ?? '') === 'package' ? 'selected' : '' }}>Katalog Layanan</option>
+                                                <option value="manual" {{ ($item['source'] ?? '') === 'manual' ? 'selected' : '' }}>Item Manual</option>
+                                            </select>
+                                        </div>
+                                        <div class="md:col-span-5">
+                                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Pilih Layanan</label>
+                                            <select class="invoice-item-option w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                                <option value="">Pilih item</option>
+                                            </select>
+                                            <p class="invoice-item-option-hint mt-1 text-[11px] text-slate-500 dark:text-slate-400"></p>
+                                        </div>
+                                        <div class="md:col-span-3">
                                             <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Deskripsi</label>
                                             <input type="text" name="items[{{ $index }}][description]" value="{{ $item['description'] ?? '' }}" required
                                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                                                 placeholder="Contoh: Biaya instalasi / layanan tambahan">
                                         </div>
-                                        <div class="md:col-span-2">
+                                        <div class="md:col-span-1">
                                             <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Qty</label>
                                             <input type="number" min="1" name="items[{{ $index }}][qty]" value="{{ $item['qty'] ?? 1 }}" required
                                                 class="invoice-item-qty w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
@@ -456,6 +525,9 @@
                 const invoiceItemsContainer = document.getElementById('invoiceItemsContainer');
                 const addInvoiceItemButton = document.getElementById('addInvoiceItem');
                 const manualInvoiceTotal = document.getElementById('manualInvoiceTotal');
+                const manualInvoiceClientSelect = document.querySelector('select[name="client_id"]');
+                const clientSubscriptionCatalog = @js($manualInvoiceClientOptions);
+                const packageCatalog = @js($manualInvoicePackageOptions);
                 let filterDebounceTimer = null;
                 let currentView = new URLSearchParams(window.location.search).get('view') || '{{ $view }}';
                 let currentSort = {
@@ -601,10 +673,134 @@
                     manualInvoiceTotal.textContent = `Rp ${formatCurrency(total)}`;
                 }
 
+                function getSubscriptionOptionsForSelectedClient() {
+                    const clientId = manualInvoiceClientSelect?.value || '';
+                    return clientSubscriptionCatalog[clientId] || [];
+                }
+
+                function buildOptionMarkup(options, selectedValue, placeholder) {
+                    const optionMarkup = options.map((option) => `
+                        <option value="${option.id}" ${String(option.id) === String(selectedValue || '') ? 'selected' : ''}>
+                            ${option.label}
+                        </option>
+                    `).join('');
+
+                    return `<option value="">${placeholder}</option>${optionMarkup}`;
+                }
+
+                function syncRowOptionSelector(row) {
+                    const sourceField = row.querySelector('.invoice-item-source');
+                    const optionField = row.querySelector('.invoice-item-option');
+                    const optionHint = row.querySelector('.invoice-item-option-hint');
+                    const subscriptionField = row.querySelector('.invoice-item-subscription-id');
+                    const packageField = row.querySelector('.invoice-item-package-id');
+
+                    if (!sourceField || !optionField || !subscriptionField || !packageField) {
+                        return;
+                    }
+
+                    const source = sourceField.value || 'subscription';
+                    const subscriptionOptions = getSubscriptionOptionsForSelectedClient();
+
+                    if (source === 'subscription') {
+                        optionField.disabled = false;
+                        optionField.innerHTML = buildOptionMarkup(subscriptionOptions, subscriptionField.value, subscriptionOptions.length
+                            ? 'Pilih layanan pelanggan'
+                            : 'Pelanggan ini belum punya layanan aktif');
+                        optionHint.textContent = subscriptionOptions.length
+                            ? 'Daftar ini mengikuti layanan aktif pelanggan yang dipilih.'
+                            : 'Ganti pelanggan atau pilih katalog layanan / item manual.';
+                        packageField.value = '';
+                        return;
+                    }
+
+                    if (source === 'package') {
+                        optionField.disabled = false;
+                        optionField.innerHTML = buildOptionMarkup(packageCatalog, packageField.value, 'Pilih layanan dari katalog');
+                        optionHint.textContent = 'Gunakan untuk layanan tambahan di luar subscription aktif pelanggan.';
+                        subscriptionField.value = '';
+                        return;
+                    }
+
+                    optionField.disabled = true;
+                    optionField.innerHTML = '<option value="">Isi item manual</option>';
+                    optionHint.textContent = 'Gunakan jika item tidak berasal dari layanan aktif maupun katalog.';
+                    subscriptionField.value = '';
+                    packageField.value = '';
+                }
+
+                function syncRowSelectionToInputs(row, shouldAutofill = true) {
+                    const sourceField = row.querySelector('.invoice-item-source');
+                    const optionField = row.querySelector('.invoice-item-option');
+                    const subscriptionField = row.querySelector('.invoice-item-subscription-id');
+                    const packageField = row.querySelector('.invoice-item-package-id');
+                    const descriptionField = row.querySelector('input[name*="[description]"]');
+                    const amountField = row.querySelector('.invoice-item-amount');
+
+                    if (!sourceField || !optionField || !subscriptionField || !packageField || !descriptionField || !amountField) {
+                        return;
+                    }
+
+                    const source = sourceField.value || 'subscription';
+                    const selectedValue = optionField.value || '';
+
+                    subscriptionField.value = '';
+                    packageField.value = '';
+
+                    if (!selectedValue) {
+                        return;
+                    }
+
+                    if (source === 'subscription') {
+                        const subscription = getSubscriptionOptionsForSelectedClient().find((item) => String(item.id) === selectedValue);
+                        if (!subscription) {
+                            return;
+                        }
+
+                        subscriptionField.value = subscription.id;
+                        if (shouldAutofill) {
+                            descriptionField.value = subscription.description;
+                            amountField.value = subscription.amount;
+                        }
+                        return;
+                    }
+
+                    if (source === 'package') {
+                        const packageItem = packageCatalog.find((item) => String(item.id) === selectedValue);
+                        if (!packageItem) {
+                            return;
+                        }
+
+                        packageField.value = packageItem.id;
+                        if (shouldAutofill) {
+                            descriptionField.value = packageItem.description;
+                            amountField.value = packageItem.amount;
+                        }
+                    }
+                }
+
                 function bindInvoiceItemRow(row) {
                     row.querySelectorAll('.invoice-item-qty, .invoice-item-amount').forEach((input) => {
                         input.addEventListener('input', updateManualInvoiceTotal);
                     });
+
+                    const sourceField = row.querySelector('.invoice-item-source');
+                    const optionField = row.querySelector('.invoice-item-option');
+
+                    if (sourceField) {
+                        sourceField.addEventListener('change', function () {
+                            syncRowOptionSelector(row);
+                            syncRowSelectionToInputs(row);
+                            updateManualInvoiceTotal();
+                        });
+                    }
+
+                    if (optionField) {
+                        optionField.addEventListener('change', function () {
+                            syncRowSelectionToInputs(row);
+                            updateManualInvoiceTotal();
+                        });
+                    }
 
                     const removeButton = row.querySelector('.remove-invoice-item');
                     if (removeButton) {
@@ -618,6 +814,11 @@
                                         input.value = '';
                                     }
                                 });
+                                const resetSource = row.querySelector('.invoice-item-source');
+                                if (resetSource) {
+                                    resetSource.value = 'subscription';
+                                }
+                                syncRowOptionSelector(row);
                             } else {
                                 row.remove();
                             }
@@ -636,8 +837,8 @@
                     }
 
                     invoiceItemsContainer.querySelectorAll('.invoice-item-row').forEach((row, index) => {
-                        row.querySelectorAll('input').forEach((input) => {
-                            input.name = input.name.replace(/items\[\d+\]/, `items[${index}]`);
+                        row.querySelectorAll('input, select[name]').forEach((field) => {
+                            field.name = field.name.replace(/items\[\d+\]/, `items[${index}]`);
                         });
                     });
                 }
@@ -781,14 +982,32 @@
                         const row = document.createElement('div');
                         row.className = 'invoice-item-row rounded-[1.25rem] border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/30 p-4';
                         row.innerHTML = `
+                            <input type="hidden" name="items[${index}][subscription_id]" value="" class="invoice-item-subscription-id">
+                            <input type="hidden" name="items[${index}][package_id]" value="" class="invoice-item-package-id">
                             <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
-                                <div class="md:col-span-6">
+                                <div class="md:col-span-3">
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Sumber Item</label>
+                                    <select name="items[${index}][source]"
+                                        class="invoice-item-source w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="subscription" selected>Layanan Pelanggan</option>
+                                        <option value="package">Katalog Layanan</option>
+                                        <option value="manual">Item Manual</option>
+                                    </select>
+                                </div>
+                                <div class="md:col-span-5">
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Pilih Layanan</label>
+                                    <select class="invoice-item-option w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="">Pilih item</option>
+                                    </select>
+                                    <p class="invoice-item-option-hint mt-1 text-[11px] text-slate-500 dark:text-slate-400"></p>
+                                </div>
+                                <div class="md:col-span-3">
                                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Deskripsi</label>
                                     <input type="text" name="items[${index}][description]" required
                                         class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                                         placeholder="Contoh: Biaya instalasi / layanan tambahan">
                                 </div>
-                                <div class="md:col-span-2">
+                                <div class="md:col-span-1">
                                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Qty</label>
                                     <input type="number" min="1" name="items[${index}][qty]" value="1" required
                                         class="invoice-item-qty w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
@@ -809,11 +1028,21 @@
                         `;
                         invoiceItemsContainer.appendChild(row);
                         bindInvoiceItemRow(row);
+                        syncRowOptionSelector(row);
                         refreshInvoiceItemIndexes();
                         updateManualInvoiceTotal();
                         if (window.lucide) {
                             window.lucide.createIcons();
                         }
+                    });
+                }
+
+                if (manualInvoiceClientSelect && invoiceItemsContainer) {
+                    manualInvoiceClientSelect.addEventListener('change', function () {
+                        invoiceItemsContainer.querySelectorAll('.invoice-item-row').forEach((row) => {
+                            syncRowOptionSelector(row);
+                            syncRowSelectionToInputs(row, false);
+                        });
                     });
                 }
 
@@ -835,7 +1064,11 @@
                 updateInvoiceViewButtons();
                 applyInvoiceFilters();
                 if (invoiceItemsContainer) {
-                    invoiceItemsContainer.querySelectorAll('.invoice-item-row').forEach(bindInvoiceItemRow);
+                    invoiceItemsContainer.querySelectorAll('.invoice-item-row').forEach((row) => {
+                        bindInvoiceItemRow(row);
+                        syncRowOptionSelector(row);
+                        syncRowSelectionToInputs(row, false);
+                    });
                     refreshInvoiceItemIndexes();
                     updateManualInvoiceTotal();
                 }
