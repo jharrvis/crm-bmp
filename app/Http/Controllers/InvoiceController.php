@@ -23,10 +23,89 @@ class InvoiceController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $invoices = Invoice::with('client')->latest()->get();
-        return view('invoices.index', compact('invoices'));
+        $view = $request->string('view', 'all')->toString();
+
+        if (! in_array($view, ['all', 'unpaid', 'paid', 'overdue', 'cancelled'], true)) {
+            $view = 'all';
+        }
+
+        $query = Invoice::query()
+            ->with('client')
+            ->latest('invoice_date')
+            ->latest('id');
+
+        if ($view !== 'all') {
+            $query->where('status', $view);
+        }
+
+        if ($request->filled('q')) {
+            $keyword = trim((string) $request->string('q'));
+
+            $query->where(function ($builder) use ($keyword) {
+                $builder
+                    ->where('invoice_number', 'like', '%' . $keyword . '%')
+                    ->orWhereHas('client', fn ($clientQuery) => $clientQuery
+                        ->where('name', 'like', '%' . $keyword . '%')
+                        ->orWhere('client_code', 'like', '%' . $keyword . '%'));
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->string('status'));
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('invoice_date', '>=', $request->string('date_from'));
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('invoice_date', '<=', $request->string('date_to'));
+        }
+
+        if ($request->filled('due_from')) {
+            $query->whereDate('due_date', '>=', $request->string('due_from'));
+        }
+
+        if ($request->filled('due_to')) {
+            $query->whereDate('due_date', '<=', $request->string('due_to'));
+        }
+
+        $invoices = $query->get();
+
+        $today = Carbon::today();
+        $nextThirtyDays = Carbon::today()->addDays(30);
+        $allInvoices = Invoice::query()->get();
+
+        $summaryCounts = [
+            'total' => $allInvoices->count(),
+            'unpaid' => $allInvoices->where('status', 'unpaid')->count(),
+            'paid' => $allInvoices->where('status', 'paid')->count(),
+            'overdue' => $allInvoices->where('status', 'overdue')->count(),
+            'cancelled' => $allInvoices->where('status', 'cancelled')->count(),
+        ];
+
+        $averagePaidDays = round(
+            $allInvoices
+                ->filter(fn (Invoice $invoice) => $invoice->paid_at && $invoice->invoice_date)
+                ->avg(fn (Invoice $invoice) => $invoice->invoice_date->diffInDays($invoice->paid_at)) ?? 0
+        );
+
+        $overviewMetrics = [
+            'overdue_amount' => $allInvoices
+                ->filter(fn (Invoice $invoice) => in_array($invoice->status, ['unpaid', 'overdue'], true) && $invoice->due_date && $invoice->due_date->lt($today))
+                ->sum(fn (Invoice $invoice) => (float) $invoice->total_amount),
+            'due_soon_amount' => $allInvoices
+                ->filter(fn (Invoice $invoice) => in_array($invoice->status, ['unpaid', 'overdue'], true) && $invoice->due_date && $invoice->due_date->between($today, $nextThirtyDays))
+                ->sum(fn (Invoice $invoice) => (float) $invoice->total_amount),
+            'average_paid_days' => $averagePaidDays,
+            'paid_this_month_amount' => $allInvoices
+                ->filter(fn (Invoice $invoice) => $invoice->status === 'paid' && $invoice->paid_at && $invoice->paid_at->isSameMonth($today))
+                ->sum(fn (Invoice $invoice) => (float) $invoice->total_amount),
+        ];
+
+        return view('invoices.index', compact('invoices', 'view', 'summaryCounts', 'overviewMetrics'));
     }
 
     /**
