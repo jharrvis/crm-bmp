@@ -40,6 +40,13 @@
                         </p>
                     </div>
                     <div class="flex flex-wrap items-center gap-3">
+                        @can('invoices.create')
+                            <button type="button" data-modal-target="createInvoiceDrawer"
+                                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                                <i data-lucide="file-plus-2" class="w-4 h-4"></i>
+                                <span>Buat Invoice Manual</span>
+                            </button>
+                        @endcan
                         <button onclick="generateInvoices()" id="btnGenerate"
                             class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors">
                             <i data-lucide="plus" class="w-4 h-4"></i>
@@ -297,6 +304,138 @@
         </div>
     </div>
 
+    @can('invoices.create')
+        <div id="createInvoiceDrawer" data-modal-root class="fixed inset-0 z-[120] hidden bg-slate-950/60 backdrop-blur-sm">
+            <div class="absolute inset-y-0 right-0 w-full max-w-3xl bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700 shadow-2xl overflow-y-auto">
+                <div class="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-5 bg-white/95 dark:bg-slate-800/95 backdrop-blur border-b border-slate-200 dark:border-slate-700">
+                    <div>
+                        <h4 class="text-lg font-bold text-slate-800 dark:text-white">Buat Invoice Manual</h4>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Tambahkan tagihan manual untuk pelanggan tertentu beserta rincian itemnya.</p>
+                    </div>
+                    <button type="button" data-modal-close class="rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <form method="POST" action="{{ route('invoices.store') }}" class="p-6 space-y-6">
+                    @csrf
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Pelanggan <span class="text-red-500">*</span></label>
+                            <select name="client_id" required
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Pilih pelanggan</option>
+                                @foreach($clients as $client)
+                                    <option value="{{ $client->id }}" {{ old('client_id') == $client->id ? 'selected' : '' }}>
+                                        {{ $client->name }} ({{ $client->client_code }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('client_id')
+                                <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Tanggal Jatuh Tempo <span class="text-red-500">*</span></label>
+                            <input type="date" name="due_date" required value="{{ old('due_date', now()->addDays(7)->toDateString()) }}"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                            @error('due_date')
+                                <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between gap-3 mb-3">
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Rincian Item <span class="text-red-500">*</span></label>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Masukkan deskripsi, qty, dan nominal per item.</p>
+                            </div>
+                            <button type="button" id="addInvoiceItem"
+                                class="inline-flex items-center gap-2 px-3 py-2 rounded-xl font-bold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                Tambah Item
+                            </button>
+                        </div>
+
+                        <div id="invoiceItemsContainer" class="space-y-3">
+                            @php
+                                $oldItems = old('items', [['description' => '', 'qty' => 1, 'amount' => '']]);
+                            @endphp
+                            @foreach($oldItems as $index => $item)
+                                <div class="invoice-item-row rounded-[1.25rem] border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/30 p-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
+                                        <div class="md:col-span-6">
+                                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Deskripsi</label>
+                                            <input type="text" name="items[{{ $index }}][description]" value="{{ $item['description'] ?? '' }}" required
+                                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                                                placeholder="Contoh: Biaya instalasi / layanan tambahan">
+                                        </div>
+                                        <div class="md:col-span-2">
+                                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Qty</label>
+                                            <input type="number" min="1" name="items[{{ $index }}][qty]" value="{{ $item['qty'] ?? 1 }}" required
+                                                class="invoice-item-qty w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                        </div>
+                                        <div class="md:col-span-3">
+                                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nominal</label>
+                                            <input type="number" min="0" step="0.01" name="items[{{ $index }}][amount]" value="{{ $item['amount'] ?? '' }}" required
+                                                class="invoice-item-amount w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                                                placeholder="0">
+                                        </div>
+                                        <div class="md:col-span-1 flex md:justify-end">
+                                            <button type="button"
+                                                class="remove-invoice-item mt-6 inline-flex items-center justify-center h-11 w-11 rounded-xl border border-slate-200 dark:border-slate-700 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                        @error('items')
+                            <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
+                        @enderror
+                        @error('items.*.description')
+                            <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
+                        @enderror
+                        @error('items.*.amount')
+                            <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
+                        @enderror
+                        @error('items.*.qty')
+                            <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Catatan</label>
+                        <textarea name="notes" rows="3"
+                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-3 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Catatan tambahan untuk invoice ini">{{ old('notes') }}</textarea>
+                    </div>
+
+                    <div class="rounded-[1.25rem] border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/30 p-4 flex items-center justify-between gap-4">
+                        <div>
+                            <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Estimasi Total</p>
+                            <p id="manualInvoiceTotal" class="mt-2 text-2xl font-black text-slate-900 dark:text-white">Rp 0</p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-3 pt-2">
+                        <button type="button" data-modal-close
+                            class="px-5 py-2.5 rounded-xl font-bold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                            Batal
+                        </button>
+                        <button type="submit"
+                            class="px-5 py-2.5 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+                            Simpan Invoice
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endcan
+
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', function () {
@@ -314,6 +453,9 @@
                 const resetInvoiceFilters = document.getElementById('resetInvoiceFilters');
                 const viewButtons = Array.from(document.querySelectorAll('[data-view-button]'));
                 const sortButtons = Array.from(document.querySelectorAll('[data-sort-button]'));
+                const invoiceItemsContainer = document.getElementById('invoiceItemsContainer');
+                const addInvoiceItemButton = document.getElementById('addInvoiceItem');
+                const manualInvoiceTotal = document.getElementById('manualInvoiceTotal');
                 let filterDebounceTimer = null;
                 let currentView = new URLSearchParams(window.location.search).get('view') || '{{ $view }}';
                 let currentSort = {
@@ -413,6 +555,93 @@
                     rows.forEach((row) => invoiceTableBody.appendChild(row));
                 }
 
+                function openModal(modalId) {
+                    const modal = document.getElementById(modalId);
+
+                    if (!modal) {
+                        return;
+                    }
+
+                    modal.classList.remove('hidden');
+
+                    if (modal.id === 'createInvoiceDrawer') {
+                        document.body.classList.add('overflow-hidden');
+                        return;
+                    }
+
+                    modal.classList.add('flex');
+                }
+
+                function closeModal(modal) {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+
+                    if (modal.id === 'createInvoiceDrawer') {
+                        document.body.classList.remove('overflow-hidden');
+                    }
+                }
+
+                function formatCurrency(value) {
+                    return new Intl.NumberFormat('id-ID').format(value);
+                }
+
+                function updateManualInvoiceTotal() {
+                    if (!invoiceItemsContainer || !manualInvoiceTotal) {
+                        return;
+                    }
+
+                    let total = 0;
+
+                    invoiceItemsContainer.querySelectorAll('.invoice-item-row').forEach((row) => {
+                        const qty = Number(row.querySelector('.invoice-item-qty')?.value || 0);
+                        const amount = Number(row.querySelector('.invoice-item-amount')?.value || 0);
+                        total += qty * amount;
+                    });
+
+                    manualInvoiceTotal.textContent = `Rp ${formatCurrency(total)}`;
+                }
+
+                function bindInvoiceItemRow(row) {
+                    row.querySelectorAll('.invoice-item-qty, .invoice-item-amount').forEach((input) => {
+                        input.addEventListener('input', updateManualInvoiceTotal);
+                    });
+
+                    const removeButton = row.querySelector('.remove-invoice-item');
+                    if (removeButton) {
+                        removeButton.addEventListener('click', function () {
+                            const rows = invoiceItemsContainer?.querySelectorAll('.invoice-item-row') || [];
+                            if (rows.length <= 1) {
+                                row.querySelectorAll('input').forEach((input) => {
+                                    if (input.name.includes('[qty]')) {
+                                        input.value = 1;
+                                    } else {
+                                        input.value = '';
+                                    }
+                                });
+                            } else {
+                                row.remove();
+                            }
+                            refreshInvoiceItemIndexes();
+                            updateManualInvoiceTotal();
+                            if (window.lucide) {
+                                window.lucide.createIcons();
+                            }
+                        });
+                    }
+                }
+
+                function refreshInvoiceItemIndexes() {
+                    if (!invoiceItemsContainer) {
+                        return;
+                    }
+
+                    invoiceItemsContainer.querySelectorAll('.invoice-item-row').forEach((row, index) => {
+                        row.querySelectorAll('input').forEach((input) => {
+                            input.name = input.name.replace(/items\[\d+\]/, `items[${index}]`);
+                        });
+                    });
+                }
+
                 function applyInvoiceFilters() {
                     if (!invoiceTableBody || !invoiceFilterForm) {
                         return;
@@ -476,6 +705,42 @@
                     });
                 }
 
+                document.querySelectorAll('[data-modal-target]').forEach((trigger) => {
+                    trigger.addEventListener('click', function () {
+                        openModal(trigger.getAttribute('data-modal-target'));
+                    });
+                });
+
+                document.querySelectorAll('[data-modal-close]').forEach((trigger) => {
+                    trigger.addEventListener('click', function () {
+                        const modal = trigger.closest('[data-modal-root]');
+
+                        if (modal) {
+                            closeModal(modal);
+                        }
+                    });
+                });
+
+                document.querySelectorAll('[data-modal-root]').forEach((modal) => {
+                    modal.addEventListener('click', function (event) {
+                        if (event.target === modal) {
+                            closeModal(modal);
+                        }
+                    });
+                });
+
+                document.addEventListener('keydown', function (event) {
+                    if (event.key !== 'Escape') {
+                        return;
+                    }
+
+                    document.querySelectorAll('[data-modal-root]').forEach((modal) => {
+                        if (!modal.classList.contains('hidden')) {
+                            closeModal(modal);
+                        }
+                    });
+                });
+
                 if (invoiceFilterForm && filterSearchInput) {
                     filterSearchInput.addEventListener('input', function () {
                         clearTimeout(filterDebounceTimer);
@@ -510,6 +775,48 @@
                     });
                 }
 
+                if (addInvoiceItemButton && invoiceItemsContainer) {
+                    addInvoiceItemButton.addEventListener('click', function () {
+                        const index = invoiceItemsContainer.querySelectorAll('.invoice-item-row').length;
+                        const row = document.createElement('div');
+                        row.className = 'invoice-item-row rounded-[1.25rem] border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/30 p-4';
+                        row.innerHTML = `
+                            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
+                                <div class="md:col-span-6">
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Deskripsi</label>
+                                    <input type="text" name="items[${index}][description]" required
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Contoh: Biaya instalasi / layanan tambahan">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Qty</label>
+                                    <input type="number" min="1" name="items[${index}][qty]" value="1" required
+                                        class="invoice-item-qty w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div class="md:col-span-3">
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nominal</label>
+                                    <input type="number" min="0" step="0.01" name="items[${index}][amount]" required
+                                        class="invoice-item-amount w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="0">
+                                </div>
+                                <div class="md:col-span-1 flex md:justify-end">
+                                    <button type="button"
+                                        class="remove-invoice-item mt-6 inline-flex items-center justify-center h-11 w-11 rounded-xl border border-slate-200 dark:border-slate-700 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        invoiceItemsContainer.appendChild(row);
+                        bindInvoiceItemRow(row);
+                        refreshInvoiceItemIndexes();
+                        updateManualInvoiceTotal();
+                        if (window.lucide) {
+                            window.lucide.createIcons();
+                        }
+                    });
+                }
+
                 if (sortButtons.length > 0) {
                     sortButtons.forEach((button) => {
                         button.addEventListener('click', function () {
@@ -527,6 +834,15 @@
                 updateSortIcons();
                 updateInvoiceViewButtons();
                 applyInvoiceFilters();
+                if (invoiceItemsContainer) {
+                    invoiceItemsContainer.querySelectorAll('.invoice-item-row').forEach(bindInvoiceItemRow);
+                    refreshInvoiceItemIndexes();
+                    updateManualInvoiceTotal();
+                }
+
+                @if ($errors->any())
+                    openModal('createInvoiceDrawer');
+                @endif
 
                 if (window.lucide) {
                     window.lucide.createIcons();

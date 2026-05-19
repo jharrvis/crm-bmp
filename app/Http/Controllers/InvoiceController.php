@@ -68,7 +68,11 @@ class InvoiceController extends Controller
                 ->sum(fn (Invoice $invoice) => (float) $invoice->total_amount),
         ];
 
-        return view('invoices.index', compact('invoices', 'view', 'summaryCounts', 'overviewMetrics'));
+        $clients = Client::query()
+            ->orderBy('name')
+            ->get(['id', 'name', 'client_code']);
+
+        return view('invoices.index', compact('invoices', 'view', 'summaryCounts', 'overviewMetrics', 'clients'));
     }
 
     /**
