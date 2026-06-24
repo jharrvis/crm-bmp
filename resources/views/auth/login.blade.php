@@ -1,138 +1,174 @@
 <x-guest-layout>
-    <div class="w-full max-w-md p-6 relative z-10">
-        <!-- Logo -->
-        <div class="flex flex-col items-center mb-8">
-            <div class="bg-blue-600 p-3 rounded-2xl shadow-lg shadow-blue-200 dark:shadow-blue-900/20 mb-4">
-                <i data-lucide="wifi" class="text-white w-8 h-8"></i>
-            </div>
-            <div class="text-center">
-                <span class="text-2xl font-bold tracking-tight text-slate-800 dark:text-white">BMP<span
-                        class="text-blue-600">net</span></span>
-                <p class="text-xs text-slate-400 font-semibold tracking-widest uppercase mt-1">ISP Management System</p>
-            </div>
-        </div>
-
-        <!-- Session Status -->
-        <x-auth-session-status class="mb-4" :status="session('status')" />
-
-        <!-- Card -->
-        <div class="login-card p-8 rounded-[2rem] shadow-xl">
-            <div class="mb-8 text-center">
-                <h2 class="text-xl font-bold text-slate-800 dark:text-white">Selamat Datang 👋</h2>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">Silahkan login untuk mengakses dashboard.</p>
-            </div>
-
-            <form method="POST" action="{{ route('login') }}" class="space-y-5">
-                @csrf
-                <!-- Email -->
-                <div class="space-y-1.5 container-input">
-                    <label for="email" class="text-xs font-bold text-slate-600 dark:text-slate-300 ml-1">Email</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i data-lucide="mail" class="w-5 h-5 text-slate-400"></i>
-                        </div>
-                        <input type="email" id="email" name="email" value="{{ old('email') }}"
-                            placeholder="nama@perusahaan.com"
-                            class="block w-full pl-10 pr-3 py-3 border border-slate-200 dark:border-slate-600 rounded-xl bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
-                            required autofocus autocomplete="username">
+    <div class="relative z-10 w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        <div class="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/90 shadow-[0_24px_80px_-28px_rgba(15,23,42,0.35)] backdrop-blur xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)]">
+            <div class="px-6 py-8 sm:px-10 lg:px-12 xl:px-14 xl:py-12">
+                <div class="flex items-center gap-3">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/25">
+                        <i data-lucide="wifi" class="h-6 w-6"></i>
                     </div>
-                    <x-input-error :messages="$errors->get('email')" class="mt-2" />
+                    <div>
+                        <p class="text-lg font-black tracking-tight text-slate-900">BMP<span class="text-blue-600">net</span></p>
+                        <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">CRM Portal</p>
+                    </div>
                 </div>
 
-                <!-- Password -->
-                <div class="space-y-1.5 container-input">
-                    <div class="flex justify-between items-center ml-1">
-                        <label for="password"
-                            class="text-xs font-bold text-slate-600 dark:text-slate-300">Password</label>
-                    </div>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i data-lucide="lock" class="w-5 h-5 text-slate-400"></i>
-                        </div>
-                        <input type="password" id="password" name="password" placeholder="••••••••"
-                            class="block w-full pl-10 pr-10 py-3 border border-slate-200 dark:border-slate-600 rounded-xl bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
-                            required autocomplete="current-password">
-                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
-                            onclick="togglePassword()">
-                            <i data-lucide="eye"
-                                class="w-5 h-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                                id="eye-icon"></i>
-                        </div>
-                    </div>
-                    <x-input-error :messages="$errors->get('password')" class="mt-2" />
+                <div class="mt-10 max-w-md">
+                    <p class="text-sm font-semibold uppercase tracking-[0.28em] text-blue-600">Sign In</p>
+                    <h1 class="mt-3 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Masuk ke dashboard operasional.</h1>
+                    <p class="mt-3 text-sm leading-6 text-slate-500">
+                        Gunakan akun internal Anda untuk mengakses data pelanggan, layanan, billing, dan support.
+                    </p>
                 </div>
 
-                <!-- Remember & Forgot -->
-                <div class="flex items-center justify-between mt-2">
-                    <label class="flex items-center gap-2 cursor-pointer group">
-                        <div class="relative flex items-center">
+                <x-auth-session-status class="mt-6 max-w-md rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700" :status="session('status')" />
+
+                <form method="POST" action="{{ route('login') }}" class="mt-8 max-w-md space-y-5">
+                    @csrf
+
+                    <div class="space-y-2">
+                        <label for="email" class="text-sm font-bold text-slate-700">Email</label>
+                        <div class="relative">
+                            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                                <i data-lucide="mail" class="h-5 w-5"></i>
+                            </div>
+                            <input type="email" id="email" name="email" value="{{ old('email') }}"
+                                placeholder="nama@bmp.net.id"
+                                class="block w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                                required autofocus autocomplete="username">
+                        </div>
+                        <x-input-error :messages="$errors->get('email')" class="mt-2" />
+                    </div>
+
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between gap-3">
+                            <label for="password" class="text-sm font-bold text-slate-700">Password</label>
+                            @if (Route::has('password.request'))
+                                <a href="{{ route('password.request') }}"
+                                    class="text-xs font-bold text-blue-600 hover:text-blue-700">
+                                    Lupa password?
+                                </a>
+                            @endif
+                        </div>
+                        <div class="relative">
+                            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                                <i data-lucide="lock" class="h-5 w-5"></i>
+                            </div>
+                            <input type="password" id="password" name="password" placeholder="Masukkan password Anda"
+                                class="block w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-12 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                                required autocomplete="current-password">
+                            <button type="button" id="togglePasswordButton"
+                                class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 hover:text-slate-600 transition-colors"
+                                aria-label="Tampilkan atau sembunyikan password">
+                                <i data-lucide="eye" class="h-5 w-5" id="eye-icon"></i>
+                            </button>
+                        </div>
+                        <x-input-error :messages="$errors->get('password')" class="mt-2" />
+                    </div>
+
+                    <div class="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <label class="flex items-center gap-3 text-sm font-medium text-slate-600">
                             <input type="checkbox" name="remember"
-                                class="peer h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 dark:border-slate-600 dark:bg-slate-800 dark:focus:ring-offset-slate-900">
+                                class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20">
+                            <span>Ingat saya di perangkat ini</span>
+                        </label>
+                        <div class="hidden sm:flex items-center gap-2 text-xs font-semibold text-slate-400">
+                            <i data-lucide="shield-check" class="h-4 w-4"></i>
+                            <span>Koneksi aman</span>
                         </div>
-                        <span
-                            class="text-xs font-medium text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">Ingat
-                            saya</span>
-                    </label>
-                    @if (Route::has('password.request'))
-                        <a href="{{ route('password.request') }}"
-                            class="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">Lupa
-                            Password?</a>
-                    @endif
+                    </div>
+
+                    <button type="submit" id="login-btn"
+                        class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 hover:shadow-blue-600/35 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70">
+                        <span id="btn-text">Masuk Sekarang</span>
+                        <i data-lucide="arrow-right" class="h-4 w-4" id="btn-icon"></i>
+                        <svg id="btn-spinner" class="hidden h-5 w-5 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                </form>
+
+                <p class="mt-8 max-w-md text-xs font-medium text-slate-400">
+                    &copy; {{ date('Y') }} PT BMPnet ISP Management System. All rights reserved.
+                </p>
+            </div>
+
+            <div class="relative hidden xl:flex">
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.24),_transparent_42%),radial-gradient(circle_at_bottom_right,_rgba(15,23,42,0.24),_transparent_45%)]"></div>
+                <div class="relative flex min-h-full w-full flex-col justify-between bg-slate-950 px-10 py-12 text-white">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-blue-300">Network Operations</p>
+                            <h2 class="mt-4 max-w-sm text-3xl font-black leading-tight">
+                                Satu workspace untuk billing, layanan, dan support pelanggan.
+                            </h2>
+                        </div>
+                        <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-right backdrop-blur">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Status</p>
+                            <p class="mt-2 text-lg font-black text-emerald-300">Online</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
+                            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Akses Cepat</p>
+                            <div class="mt-4 grid grid-cols-3 gap-3">
+                                <div class="rounded-2xl bg-white/5 p-4">
+                                    <p class="text-2xl font-black">CRM</p>
+                                    <p class="mt-1 text-xs text-slate-400">Pelanggan & layanan</p>
+                                </div>
+                                <div class="rounded-2xl bg-white/5 p-4">
+                                    <p class="text-2xl font-black">NOC</p>
+                                    <p class="mt-1 text-xs text-slate-400">Monitoring & koneksi</p>
+                                </div>
+                                <div class="rounded-2xl bg-white/5 p-4">
+                                    <p class="text-2xl font-black">Billing</p>
+                                    <p class="mt-1 text-xs text-slate-400">Invoice & pembayaran</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
+                                <p class="text-sm font-bold">Lebih fokus</p>
+                                <p class="mt-2 text-sm leading-6 text-slate-300">Alur kerja operasional diringkas dalam satu dashboard internal.</p>
+                            </div>
+                            <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
+                                <p class="text-sm font-bold">Lebih aman</p>
+                                <p class="mt-2 text-sm leading-6 text-slate-300">Hak akses modular per divisi dan aktivitas user tercatat lebih rapi.</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-
-                <!-- Button -->
-                <button type="submit" id="login-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 transition-all duration-300 transform active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none">
-                    <span id="btn-text">Masuk Dashboard</span>
-                    <i data-lucide="arrow-right" class="w-4 h-4" id="btn-icon"></i>
-                    <!-- Loading Spinner (Hidden by default) -->
-                    <svg id="btn-spinner" class="hidden animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                </button>
-            </form>
+            </div>
         </div>
-
-        <!-- Footer -->
-        <p class="text-center text-xs text-slate-400 mt-8 font-medium">
-            &copy; {{ date('Y') }} PT BMPnet ISP Management System. <br class="hidden sm:block">All rights reserved.
-        </p>
     </div>
 
     <script>
-        function togglePassword() {
-            const passwordInput = document.getElementById('password');
-            const eyeIcon = document.getElementById('eye-icon');
+        const passwordInput = document.getElementById('password');
+        const eyeIcon = document.getElementById('eye-icon');
+        const togglePasswordButton = document.getElementById('togglePasswordButton');
 
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                eyeIcon.setAttribute('data-lucide', 'eye-off');
-            } else {
-                passwordInput.type = 'password';
-                eyeIcon.setAttribute('data-lucide', 'eye');
-            }
+        togglePasswordButton?.addEventListener('click', function () {
+            const nextType = passwordInput.type === 'password' ? 'text' : 'password';
+            passwordInput.type = nextType;
+            eyeIcon.setAttribute('data-lucide', nextType === 'password' ? 'eye' : 'eye-off');
             lucide.createIcons();
-        }
+        });
 
-        // Loading State Logic
         const loginForm = document.querySelector('form');
-        if (loginForm) {
-            loginForm.addEventListener('submit', function() {
-                const btn = document.getElementById('login-btn');
-                const text = document.getElementById('btn-text');
-                const icon = document.getElementById('btn-icon');
-                const spinner = document.getElementById('btn-spinner');
+        loginForm?.addEventListener('submit', function () {
+            const btn = document.getElementById('login-btn');
+            const text = document.getElementById('btn-text');
+            const icon = document.getElementById('btn-icon');
+            const spinner = document.getElementById('btn-spinner');
 
-                if(btn && text && icon && spinner) {
-                    // Disable button
-                    btn.disabled = true;
-                    
-                    // Hide text/icon & Show spinner
-                    text.classList.add('hidden');
-                    icon.classList.add('hidden');
-                    spinner.classList.remove('hidden');
-                }
-            });
-        }
+            if (btn && text && icon && spinner) {
+                btn.disabled = true;
+                text.classList.add('hidden');
+                icon.classList.add('hidden');
+                spinner.classList.remove('hidden');
+            }
+        });
     </script>
 </x-guest-layout>
