@@ -21,15 +21,14 @@ Route::middleware('auth')->group(function () {
         Route::resource('branches', \App\Http\Controllers\BranchController::class);
         Route::resource('divisions', \App\Http\Controllers\DivisionController::class);
         Route::resource('employees', \App\Http\Controllers\EmployeeController::class);
-
-        // Master Data: Infrastructure
-        Route::resource('routers', \App\Http\Controllers\RouterController::class);
-        Route::resource('servers', \App\Http\Controllers\HostingServerController::class);
-        Route::resource('vendors', \App\Http\Controllers\VendorController::class);
-        Route::resource('metro-ethernets', \App\Http\Controllers\MetroEthernetController::class);
-        Route::get('zabbix-monitors', [\App\Http\Controllers\ZabbixMonitorController::class, 'index'])->name('zabbix-monitors.index');
-        Route::get('zabbix-monitors/chart-data', [\App\Http\Controllers\ZabbixMonitorController::class, 'chartData'])->name('zabbix-monitors.chart-data');
     });
+
+    Route::resource('routers', \App\Http\Controllers\RouterController::class);
+    Route::resource('servers', \App\Http\Controllers\HostingServerController::class);
+    Route::resource('vendors', \App\Http\Controllers\VendorController::class);
+    Route::resource('metro-ethernets', \App\Http\Controllers\MetroEthernetController::class);
+    Route::get('zabbix-monitors', [\App\Http\Controllers\ZabbixMonitorController::class, 'index'])->name('zabbix-monitors.index');
+    Route::get('zabbix-monitors/chart-data', [\App\Http\Controllers\ZabbixMonitorController::class, 'chartData'])->name('zabbix-monitors.chart-data');
 
     // Master Data: Products & Services (Owner, Admin, & Employee)
     Route::middleware(['role:Owner|Admin|Employee|Billing|NOC|CS|Sales|Finance'])->group(function () {

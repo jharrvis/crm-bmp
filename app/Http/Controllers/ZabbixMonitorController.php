@@ -12,6 +12,7 @@ class ZabbixMonitorController extends Controller
     public function __construct(
         protected ZabbixService $zabbixService
     ) {
+        $this->middleware('permission:zabbix_monitors.view');
     }
 
     public function index()

@@ -196,9 +196,22 @@
         </div>
     </div>
 
+    @endrole
+
     <!-- Submenu: Infrastruktur -->
+    @if(
+        auth()->user()->can('routers.view')
+        || auth()->user()->can('servers.view')
+        || auth()->user()->can('vendors.view')
+        || auth()->user()->can('metro_ethernets.view')
+        || auth()->user()->can('zabbix_monitors.view')
+    )
     @php
-        $isInfraActive = request()->routeIs('routers.*') || request()->routeIs('servers.*') || request()->routeIs('zabbix-monitors.*');
+        $isInfraActive = request()->routeIs('routers.*')
+            || request()->routeIs('servers.*')
+            || request()->routeIs('vendors.*')
+            || request()->routeIs('metro-ethernets.*')
+            || request()->routeIs('zabbix-monitors.*');
     @endphp
     <div class="submenu-container {{ $isInfraActive ? 'submenu-active' : '' }}" id="menu-infrastruktur"
         data-menu-title="Infrastruktur">
@@ -213,29 +226,41 @@
         </button>
         <div class="submenu-content flex flex-col pl-12 lg:group-hover:pl-2 space-y-1 mt-1 overflow-hidden transition-all duration-300 {{ $isInfraActive ? 'submenu-open' : '' }}"
             style="{{ $isInfraActive ? 'max-height: 500px;' : 'max-height: 0;' }}">
+            @can('routers.view')
             <a href="{{ route('routers.index') }}"
                 class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('routers.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
                 Router MikroTik
             </a>
+            @endcan
+            @can('servers.view')
             <a href="{{ route('servers.index') }}"
                 class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('servers.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
                 Server Hosting
             </a>
+            @endcan
+            @can('vendors.view')
             <a href="{{ route('vendors.index') }}"
                 class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('vendors.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
                 Vendor
             </a>
+            @endcan
+            @can('metro_ethernets.view')
             <a href="{{ route('metro-ethernets.index') }}"
                 class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('metro-ethernets.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
                 Metro Ethernet
             </a>
+            @endcan
+            @can('zabbix_monitors.view')
             <a href="{{ route('zabbix-monitors.index') }}"
                 class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('zabbix-monitors.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
                 Zabbix Monitoring
             </a>
+            @endcan
         </div>
     </div>
+    @endif
 
+    @role('Owner|Admin')
     <!-- Manajemen Role -->
     <a href="{{ route('roles.index') }}"
         class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all group whitespace-nowrap {{ request()->routeIs('roles.*') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">

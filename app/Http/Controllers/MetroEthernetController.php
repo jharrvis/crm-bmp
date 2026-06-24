@@ -11,6 +11,14 @@ use Yajra\DataTables\Facades\DataTables;
 
 class MetroEthernetController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:metro_ethernets.view')->only(['index', 'show']);
+        $this->middleware('permission:metro_ethernets.create')->only(['store']);
+        $this->middleware('permission:metro_ethernets.update')->only(['update']);
+        $this->middleware('permission:metro_ethernets.delete')->only(['destroy']);
+    }
+
     public function index(Request $request)
     {
         if ($request->ajax()) {

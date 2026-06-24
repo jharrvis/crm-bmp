@@ -7,6 +7,14 @@ use Illuminate\Http\Request;
 
 class HostingServerController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:servers.view')->only(['index', 'show']);
+        $this->middleware('permission:servers.create')->only(['create', 'store']);
+        $this->middleware('permission:servers.update')->only(['edit', 'update']);
+        $this->middleware('permission:servers.delete')->only(['destroy']);
+    }
+
     /**
      * Display a listing of the resource.
      */

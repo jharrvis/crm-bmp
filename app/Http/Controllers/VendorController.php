@@ -9,6 +9,14 @@ use Illuminate\Support\Facades\DB;
 
 class VendorController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:vendors.view')->only(['index', 'show']);
+        $this->middleware('permission:vendors.create')->only(['store']);
+        $this->middleware('permission:vendors.update')->only(['update']);
+        $this->middleware('permission:vendors.delete')->only(['destroy']);
+    }
+
     /**
      * Display a listing of the resource.
      */
