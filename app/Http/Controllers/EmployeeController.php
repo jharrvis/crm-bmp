@@ -15,6 +15,14 @@ class EmployeeController extends Controller
 {
     private const STAFF_ROLE_NAMES = ['Owner', 'Admin', 'Employee', 'Billing', 'NOC', 'CS', 'Sales', 'Finance'];
 
+    public function __construct()
+    {
+        $this->middleware('permission:employees.view')->only(['index', 'show']);
+        $this->middleware('permission:employees.create')->only(['create', 'store']);
+        $this->middleware('permission:employees.update')->only(['edit', 'update']);
+        $this->middleware('permission:employees.delete')->only(['destroy']);
+    }
+
     /**
      * Display a listing of the resource.
      */

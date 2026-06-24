@@ -8,6 +8,14 @@ use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:roles.view')->only(['index', 'show']);
+        $this->middleware('permission:roles.create')->only(['create', 'store']);
+        $this->middleware('permission:roles.update')->only(['edit', 'update', 'syncPermissions']);
+        $this->middleware('permission:roles.delete')->only(['destroy']);
+    }
+
     /**
      * Display a listing of roles.
      */

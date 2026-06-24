@@ -158,13 +158,15 @@
     @endif
     @endif
 
-    {{-- MASTER DATA GROUP (Owner & Admin) --}}
-    @role('Owner|Admin')
+    {{-- MASTER DATA GROUP (Permission-based) --}}
+    @if(auth()->user()->can('branches.view') || auth()->user()->can('divisions.view') || auth()->user()->can('employees.view') || auth()->user()->can('roles.view'))
     <div class="pt-4 pb-2 menu-text">
         <p class="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Master Data</p>
     </div>
+    @endif
 
     <!-- Submenu: Organisasi -->
+    @if(auth()->user()->can('branches.view') || auth()->user()->can('divisions.view') || auth()->user()->can('employees.view'))
     @php
         $isOrgActive = request()->routeIs('branches.*') || request()->routeIs('divisions.*') || request()->routeIs('employees.*');
     @endphp
@@ -181,22 +183,27 @@
         </button>
         <div class="submenu-content flex flex-col pl-12 lg:group-hover:pl-2 space-y-1 mt-1 overflow-hidden transition-all duration-300 {{ $isOrgActive ? 'submenu-open' : '' }}"
             style="{{ $isOrgActive ? 'max-height: 500px;' : 'max-height: 0;' }}">
+            @can('branches.view')
             <a href="{{ route('branches.index') }}"
                 class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('branches.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
                 Kantor Cabang
             </a>
+            @endcan
+            @can('divisions.view')
             <a href="{{ route('divisions.index') }}"
                 class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('divisions.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
                 Divisi
             </a>
+            @endcan
+            @can('employees.view')
             <a href="{{ route('employees.index') }}"
                 class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('employees.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
                 Karyawan
             </a>
+            @endcan
         </div>
     </div>
-
-    @endrole
+    @endif
 
     <!-- Submenu: Infrastruktur -->
     @if(
@@ -260,14 +267,14 @@
     </div>
     @endif
 
-    @role('Owner|Admin')
+    @can('roles.view')
     <!-- Manajemen Role -->
     <a href="{{ route('roles.index') }}"
         class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all group whitespace-nowrap {{ request()->routeIs('roles.*') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
         <i data-lucide="shield" class="w-5 h-5 shrink-0 transition-colors"></i>
         <span class="font-medium text-sm menu-text transition-opacity duration-200">Manajemen Role</span>
     </a>
-    @endrole
+    @endcan
 
     {{-- CLIENT GROUP (Future Phase) --}}
     @role('Client')

@@ -16,12 +16,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Master Data: Organization Structure (Owner & Admin only)
-    Route::middleware(['role:Owner|Admin'])->group(function () {
-        Route::resource('branches', \App\Http\Controllers\BranchController::class);
-        Route::resource('divisions', \App\Http\Controllers\DivisionController::class);
-        Route::resource('employees', \App\Http\Controllers\EmployeeController::class);
-    });
+    Route::resource('branches', \App\Http\Controllers\BranchController::class);
+    Route::resource('divisions', \App\Http\Controllers\DivisionController::class);
+    Route::resource('employees', \App\Http\Controllers\EmployeeController::class);
 
     Route::resource('routers', \App\Http\Controllers\RouterController::class);
     Route::resource('servers', \App\Http\Controllers\HostingServerController::class);
@@ -77,12 +74,9 @@ Route::middleware('auth')->group(function () {
             ->name('clients.portal-account.generate-otp');
     });
 
-    // Role & Permission Management (Owner & Admin)
-    Route::middleware(['role:Owner|Admin'])->group(function () {
-        Route::resource('roles', \App\Http\Controllers\RoleController::class);
-        Route::post('roles/{role}/permissions', [\App\Http\Controllers\RoleController::class, 'syncPermissions'])
-            ->name('roles.permissions.sync');
-    });
+    Route::resource('roles', \App\Http\Controllers\RoleController::class);
+    Route::post('roles/{role}/permissions', [\App\Http\Controllers\RoleController::class, 'syncPermissions'])
+        ->name('roles.permissions.sync');
 });
 
 require __DIR__ . '/auth.php';
