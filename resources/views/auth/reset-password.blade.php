@@ -1,88 +1,157 @@
 <x-guest-layout>
-    <div class="w-full max-w-md p-6 relative z-10">
-        <!-- Logo -->
-        <div class="flex flex-col items-center mb-8">
-            <div class="bg-blue-600 p-3 rounded-2xl shadow-lg shadow-blue-200 dark:shadow-blue-900/20 mb-4">
-                <i data-lucide="key-round" class="text-white w-8 h-8"></i>
-            </div>
-            <div class="text-center">
-                <span class="text-2xl font-bold tracking-tight text-slate-800 dark:text-white">Reset Password</span>
-                <p class="text-xs text-slate-400 font-semibold tracking-widest uppercase mt-1">Buat Password Baru Anda
+    <!-- Full-screen overlay to hide default guest layout centering and blobs -->
+    <div class="fixed inset-0 z-40 flex flex-wrap min-h-screen w-full bg-white dark:bg-slate-900 overflow-y-auto">
+        
+        <!-- Left Form Column -->
+        <div class="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-16 md:px-24 xl:px-32 py-10 relative">
+            
+            <a href="{{ route('login') }}" class="absolute top-8 left-8 sm:left-16 text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-2">
+                <i data-lucide="chevron-left" class="h-4 w-4"></i>
+                Back to login
+            </a>
+
+            <div class="w-full max-w-md mx-auto mt-12 lg:mt-0">
+                <h1 class="text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl">Reset Password</h1>
+                <p class="mt-2 text-slate-500 dark:text-slate-400">Buat password baru untuk akun Anda.</p>
+
+                <x-auth-session-status class="mt-8" :status="session('status')" />
+
+                <form method="POST" action="{{ route('password.store') }}" class="mt-8 space-y-5">
+                    @csrf
+
+                    <!-- Password Reset Token -->
+                    <input type="hidden" name="token" value="{{ $request->route('token') }}">
+
+                    <div>
+                        <label for="email" class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                            Email<span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <input type="email" id="email" name="email" value="{{ old('email', $request->email) }}"
+                                placeholder="nama@bmp.net.id"
+                                class="block w-full rounded-lg border border-slate-300 bg-transparent px-4 py-3 text-slate-900 placeholder-slate-400 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 dark:border-slate-600 dark:text-white dark:placeholder-slate-500 dark:focus:border-blue-500 dark:focus:ring-blue-500"
+                                required autofocus autocomplete="username">
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                                <i data-lucide="mail" class="h-5 w-5 text-slate-400"></i>
+                            </div>
+                        </div>
+                        <x-input-error :messages="$errors->get('email')" class="mt-2" />
+                    </div>
+
+                    <div>
+                        <label for="password" class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                            Password Baru<span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <input type="password" id="password" name="password"
+                                placeholder="••••••••"
+                                class="block w-full rounded-lg border border-slate-300 bg-transparent px-4 py-3 pr-20 text-slate-900 placeholder-slate-400 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 dark:border-slate-600 dark:text-white dark:placeholder-slate-500 dark:focus:border-blue-500 dark:focus:ring-blue-500"
+                                required autocomplete="new-password">
+                            
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 gap-2">
+                                <i data-lucide="lock" class="h-5 w-5 text-slate-400 pointer-events-none"></i>
+                                <button type="button" id="togglePasswordButton" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 focus:outline-none flex items-center justify-center p-1">
+                                    <i data-lucide="eye" class="h-5 w-5" id="eye-icon"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <x-input-error :messages="$errors->get('password')" class="mt-2" />
+                    </div>
+
+                    <div>
+                        <label for="password_confirmation" class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                            Konfirmasi Password<span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <input type="password" id="password_confirmation" name="password_confirmation"
+                                placeholder="••••••••"
+                                class="block w-full rounded-lg border border-slate-300 bg-transparent px-4 py-3 pr-20 text-slate-900 placeholder-slate-400 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 dark:border-slate-600 dark:text-white dark:placeholder-slate-500 dark:focus:border-blue-500 dark:focus:ring-blue-500"
+                                required autocomplete="new-password">
+                            
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 gap-2">
+                                <i data-lucide="shield-check" class="h-5 w-5 text-slate-400 pointer-events-none"></i>
+                                <button type="button" id="toggleConfirmPasswordButton" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 focus:outline-none flex items-center justify-center p-1">
+                                    <i data-lucide="eye" class="h-5 w-5" id="eye-confirm-icon"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
+                    </div>
+
+                    <button type="submit" id="reset-btn" class="w-full rounded-lg bg-blue-600 px-4 py-3 text-center text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/50 disabled:opacity-70 flex justify-center items-center gap-2">
+                        <span id="btn-text">Reset Password</span>
+                        <svg id="btn-spinner" class="hidden h-5 w-5 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                </form>
+
+                <p class="mt-12 text-center text-xs text-slate-500 dark:text-slate-500">
+                    &copy; 2026 PT BMPnet ISP Management System. All rights reserved.
                 </p>
             </div>
         </div>
 
-        <!-- Card -->
-        <div class="login-card p-8 rounded-[2rem] shadow-xl">
-            <div class="mb-6 text-center">
-                <h2 class="text-xl font-bold text-slate-800 dark:text-white">Password Baru 🔐</h2>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">Masukkan password baru untuk akun Anda.</p>
+        <!-- Right Branding Column -->
+        <div class="hidden lg:flex lg:w-1/2 bg-[#0B1533] items-center justify-center relative overflow-hidden">
+            <!-- Grid Pattern from SVG -->
+            <img src="{{ asset('assets/img/auth-grid-01.svg') }}" alt="" class="pointer-events-none absolute left-0 top-0 w-56 opacity-70">
+            <img src="{{ asset('assets/img/auth-grid-01.svg') }}" alt="" class="pointer-events-none absolute bottom-0 right-0 w-56 rotate-180 opacity-70">
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.22),_transparent_40%),radial-gradient(circle_at_bottom,_rgba(37,99,235,0.2),_transparent_42%)]"></div>
+            
+            <div class="relative z-10 text-center px-12">
+                <div class="flex items-center justify-center gap-3 mb-4">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/25">
+                        <i data-lucide="shield-check" class="h-6 w-6"></i>
+                    </div>
+                    <span class="text-white text-4xl font-bold">BMP<span class="text-blue-400">net</span> CRM</span>
+                </div>
+                <p class="text-slate-300 text-lg max-w-sm mx-auto mt-6">
+                    Satu portal internal untuk operasional jaringan dan billing.
+                </p>
             </div>
-
-            <form method="POST" action="{{ route('password.store') }}" class="space-y-5">
-                @csrf
-
-                <!-- Password Reset Token -->
-                <input type="hidden" name="token" value="{{ $request->route('token') }}">
-
-                <!-- Email -->
-                <div class="space-y-1.5 container-input">
-                    <label for="email" class="text-xs font-bold text-slate-600 dark:text-slate-300 ml-1">Email</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i data-lucide="mail" class="w-5 h-5 text-slate-400"></i>
-                        </div>
-                        <input type="email" id="email" name="email" value="{{ old('email', $request->email) }}"
-                            placeholder="nama@perusahaan.com"
-                            class="block w-full pl-10 pr-3 py-3 border border-slate-200 dark:border-slate-600 rounded-xl bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
-                            required autofocus autocomplete="username">
-                    </div>
-                    <x-input-error :messages="$errors->get('email')" class="mt-2" />
-                </div>
-
-                <!-- Password -->
-                <div class="space-y-1.5 container-input">
-                    <label for="password" class="text-xs font-bold text-slate-600 dark:text-slate-300 ml-1">Password
-                        Baru</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i data-lucide="lock" class="w-5 h-5 text-slate-400"></i>
-                        </div>
-                        <input type="password" id="password" name="password" placeholder="••••••••"
-                            class="block w-full pl-10 pr-3 py-3 border border-slate-200 dark:border-slate-600 rounded-xl bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
-                            required autocomplete="new-password">
-                    </div>
-                    <x-input-error :messages="$errors->get('password')" class="mt-2" />
-                </div>
-
-                <!-- Confirm Password -->
-                <div class="space-y-1.5 container-input">
-                    <label for="password_confirmation"
-                        class="text-xs font-bold text-slate-600 dark:text-slate-300 ml-1">Konfirmasi Password</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i data-lucide="shield-check" class="w-5 h-5 text-slate-400"></i>
-                        </div>
-                        <input type="password" id="password_confirmation" name="password_confirmation"
-                            placeholder="••••••••"
-                            class="block w-full pl-10 pr-3 py-3 border border-slate-200 dark:border-slate-600 rounded-xl bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
-                            required autocomplete="new-password">
-                    </div>
-                    <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
-                </div>
-
-                <!-- Button -->
-                <button type="submit"
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 transition-all duration-300 transform active:scale-[0.98] flex items-center justify-center gap-2">
-                    <span>Reset Password</span>
-                    <i data-lucide="check" class="w-4 h-4"></i>
-                </button>
-            </form>
         </div>
-
-        <!-- Footer -->
-        <p class="text-center text-xs text-slate-400 mt-8 font-medium">
-            &copy; {{ date('Y') }} PT BMPnet ISP Management System.
-        </p>
     </div>
+
+    <script>
+        const passwordInput = document.getElementById('password');
+        const eyeIcon = document.getElementById('eye-icon');
+        const togglePasswordButton = document.getElementById('togglePasswordButton');
+
+        togglePasswordButton?.addEventListener('click', function () {
+            const nextType = passwordInput.type === 'password' ? 'text' : 'password';
+            passwordInput.type = nextType;
+            eyeIcon.setAttribute('data-lucide', nextType === 'password' ? 'eye' : 'eye-off');
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+
+        const confirmPasswordInput = document.getElementById('password_confirmation');
+        const eyeConfirmIcon = document.getElementById('eye-confirm-icon');
+        const toggleConfirmPasswordButton = document.getElementById('toggleConfirmPasswordButton');
+
+        toggleConfirmPasswordButton?.addEventListener('click', function () {
+            const nextType = confirmPasswordInput.type === 'password' ? 'text' : 'password';
+            confirmPasswordInput.type = nextType;
+            eyeConfirmIcon.setAttribute('data-lucide', nextType === 'password' ? 'eye' : 'eye-off');
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+
+        const resetForm = document.querySelector('form');
+        resetForm?.addEventListener('submit', function () {
+            const btn = document.getElementById('reset-btn');
+            const text = document.getElementById('btn-text');
+            const spinner = document.getElementById('btn-spinner');
+
+            if (btn && text && spinner) {
+                btn.disabled = true;
+                text.classList.add('hidden');
+                spinner.classList.remove('hidden');
+            }
+        });
+    </script>
 </x-guest-layout>
