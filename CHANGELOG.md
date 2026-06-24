@@ -2,6 +2,26 @@
 
 Semua perubahan penting pada project ini dicatat di file ini.
 
+## 2026-06-24
+
+### Added
+
+- Seeder akun `webmaster@bmp.net.id` dengan role `Owner` untuk akses penuh sistem
+- Permission baru untuk modul infrastruktur: `vendors`, `metro_ethernets`, dan `zabbix_monitors`
+- Asset dekoratif SVG untuk panel kanan halaman auth
+
+### Changed
+
+- Halaman `login` dan `forgot password` didesain ulang ke layout split dua kolom yang lebih modern
+- Panel kanan auth disesuaikan agar lebih dekat ke referensi TailAdmin, dengan latar biru tua dan grid dekoratif
+- Manajemen role diselaraskan dengan visibilitas menu dan akses route berbasis permission
+- Default permission role `NOC` diperluas agar dapat melihat modul infrastruktur yang relevan
+
+### Fixed
+
+- Menu `Infrastruktur` yang sebelumnya tidak muncul untuk role `NOC` walaupun permission sudah ada
+- Inkonsistensi modul `Organisasi`, `Infrastruktur`, dan `Manajemen Role` yang sebelumnya masih dikunci berdasarkan nama role
+
 ## 2026-05-16
 
 ### Added

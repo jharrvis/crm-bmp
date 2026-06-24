@@ -1,22 +1,16 @@
 <x-guest-layout>
     <div class="relative z-10 w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <div class="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/90 shadow-[0_24px_80px_-28px_rgba(15,23,42,0.35)] backdrop-blur xl:grid xl:min-h-[720px] xl:grid-cols-[minmax(0,0.96fr)_minmax(0,1.04fr)]">
-            <div class="px-6 py-8 sm:px-10 lg:px-12 xl:px-14 xl:py-12">
-                <div class="flex items-center gap-3">
-                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/25">
-                        <i data-lucide="wifi" class="h-6 w-6"></i>
-                    </div>
-                    <div>
-                        <p class="text-lg font-black tracking-tight text-slate-900">BMP<span class="text-blue-600">net</span></p>
-                        <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">CRM Portal</p>
-                    </div>
-                </div>
+            <div class="px-6 py-8 sm:px-10 lg:px-12 xl:px-16 xl:py-12">
+                <a href="{{ url('/') }}" class="inline-flex items-center gap-2 text-sm font-medium text-slate-400 transition hover:text-slate-600">
+                    <i data-lucide="chevron-left" class="h-4 w-4"></i>
+                    <span>Back to dashboard</span>
+                </a>
 
-                <div class="mt-10 max-w-md">
-                    <p class="text-sm font-semibold uppercase tracking-[0.28em] text-blue-600">Sign In</p>
-                    <h1 class="mt-3 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Masuk ke dashboard operasional.</h1>
-                    <p class="mt-3 text-sm leading-6 text-slate-500">
-                        Gunakan akun internal Anda untuk mengakses data pelanggan, layanan, billing, dan support.
+                <div class="mt-20 max-w-md">
+                    <h1 class="text-4xl font-black tracking-tight text-slate-900">Sign In</h1>
+                    <p class="mt-3 text-base leading-7 text-slate-500">
+                        Enter your email and password to sign in!
                     </p>
                 </div>
 
@@ -26,13 +20,13 @@
                     @csrf
 
                     <div class="space-y-2">
-                        <label for="email" class="text-sm font-bold text-slate-700">Email</label>
+                        <label for="email" class="text-sm font-bold text-slate-700">Email <span class="text-red-500">*</span></label>
                         <div class="relative">
                             <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
                                 <i data-lucide="mail" class="h-5 w-5"></i>
                             </div>
                             <input type="email" id="email" name="email" value="{{ old('email') }}"
-                                placeholder="nama@bmp.net.id"
+                                placeholder="info@bmp.net.id"
                                 class="block w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
                                 required autofocus autocomplete="username">
                         </div>
@@ -41,11 +35,11 @@
 
                     <div class="space-y-2">
                         <div class="flex items-center justify-between gap-3">
-                            <label for="password" class="text-sm font-bold text-slate-700">Password</label>
+                            <label for="password" class="text-sm font-bold text-slate-700">Password <span class="text-red-500">*</span></label>
                             @if (Route::has('password.request'))
                                 <a href="{{ route('password.request') }}"
                                     class="text-xs font-bold text-blue-600 hover:text-blue-700">
-                                    Lupa password?
+                                    Forgot password?
                                 </a>
                             @endif
                         </div>
@@ -53,7 +47,7 @@
                             <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
                                 <i data-lucide="lock" class="h-5 w-5"></i>
                             </div>
-                            <input type="password" id="password" name="password" placeholder="Masukkan password Anda"
+                            <input type="password" id="password" name="password" placeholder="Enter your password"
                                 class="block w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-12 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
                                 required autocomplete="current-password">
                             <button type="button" id="togglePasswordButton"
@@ -69,17 +63,17 @@
                         <label class="flex items-center gap-3 text-sm font-medium text-slate-600">
                             <input type="checkbox" name="remember"
                                 class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20">
-                            <span>Ingat saya di perangkat ini</span>
+                            <span>Keep me logged in</span>
                         </label>
                         <div class="hidden sm:flex items-center gap-2 text-xs font-semibold text-slate-400">
                             <i data-lucide="shield-check" class="h-4 w-4"></i>
-                            <span>Koneksi aman</span>
+                            <span>Secure access</span>
                         </div>
                     </div>
 
                     <button type="submit" id="login-btn"
                         class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 hover:shadow-blue-600/35 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70">
-                        <span id="btn-text">Masuk Sekarang</span>
+                        <span id="btn-text">Sign In</span>
                         <i data-lucide="arrow-right" class="h-4 w-4" id="btn-icon"></i>
                         <svg id="btn-spinner" class="hidden h-5 w-5 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
