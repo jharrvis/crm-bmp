@@ -1,6 +1,6 @@
 <x-guest-layout>
     <div class="relative z-10 w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <div class="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/90 shadow-[0_24px_80px_-28px_rgba(15,23,42,0.35)] backdrop-blur xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)]">
+        <div class="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/90 shadow-[0_24px_80px_-28px_rgba(15,23,42,0.35)] backdrop-blur xl:grid xl:min-h-[720px] xl:grid-cols-[minmax(0,0.96fr)_minmax(0,1.04fr)]">
             <div class="px-6 py-8 sm:px-10 lg:px-12 xl:px-14 xl:py-12">
                 <div class="flex items-center gap-3">
                     <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/25">
@@ -93,52 +93,22 @@
                 </p>
             </div>
 
-            <div class="relative hidden xl:flex">
-                <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.24),_transparent_42%),radial-gradient(circle_at_bottom_right,_rgba(15,23,42,0.24),_transparent_45%)]"></div>
-                <div class="relative flex min-h-full w-full flex-col justify-between bg-slate-950 px-10 py-12 text-white">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-blue-300">Network Operations</p>
-                            <h2 class="mt-4 max-w-sm text-3xl font-black leading-tight">
-                                Satu workspace untuk billing, layanan, dan support pelanggan.
-                            </h2>
-                        </div>
-                        <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-right backdrop-blur">
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Status</p>
-                            <p class="mt-2 text-lg font-black text-emerald-300">Online</p>
-                        </div>
-                    </div>
+            <div class="relative hidden xl:flex items-center justify-center overflow-hidden bg-[#0B1533] px-12 py-16 text-white">
+                <img src="{{ asset('assets/img/auth-grid-01.svg') }}" alt="" class="pointer-events-none absolute left-0 top-0 w-56 opacity-70">
+                <img src="{{ asset('assets/img/auth-grid-01.svg') }}" alt="" class="pointer-events-none absolute bottom-0 right-0 w-56 rotate-180 opacity-70">
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.22),_transparent_40%),radial-gradient(circle_at_bottom,_rgba(37,99,235,0.2),_transparent_42%)]"></div>
 
-                    <div class="space-y-4">
-                        <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
-                            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Akses Cepat</p>
-                            <div class="mt-4 grid grid-cols-3 gap-3">
-                                <div class="rounded-2xl bg-white/5 p-4">
-                                    <p class="text-2xl font-black">CRM</p>
-                                    <p class="mt-1 text-xs text-slate-400">Pelanggan & layanan</p>
-                                </div>
-                                <div class="rounded-2xl bg-white/5 p-4">
-                                    <p class="text-2xl font-black">NOC</p>
-                                    <p class="mt-1 text-xs text-slate-400">Monitoring & koneksi</p>
-                                </div>
-                                <div class="rounded-2xl bg-white/5 p-4">
-                                    <p class="text-2xl font-black">Billing</p>
-                                    <p class="mt-1 text-xs text-slate-400">Invoice & pembayaran</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
-                                <p class="text-sm font-bold">Lebih fokus</p>
-                                <p class="mt-2 text-sm leading-6 text-slate-300">Alur kerja operasional diringkas dalam satu dashboard internal.</p>
-                            </div>
-                            <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
-                                <p class="text-sm font-bold">Lebih aman</p>
-                                <p class="mt-2 text-sm leading-6 text-slate-300">Hak akses modular per divisi dan aktivitas user tercatat lebih rapi.</p>
-                            </div>
-                        </div>
+                <div class="relative mx-auto flex max-w-md flex-col items-center text-center">
+                    <div class="flex h-16 w-16 items-center justify-center rounded-[1.5rem] border border-white/15 bg-white/10 backdrop-blur">
+                        <i data-lucide="shield-check" class="h-8 w-8 text-blue-200"></i>
                     </div>
+                    <p class="mt-8 text-sm font-semibold uppercase tracking-[0.34em] text-blue-200">BMPnet CRM</p>
+                    <h2 class="mt-5 text-4xl font-black leading-tight">
+                        Satu portal internal untuk operasional jaringan dan billing.
+                    </h2>
+                    <p class="mt-5 text-base leading-8 text-slate-300">
+                        Kelola pelanggan, layanan, tagihan, dan support dari satu workspace yang lebih terstruktur untuk tim internal BMPnet.
+                    </p>
                 </div>
             </div>
         </div>

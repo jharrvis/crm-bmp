@@ -1,6 +1,6 @@
 <x-guest-layout>
     <div class="relative z-10 w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <div class="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/90 shadow-[0_24px_80px_-28px_rgba(15,23,42,0.35)] backdrop-blur xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)]">
+        <div class="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/90 shadow-[0_24px_80px_-28px_rgba(15,23,42,0.35)] backdrop-blur xl:grid xl:min-h-[720px] xl:grid-cols-[minmax(0,0.96fr)_minmax(0,1.04fr)]">
             <div class="px-6 py-8 sm:px-10 lg:px-12 xl:px-14 xl:py-12">
                 <div class="flex items-center gap-3">
                     <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/25">
@@ -61,49 +61,22 @@
                 </p>
             </div>
 
-            <div class="relative hidden xl:flex">
-                <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.24),_transparent_42%),radial-gradient(circle_at_bottom_right,_rgba(15,23,42,0.24),_transparent_45%)]"></div>
-                <div class="relative flex min-h-full w-full flex-col justify-between bg-slate-950 px-10 py-12 text-white">
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.28em] text-blue-300">Account Security</p>
-                        <h2 class="mt-4 max-w-sm text-3xl font-black leading-tight">
-                            Recovery flow yang lebih rapi untuk akun staf internal.
-                        </h2>
-                        <p class="mt-4 max-w-md text-sm leading-7 text-slate-300">
-                            Gunakan email yang terdaftar di sistem. Setelah menerima tautan reset, buat password baru lalu login kembali ke dashboard.
-                        </p>
+            <div class="relative hidden xl:flex items-center justify-center overflow-hidden bg-[#0B1533] px-12 py-16 text-white">
+                <img src="{{ asset('assets/img/auth-grid-01.svg') }}" alt="" class="pointer-events-none absolute left-0 top-0 w-56 opacity-70">
+                <img src="{{ asset('assets/img/auth-grid-01.svg') }}" alt="" class="pointer-events-none absolute bottom-0 right-0 w-56 rotate-180 opacity-70">
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.22),_transparent_40%),radial-gradient(circle_at_bottom,_rgba(37,99,235,0.2),_transparent_42%)]"></div>
+
+                <div class="relative mx-auto flex max-w-md flex-col items-center text-center">
+                    <div class="flex h-16 w-16 items-center justify-center rounded-[1.5rem] border border-white/15 bg-white/10 backdrop-blur">
+                        <i data-lucide="mail-check" class="h-8 w-8 text-blue-200"></i>
                     </div>
-
-                    <div class="space-y-4">
-                        <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
-                            <div class="flex items-start gap-4">
-                                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-400/10 text-emerald-300">
-                                    <i data-lucide="shield-check" class="h-5 w-5"></i>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-bold">Tautan aman</p>
-                                    <p class="mt-2 text-sm leading-6 text-slate-300">Reset password dikirim lewat email dan hanya berlaku untuk sesi pemulihan akun.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
-                            <div class="flex items-start gap-4">
-                                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-400/10 text-blue-300">
-                                    <i data-lucide="mail-check" class="h-5 w-5"></i>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-bold">Verifikasi email</p>
-                                    <p class="mt-2 text-sm leading-6 text-slate-300">Pastikan alamat email aktif agar tautan reset dapat diterima tanpa kendala.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
-                            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Need help?</p>
-                            <p class="mt-3 text-sm leading-6 text-slate-300">Jika email tidak diterima, hubungi administrator sistem atau tim IT internal BMPnet.</p>
-                        </div>
-                    </div>
+                    <p class="mt-8 text-sm font-semibold uppercase tracking-[0.34em] text-blue-200">Account Recovery</p>
+                    <h2 class="mt-5 text-4xl font-black leading-tight">
+                        Pulihkan akses akun internal Anda dengan lebih cepat.
+                    </h2>
+                    <p class="mt-5 text-base leading-8 text-slate-300">
+                        Masukkan email yang terdaftar di sistem. Kami akan mengirim tautan reset untuk membuat password baru dan melanjutkan login ke CRM.
+                    </p>
                 </div>
             </div>
         </div>
