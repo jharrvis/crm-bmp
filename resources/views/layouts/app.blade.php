@@ -97,7 +97,13 @@
 
             <!-- Dashboard Content Container -->
             <div id="content-area" class="p-4 md:p-8 flex-1 overflow-y-auto">
-                {{ $slot }}
+                <div class="space-y-6">
+                    @if (!empty($breadcrumbs))
+                        <x-breadcrumbs :items="$breadcrumbs" />
+                    @endif
+
+                    {{ $slot }}
+                </div>
             </div>
         </main>
     </div>
