@@ -27,7 +27,6 @@ class UserSeeder extends Seeder
         Role::firstOrCreate(['name' => 'CS']);
         Role::firstOrCreate(['name' => 'Sales']);
         Role::firstOrCreate(['name' => 'Finance']);
-        $roleClient = Role::firstOrCreate(['name' => 'Client']);
 
         // Create Owner User
         $owner = User::updateOrCreate(
@@ -59,14 +58,7 @@ class UserSeeder extends Seeder
         );
         $employee->assignRole($roleEmployee);
 
-        // Create Client User
-        $client = User::updateOrCreate(
-            ['email' => 'client@gmail.com'],
-            [
-                'name' => 'Pelanggan A',
-                'password' => Hash::make('password'),
-            ]
-        );
-        $client->assignRole($roleClient);
+        // Portal client accounts use the dedicated client_portal_accounts table.
+        // They are not represented as staff users or roles in the users table.
     }
 }

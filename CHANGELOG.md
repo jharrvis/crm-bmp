@@ -27,6 +27,7 @@ Semua perubahan penting pada project ini dicatat di file ini.
 
 - Inkonsistensi penempatan menu administratif yang sebelumnya tersebar di `Master Data`
 - Jam pada aplikasi yang sebelumnya selalu mengikuti `UTC` karena timezone config masih hardcoded
+- Legacy role `Client` dan user dummy `Pelanggan A` yang sebelumnya muncul di manajemen role walaupun portal client sudah memakai tabel akun terpisah
 
 ## 2026-06-24
 

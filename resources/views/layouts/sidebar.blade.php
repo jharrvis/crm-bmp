@@ -332,9 +332,4 @@
         </div>
     </div>
     @endif
-
-    {{-- CLIENT GROUP (Future Phase) --}}
-    @role('Client')
-    <!-- Placeholder for client menu -->
-    @endrole
 </nav>

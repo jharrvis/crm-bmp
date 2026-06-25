@@ -72,7 +72,6 @@ class PermissionSeeder extends Seeder
             'CS' => 'Customer service untuk pelanggan dan koordinasi layanan',
             'Sales' => 'Tim sales untuk akuisisi pelanggan dan penawaran layanan',
             'Finance' => 'Tim finance untuk laporan dan kontrol keuangan',
-            'Client' => 'Pelanggan dengan akses portal pelanggan',
         ];
 
         foreach ($roleDescriptions as $roleName => $description) {
