@@ -304,6 +304,95 @@ Minimal cek:
 - [ ] syntax check / test minimum sudah dilakukan jika memungkinkan
 - [ ] permission/role diperiksa jika menyentuh menu atau akses
 
+## 12.0 Skill Operasional yang Disarankan
+
+Jika environment agent mendukung skill lokal, gunakan skill berikut untuk menjaga konsistensi repo ini:
+
+- `crm-doc-maintainer`
+  - untuk memastikan `CHANGELOG.md`, `docs/`, dan deployment note ikut diperbarui
+- `crm-release-checker`
+  - untuk mengecek dampak release sebelum commit, push, atau deploy
+- `crm-api-doc-writer`
+  - untuk menjaga dokumentasi endpoint API tetap sinkron dengan route/controller
+- `crm-permission-auditor`
+  - untuk mengecek konsistensi permission, sidebar, route, controller, dan role management
+- `crm-activitylog-auditor`
+  - untuk mengecek apakah aksi penting sudah tercatat di Activity Log dan field sensitif tidak ikut terlog
+
+Skill di atas tidak menggantikan penilaian engineer, tetapi menjadi checklist operasional tambahan agar perubahan tidak lepas dari standar repo.
+
+## 12.1 Kapan Harus Commit
+
+Commit sebaiknya dilakukan ketika salah satu kondisi ini terpenuhi:
+
+1. satu unit pekerjaan selesai end-to-end
+2. satu bug fix sudah selesai dan terverifikasi
+3. satu fitur baru sudah bisa dipakai meskipun belum final 100%
+4. satu perubahan dokumentasi penting sudah lengkap
+5. sebelum beralih ke pekerjaan lain yang berbeda scope
+
+Hindari:
+
+- commit campuran untuk banyak topik yang tidak berhubungan
+- commit setengah jadi tanpa konteks yang jelas
+- commit file temp, cache, atau artefak lokal yang tidak relevan
+
+## 12.2 Standar Isi Commit
+
+Commit message harus:
+
+- singkat
+- menjelaskan hasil, bukan proses berpikir
+- fokus pada satu scope perubahan
+
+Contoh:
+
+- `Add in-app documentation module`
+- `Implement MVP activity logging`
+- `Show assigned users in role management`
+- `Fix invoice deletion handling`
+
+## 12.3 Kapan Harus Push ke GitHub
+
+Push sebaiknya dilakukan jika:
+
+1. pekerjaan sudah siap dipakai atau diuji di server lain
+2. perubahan sudah aman untuk branch aktif
+3. dokumentasi/changelog yang relevan sudah ikut diperbarui
+4. user secara eksplisit meminta commit dan push
+5. perubahan diperlukan untuk deploy production, staging, atau kolaborasi tim
+
+Jangan push jika:
+
+- pekerjaan masih eksplorasi dan belum stabil
+- perubahan belum dicek dampaknya ke modul lain
+- migration/seeder/deploy note belum jelas padahal dibutuhkan
+- masih ada file lokal yang tidak sengaja ikut berubah
+
+## 12.4 Default Workflow Commit dan Push
+
+Urutan kerja yang disarankan:
+
+1. implement perubahan
+2. verifikasi minimum
+3. update dokumentasi terkait
+4. update `CHANGELOG.md` jika user atau operasional akan merasakan perubahan
+5. commit dengan message yang jelas
+6. push ke GitHub jika perubahan sudah siap dibagikan atau dideploy
+
+## 12.5 Persetujuan Push dan Batasan Environment
+
+Catatan penting:
+
+- prosedur di `AGENTS.md` tidak dapat menonaktifkan prompt persetujuan dari environment/tooling
+- persetujuan untuk `git commit`, `git push`, atau command sensitif tetap mengikuti aturan sandbox/runtime
+- jika environment mendukung approval rule atau trusted prefix, itu harus diatur di level tool/runtime, bukan di repo
+
+Artinya:
+
+- `AGENTS.md` hanya bisa menetapkan kebiasaan kerja
+- keputusan akhir soal perlu atau tidaknya approval tetap ditentukan platform yang menjalankan agent
+
 ## 13. Checklist Sebelum Push ke Production
 
 - [ ] branch sudah sinkron
