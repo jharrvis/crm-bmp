@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsModelActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class ClientContact extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsModelActivity;
 
     protected $fillable = [
         'client_id',
@@ -22,6 +23,8 @@ class ClientContact extends Model
     protected $casts = [
         'is_primary' => 'boolean',
     ];
+
+    protected string $activitylogEntityName = 'kontak pelanggan';
 
     public function client()
     {

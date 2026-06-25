@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsModelActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class MetroEthernet extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsModelActivity;
 
     protected $appends = [
         'display_name',
@@ -21,6 +22,8 @@ class MetroEthernet extends Model
         'ip_address',
         'bandwidth',
     ];
+
+    protected string $activitylogEntityName = 'metro ethernet';
 
     public function vendor()
     {

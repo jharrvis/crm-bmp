@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsModelActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class TicketReply extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsModelActivity;
 
     protected $fillable = [
         'ticket_id',
@@ -24,6 +25,12 @@ class TicketReply extends Model
             'is_internal' => 'boolean',
         ];
     }
+
+    protected array $activitylogExcludeAttributes = [
+        'message',
+    ];
+
+    protected string $activitylogEntityName = 'balasan tiket';
 
     public function ticket()
     {

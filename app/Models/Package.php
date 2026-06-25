@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsModelActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Package extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsModelActivity;
 
     protected $fillable = [
         'service_id',
@@ -24,6 +25,8 @@ class Package extends Model
         'is_active' => 'boolean',
         'price' => 'decimal:2',
     ];
+
+    protected string $activitylogEntityName = 'package';
 
     public function service()
     {

@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsModelActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Subscription extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsModelActivity;
 
     protected $fillable = [
         'client_id',
@@ -43,6 +44,8 @@ class Subscription extends Model
         'pph23_amount' => 'decimal:2',
         'discount_percent' => 'decimal:2',
     ];
+
+    protected string $activitylogEntityName = 'langganan';
 
     public function client()
     {

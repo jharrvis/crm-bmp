@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsModelActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 class Invoice extends Model
 {
+    use LogsModelActivity;
+
     protected $fillable = [
         'client_id',
         'invoice_number',
@@ -24,6 +27,8 @@ class Invoice extends Model
         'paid_at' => 'datetime',
         'total_amount' => 'decimal:2',
     ];
+
+    protected string $activitylogEntityName = 'invoice';
 
     public function client()
     {

@@ -67,6 +67,16 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
                         @forelse($activities as $activity)
+                            @php
+                                $properties = $activity->properties ?? collect();
+                                $subjectLabel = data_get($properties, 'subject_label');
+                                $attributes = data_get($properties, 'attributes', []);
+                                $old = data_get($properties, 'old', []);
+                                $changedKeys = collect(array_keys(is_array($attributes) ? $attributes : []))
+                                    ->merge(array_keys(is_array($old) ? $old : []))
+                                    ->unique()
+                                    ->reject(fn ($key) => in_array($key, ['updated_at', 'created_at']));
+                            @endphp
                             <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30">
                                 <td class="px-6 py-4 md:px-8 align-top">
                                     <div class="text-sm font-medium text-slate-800 dark:text-white">{{ $activity->created_at?->format('d M Y H:i') }}</div>
@@ -84,9 +94,26 @@
                                 <td class="px-6 py-4 align-top">
                                     <div class="text-sm font-medium text-slate-800 dark:text-white">{{ class_basename($activity->subject_type ?? '-') }}</div>
                                     <div class="mt-1 text-xs text-slate-400">ID: {{ $activity->subject_id ?? '-' }}</div>
+                                    @if($subjectLabel)
+                                        <div class="mt-1 text-xs font-medium text-slate-500 dark:text-slate-300">{{ $subjectLabel }}</div>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 md:pr-8 align-top text-sm text-slate-600 dark:text-slate-300">
                                     {{ $activity->description }}
+                                    @if($changedKeys->isNotEmpty())
+                                        <div class="mt-3 flex flex-wrap gap-2">
+                                            @foreach($changedKeys->take(6) as $field)
+                                                <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                                                    {{ str_replace('_', ' ', $field) }}
+                                                </span>
+                                            @endforeach
+                                            @if($changedKeys->count() > 6)
+                                                <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500 dark:bg-slate-700 dark:text-slate-400">
+                                                    +{{ $changedKeys->count() - 6 }} field
+                                                </span>
+                                            @endif
+                                        </div>
+                                    @endif
                                 </td>
                             </tr>
                         @empty

@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsModelActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class TicketCannedResponse extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsModelActivity;
 
     protected $fillable = [
         'title',
@@ -24,4 +25,6 @@ class TicketCannedResponse extends Model
             'is_active' => 'boolean',
         ];
     }
+
+    protected string $activitylogEntityName = 'template respons tiket';
 }

@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsModelActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Client extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsModelActivity;
 
     protected $fillable = [
         'branch_id',
@@ -29,6 +30,8 @@ class Client extends Model
     protected $casts = [
         'registered_at' => 'date',
     ];
+
+    protected string $activitylogEntityName = 'pelanggan';
 
     public function branch()
     {

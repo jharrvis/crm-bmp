@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsModelActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Ticket extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsModelActivity;
 
     protected $fillable = [
         'client_id',
@@ -38,6 +39,8 @@ class Ticket extends Model
             'staff_last_read_at' => 'datetime',
         ];
     }
+
+    protected string $activitylogEntityName = 'tiket';
 
     public function client()
     {

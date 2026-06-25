@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsModelActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Vendor extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsModelActivity;
 
     protected $fillable = [
         'name',
@@ -15,6 +16,8 @@ class Vendor extends Model
         'address',
         'notes',
     ];
+
+    protected string $activitylogEntityName = 'vendor';
 
     public function contacts()
     {

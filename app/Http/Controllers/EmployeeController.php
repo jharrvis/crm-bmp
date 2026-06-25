@@ -87,6 +87,17 @@ class EmployeeController extends Controller
 
         $user->assignRole($request->role);
 
+        activity('roles')
+            ->causedBy($request->user())
+            ->performedOn($user)
+            ->event('roles_synced')
+            ->withProperties([
+                'attributes' => [
+                    'roles' => $user->roles->pluck('name')->values()->all(),
+                ],
+            ])
+            ->log('Menetapkan role karyawan');
+
         if ($request->wantsJson()) {
             $user->load(['branch', 'division', 'roles']);
             return response()->json([
@@ -161,8 +172,22 @@ class EmployeeController extends Controller
             $data['password'] = Hash::make($request->password);
         }
 
+        $oldRoles = $employee->roles->pluck('name')->sort()->values()->all();
         $employee->update($data);
         $employee->syncRoles([$request->role]);
+
+        $newRoles = $employee->fresh('roles')->roles->pluck('name')->sort()->values()->all();
+        if ($oldRoles !== $newRoles) {
+            activity('roles')
+                ->causedBy($request->user())
+                ->performedOn($employee)
+                ->event('roles_synced')
+                ->withProperties([
+                    'old' => ['roles' => $oldRoles],
+                    'attributes' => ['roles' => $newRoles],
+                ])
+                ->log('Mengubah role karyawan');
+        }
 
         if ($request->wantsJson()) {
             $employee->load(['branch', 'division', 'roles']);

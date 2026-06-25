@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsModelActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class HostingServer extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsModelActivity;
 
     protected $fillable = [
         'name',
@@ -28,4 +29,11 @@ class HostingServer extends Model
         'api_key' => 'encrypted',
         'secret_key' => 'encrypted',
     ];
+
+    protected array $activitylogExcludeAttributes = [
+        'api_key',
+        'secret_key',
+    ];
+
+    protected string $activitylogEntityName = 'hosting server';
 }

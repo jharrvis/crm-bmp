@@ -56,10 +56,22 @@ class RoleController extends Controller
         ]);
 
         // Copy permissions from existing role if specified
+        $sourceRole = null;
         if (!empty($validated['copy_from'])) {
             $sourceRole = Role::find($validated['copy_from']);
             $role->syncPermissions($sourceRole->permissions);
         }
+
+        activity('roles')
+            ->causedBy($request->user())
+            ->performedOn($role)
+            ->event('created')
+            ->withProperties([
+                'role_name' => $role->name,
+                'copied_from' => $sourceRole->name ?? null,
+                'permissions' => $role->permissions->pluck('name')->values()->all(),
+            ])
+            ->log('Membuat role baru');
 
         return redirect()->route('roles.edit', $role)
             ->with('success', 'Role berhasil dibuat. Silakan atur permissions.');
@@ -122,6 +134,10 @@ class RoleController extends Controller
             'permissions.*' => 'exists:permissions,name',
         ]);
 
+        $oldName = $role->name;
+        $oldDescription = $role->description;
+        $oldPermissions = $role->permissions->pluck('name')->sort()->values()->all();
+
         $role->update([
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
@@ -129,6 +145,24 @@ class RoleController extends Controller
 
         // Sync permissions
         $role->syncPermissions($validated['permissions'] ?? []);
+
+        activity('roles')
+            ->causedBy($request->user())
+            ->performedOn($role)
+            ->event('updated')
+            ->withProperties([
+                'old' => [
+                    'name' => $oldName,
+                    'description' => $oldDescription,
+                    'permissions' => $oldPermissions,
+                ],
+                'attributes' => [
+                    'name' => $role->name,
+                    'description' => $role->description,
+                    'permissions' => $role->permissions->pluck('name')->sort()->values()->all(),
+                ],
+            ])
+            ->log('Memperbarui role dan permissions');
 
         return redirect()->route('roles.index')
             ->with('success', 'Role dan permissions berhasil diperbarui.');
@@ -144,7 +178,18 @@ class RoleController extends Controller
             'permissions.*' => 'exists:permissions,name',
         ]);
 
+        $oldPermissions = $role->permissions->pluck('name')->sort()->values()->all();
         $role->syncPermissions($validated['permissions'] ?? []);
+
+        activity('roles')
+            ->causedBy($request->user())
+            ->performedOn($role)
+            ->event('permissions_synced')
+            ->withProperties([
+                'old' => ['permissions' => $oldPermissions],
+                'attributes' => ['permissions' => $role->permissions->pluck('name')->sort()->values()->all()],
+            ])
+            ->log('Sinkronisasi permission role');
 
         return response()->json([
             'success' => true,
@@ -173,6 +218,16 @@ class RoleController extends Controller
                 'message' => 'Role masih digunakan oleh ' . $role->users()->count() . ' user.',
             ], 400);
         }
+
+        activity('roles')
+            ->causedBy(request()->user())
+            ->performedOn($role)
+            ->event('deleted')
+            ->withProperties([
+                'role_name' => $role->name,
+                'description' => $role->description,
+            ])
+            ->log('Menghapus role');
 
         $role->delete();
 

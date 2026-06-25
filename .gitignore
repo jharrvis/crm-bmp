@@ -25,3 +25,5 @@ Thumbs.db
 public/zabbix/
 design/
 plan/
+.blackboxcli/
+.codex-temp/
