@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'github' => [
+        'repo' => env('GITHUB_REPO', 'jharrvis/crm-bmp'),
+        'branch' => env('GITHUB_BRANCH', 'master'),
+        'token' => env('GITHUB_TOKEN'),
+    ],
+
 ];
