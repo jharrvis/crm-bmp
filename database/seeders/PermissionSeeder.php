@@ -46,6 +46,7 @@ class PermissionSeeder extends Seeder
             'work_orders' => ['view', 'create', 'update', 'delete', 'assign', 'complete'],
 
             // Settings
+            'system_updates' => ['view'],
             'settings' => ['view', 'update'],
             'logs' => ['view'],
         ];
@@ -119,6 +120,7 @@ class PermissionSeeder extends Seeder
             'subscriptions.update',
             'invoices.view',
             'invoices.create',
+            'system_updates.view',
             'tickets.view',
             'tickets.create',
             'tickets.update',
@@ -143,6 +145,7 @@ class PermissionSeeder extends Seeder
             'payments.update',
             'payments.verify',
             'financial_reports.view',
+            'system_updates.view',
             'tickets.view',
             'tickets.create',
             'tickets.update',
@@ -161,6 +164,7 @@ class PermissionSeeder extends Seeder
             'vendors.view',
             'metro_ethernets.view',
             'zabbix_monitors.view',
+            'system_updates.view',
             'tickets.view',
             'tickets.update',
             'tickets.assign',
@@ -181,6 +185,7 @@ class PermissionSeeder extends Seeder
             'subscriptions.create',
             'subscriptions.update',
             'invoices.view',
+            'system_updates.view',
             'tickets.view',
             'tickets.create',
             'tickets.update',
@@ -195,6 +200,7 @@ class PermissionSeeder extends Seeder
             'subscriptions.create',
             'services.view',
             'packages.view',
+            'system_updates.view',
             'tickets.view',
             'tickets.create',
         ]);
@@ -214,6 +220,7 @@ class PermissionSeeder extends Seeder
             'payments.update',
             'payments.verify',
             'financial_reports.view',
+            'system_updates.view',
         ]);
 
         // Client role - minimal permissions (portal only)

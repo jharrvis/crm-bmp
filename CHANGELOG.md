@@ -2,6 +2,26 @@
 
 Semua perubahan penting pada project ini dicatat di file ini.
 
+## 2026-06-25
+
+### Added
+
+- Entry point `global search` di header aplikasi untuk pencarian lintas modul
+- Halaman `Pembaruan Sistem` yang membaca `CHANGELOG.md` dan menampilkan commit terbaru repo lokal
+- Halaman `Activity Log` global berbasis `spatie/laravel-activitylog`
+- Placeholder halaman `Pengaturan` untuk rencana konfigurasi sistem ke depan
+- Group menu baru `Sistem` di sidebar
+
+### Changed
+
+- `Manajemen Role` dipindahkan ke group menu `Sistem`
+- Struktur permission role dikelompokkan ulang agar modul `Sistem` tampil konsisten di halaman edit role
+- Sidebar disusun ulang agar menu `Pembaruan Sistem`, `Activity Log`, `Manajemen Role`, dan `Pengaturan` berada dalam satu kelompok administratif
+
+### Fixed
+
+- Inkonsistensi penempatan menu administratif yang sebelumnya tersebar di `Master Data`
+
 ## 2026-06-24
 
 ### Added

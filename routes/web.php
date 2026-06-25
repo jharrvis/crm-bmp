@@ -81,6 +81,9 @@ Route::middleware('auth')->group(function () {
     Route::resource('roles', \App\Http\Controllers\RoleController::class);
     Route::post('roles/{role}/permissions', [\App\Http\Controllers\RoleController::class, 'syncPermissions'])
         ->name('roles.permissions.sync');
+    Route::get('system-updates', [\App\Http\Controllers\SystemUpdateController::class, 'index'])->name('system-updates.index');
+    Route::get('activity-logs', [\App\Http\Controllers\ActivityLogController::class, 'index'])->name('activity-logs.index');
+    Route::get('settings', [\App\Http\Controllers\SystemSettingController::class, 'index'])->name('settings.index');
 });
 
 require __DIR__ . '/auth.php';

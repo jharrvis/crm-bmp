@@ -159,7 +159,7 @@
     @endif
 
     {{-- MASTER DATA GROUP (Permission-based) --}}
-    @if(auth()->user()->can('branches.view') || auth()->user()->can('divisions.view') || auth()->user()->can('employees.view') || auth()->user()->can('roles.view'))
+    @if(auth()->user()->can('branches.view') || auth()->user()->can('divisions.view') || auth()->user()->can('employees.view'))
     <div class="pt-4 pb-2 menu-text">
         <p class="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Master Data</p>
     </div>
@@ -267,14 +267,63 @@
     </div>
     @endif
 
-    @can('roles.view')
-    <!-- Manajemen Role -->
-    <a href="{{ route('roles.index') }}"
-        class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all group whitespace-nowrap {{ request()->routeIs('roles.*') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
-        <i data-lucide="shield" class="w-5 h-5 shrink-0 transition-colors"></i>
-        <span class="font-medium text-sm menu-text transition-opacity duration-200">Manajemen Role</span>
-    </a>
-    @endcan
+    {{-- SISTEM GROUP --}}
+    @if(
+        auth()->user()->can('system_updates.view')
+        || auth()->user()->can('logs.view')
+        || auth()->user()->can('roles.view')
+        || auth()->user()->can('settings.view')
+    )
+    <div class="pt-4 pb-2 menu-text">
+        <p class="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sistem</p>
+    </div>
+
+    @php
+        $isSystemActive = request()->routeIs('system-updates.*')
+            || request()->routeIs('activity-logs.*')
+            || request()->routeIs('roles.*')
+            || request()->routeIs('settings.*');
+    @endphp
+    <div class="submenu-container {{ $isSystemActive ? 'submenu-active' : '' }}" id="menu-sistem"
+        data-menu-title="Sistem">
+        <button onclick="toggleSubmenu('menu-sistem')"
+            class="w-full flex items-center justify-between px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all whitespace-nowrap group {{ $isSystemActive ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
+            <div class="flex items-center gap-3">
+                <i data-lucide="shield" class="w-5 h-5 shrink-0 transition-colors"></i>
+                <span class="font-medium text-sm menu-text">Sistem</span>
+            </div>
+            <i data-lucide="chevron-down"
+                class="chevron-icon w-4 h-4 transition-transform duration-200 {{ $isSystemActive ? 'rotate-180' : '' }}"></i>
+        </button>
+        <div class="submenu-content flex flex-col pl-12 lg:group-hover:pl-2 space-y-1 mt-1 overflow-hidden transition-all duration-300 {{ $isSystemActive ? 'submenu-open' : '' }}"
+            style="{{ $isSystemActive ? 'max-height: 500px;' : 'max-height: 0;' }}">
+            @can('system_updates.view')
+            <a href="{{ route('system-updates.index') }}"
+                class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('system-updates.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
+                Pembaruan Sistem
+            </a>
+            @endcan
+            @can('logs.view')
+            <a href="{{ route('activity-logs.index') }}"
+                class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('activity-logs.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
+                Activity Log
+            </a>
+            @endcan
+            @can('roles.view')
+            <a href="{{ route('roles.index') }}"
+                class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('roles.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
+                Manajemen Role
+            </a>
+            @endcan
+            @can('settings.view')
+            <a href="{{ route('settings.index') }}"
+                class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('settings.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
+                Pengaturan
+            </a>
+            @endcan
+        </div>
+    </div>
+    @endif
 
     {{-- CLIENT GROUP (Future Phase) --}}
     @role('Client')
