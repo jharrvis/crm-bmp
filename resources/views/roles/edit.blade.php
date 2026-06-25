@@ -64,6 +64,22 @@
                             </div>
                         </div>
 
+                        <div class="pt-4 border-t border-slate-100 dark:border-slate-700">
+                            <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">User dengan Role Ini</p>
+                            @if($role->users->isNotEmpty())
+                                <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                                    @foreach($role->users as $user)
+                                        <div class="rounded-xl bg-slate-50 dark:bg-slate-700/50 px-3 py-2">
+                                            <div class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ $user->name }}</div>
+                                            <div class="text-xs text-slate-400">{{ $user->email }}</div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="text-sm text-slate-500 dark:text-slate-400">Belum ada user.</p>
+                            @endif
+                        </div>
+
                         {{-- Actions --}}
                         <div class="pt-4">
                             <button type="submit"

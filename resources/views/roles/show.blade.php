@@ -71,6 +71,36 @@
                     </div>
                 </div>
             </div>
+
+            <div class="mt-6 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div class="p-6 border-b border-slate-100 dark:border-slate-700">
+                    <h2 class="font-bold text-lg text-slate-800 dark:text-white">Pengguna dengan Role Ini</h2>
+                </div>
+                <div class="p-6">
+                    @if($role->users->isNotEmpty())
+                        <div class="space-y-3">
+                            @foreach($role->users as $user)
+                                <div class="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3">
+                                    <div class="text-sm font-semibold text-slate-800 dark:text-white">{{ $user->name }}</div>
+                                    <div class="mt-1 text-xs text-slate-400">{{ $user->email }}</div>
+                                    @if($user->branch || $user->division)
+                                        <div class="mt-2 flex flex-wrap gap-2 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                                            @if($user->branch)
+                                                <span class="rounded-full bg-slate-100 dark:bg-slate-700 px-2.5 py-1">Cabang: {{ $user->branch->name }}</span>
+                                            @endif
+                                            @if($user->division)
+                                                <span class="rounded-full bg-slate-100 dark:bg-slate-700 px-2.5 py-1">Divisi: {{ $user->division->name }}</span>
+                                            @endif
+                                        </div>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Belum ada user yang menggunakan role ini.</p>
+                    @endif
+                </div>
+            </div>
         </div>
 
         {{-- Right Column: Permissions List --}}

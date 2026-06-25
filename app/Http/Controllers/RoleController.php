@@ -22,6 +22,9 @@ class RoleController extends Controller
     public function index()
     {
         $roles = Role::withCount('users', 'permissions')
+            ->with([
+                'users' => fn ($query) => $query->select('users.id', 'users.name', 'users.email')->orderBy('name'),
+            ])
             ->orderBy('is_system', 'desc')
             ->orderBy('name')
             ->get();
@@ -82,7 +85,13 @@ class RoleController extends Controller
      */
     public function show(Role $role)
     {
-        $role->loadCount('users', 'permissions');
+        $role->loadCount('users', 'permissions')
+            ->load([
+                'users' => fn ($query) => $query
+                    ->select('users.id', 'users.name', 'users.email')
+                    ->with(['branch:id,name', 'division:id,name'])
+                    ->orderBy('name'),
+            ]);
         $permissions = Permission::all()->groupBy(function ($permission) {
             return explode('.', $permission->name)[0];
         });
@@ -96,7 +105,13 @@ class RoleController extends Controller
      */
     public function edit(Role $role)
     {
-        $role->loadCount('users', 'permissions');
+        $role->loadCount('users', 'permissions')
+            ->load([
+                'users' => fn ($query) => $query
+                    ->select('users.id', 'users.name', 'users.email')
+                    ->with(['branch:id,name', 'division:id,name'])
+                    ->orderBy('name'),
+            ]);
 
         // Group permissions by module
         $permissions = Permission::all()->groupBy(function ($permission) {
