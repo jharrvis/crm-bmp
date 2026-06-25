@@ -111,13 +111,14 @@ class GlobalSearchController extends Controller
                             ->orWhere('address', 'like', "%{$query}%")
                             ->orWhere('phone', 'like', "%{$query}%");
                     }),
-                'map' => fn (Branch $branch) => [
-                    'id' => $branch->id,
-                    'title' => $branch->name,
-                    'subtitle' => implode(' · ', array_filter([$branch->code, $branch->phone])),
-                    'badge' => 'cabang',
-                    'url' => route('branches.show', $branch),
-                ],
+                'map' => fn (Branch $branch) => $this->quickViewResult(
+                    'branch',
+                    $branch->id,
+                    $branch->name,
+                    [$branch->code, $branch->phone],
+                    'cabang',
+                    route('branches.show', $branch)
+                ),
             ];
         }
 
@@ -132,13 +133,14 @@ class GlobalSearchController extends Controller
                         $builder->where('name', 'like', "%{$query}%")
                             ->orWhere('description', 'like', "%{$query}%");
                     }),
-                'map' => fn (Division $division) => [
-                    'id' => $division->id,
-                    'title' => $division->name,
-                    'subtitle' => $division->description,
-                    'badge' => 'divisi',
-                    'url' => route('divisions.show', $division),
-                ],
+                'map' => fn (Division $division) => $this->quickViewResult(
+                    'division',
+                    $division->id,
+                    $division->name,
+                    [$division->description],
+                    'divisi',
+                    route('divisions.show', $division)
+                ),
             ];
         }
 
@@ -158,17 +160,14 @@ class GlobalSearchController extends Controller
                             ->orWhere('phone', 'like', "%{$query}%");
                     })
                     ->with(['branch:id,name', 'division:id,name', 'roles:id,name']),
-                'map' => fn (User $employee) => [
-                    'id' => $employee->id,
-                    'title' => $employee->name,
-                    'subtitle' => implode(' · ', array_filter([
-                        $employee->email,
-                        $employee->division?->name,
-                        $employee->branch?->name,
-                    ])),
-                    'badge' => $employee->roles->first()?->name ?? 'staff',
-                    'url' => route('employees.show', $employee),
-                ],
+                'map' => fn (User $employee) => $this->quickViewResult(
+                    'employee',
+                    $employee->id,
+                    $employee->name,
+                    [$employee->email, $employee->division?->name, $employee->branch?->name],
+                    $employee->roles->first()?->name ?? 'staff',
+                    route('employees.show', $employee)
+                ),
             ];
         }
 
@@ -185,13 +184,14 @@ class GlobalSearchController extends Controller
                             ->orWhere('address', 'like', "%{$query}%")
                             ->orWhere('city', 'like', "%{$query}%");
                     }),
-                'map' => fn (Client $client) => [
-                    'id' => $client->id,
-                    'title' => $client->name,
-                    'subtitle' => implode(' · ', array_filter([$client->client_code, $client->city])),
-                    'badge' => $client->status,
-                    'url' => route('clients.show', $client),
-                ],
+                'map' => fn (Client $client) => $this->quickViewResult(
+                    'client',
+                    $client->id,
+                    $client->name,
+                    [$client->client_code, $client->city],
+                    $client->status,
+                    route('clients.show', $client)
+                ),
             ];
         }
 
@@ -204,16 +204,13 @@ class GlobalSearchController extends Controller
                 'query' => fn (string $query) => Subscription::query()
                     ->where('subscription_code', 'like', "%{$query}%")
                     ->with(['client:id,name', 'package:id,name']),
-                'map' => fn (Subscription $subscription) => [
-                    'id' => $subscription->id,
-                    'title' => $subscription->subscription_code,
-                    'subtitle' => implode(' · ', array_filter([
-                        $subscription->client?->name,
-                        $subscription->package?->name,
-                    ])),
-                    'badge' => $subscription->status,
-                    'url' => route('subscriptions.show', $subscription),
-                ],
+                'map' => fn (Subscription $subscription) => $this->pageResult(
+                    $subscription->id,
+                    $subscription->subscription_code,
+                    [$subscription->client?->name, $subscription->package?->name],
+                    $subscription->status,
+                    route('subscriptions.show', $subscription)
+                ),
             ];
         }
 
@@ -226,16 +223,13 @@ class GlobalSearchController extends Controller
                 'query' => fn (string $query) => Invoice::query()
                     ->where('invoice_number', 'like', "%{$query}%")
                     ->with('client:id,name'),
-                'map' => fn (Invoice $invoice) => [
-                    'id' => $invoice->id,
-                    'title' => $invoice->invoice_number,
-                    'subtitle' => implode(' · ', array_filter([
-                        $invoice->client?->name,
-                        'Rp ' . number_format((float) $invoice->total_amount, 0, ',', '.'),
-                    ])),
-                    'badge' => $invoice->status,
-                    'url' => route('invoices.show', $invoice),
-                ],
+                'map' => fn (Invoice $invoice) => $this->pageResult(
+                    $invoice->id,
+                    $invoice->invoice_number,
+                    [$invoice->client?->name, 'Rp ' . number_format((float) $invoice->total_amount, 0, ',', '.')],
+                    $invoice->status,
+                    route('invoices.show', $invoice)
+                ),
             ];
         }
 
@@ -251,13 +245,13 @@ class GlobalSearchController extends Controller
                             ->orWhere('subject', 'like', "%{$query}%");
                     })
                     ->with('client:id,name'),
-                'map' => fn (Ticket $ticket) => [
-                    'id' => $ticket->id,
-                    'title' => $ticket->ticket_number,
-                    'subtitle' => implode(' · ', array_filter([$ticket->subject, $ticket->client?->name])),
-                    'badge' => $ticket->status,
-                    'url' => route('tickets.show', $ticket),
-                ],
+                'map' => fn (Ticket $ticket) => $this->pageResult(
+                    $ticket->id,
+                    $ticket->ticket_number,
+                    [$ticket->subject, $ticket->client?->name],
+                    $ticket->status,
+                    route('tickets.show', $ticket)
+                ),
             ];
         }
 
@@ -275,13 +269,14 @@ class GlobalSearchController extends Controller
                             ->orWhere('description', 'like', "%{$query}%");
                     })
                     ->with('branch:id,name'),
-                'map' => fn (Router $router) => [
-                    'id' => $router->id,
-                    'title' => $router->name,
-                    'subtitle' => implode(' · ', array_filter([$router->host, $router->branch?->name])),
-                    'badge' => $router->is_active ? 'aktif' : 'nonaktif',
-                    'url' => route('routers.show', $router),
-                ],
+                'map' => fn (Router $router) => $this->quickViewResult(
+                    'router',
+                    $router->id,
+                    $router->name,
+                    [$router->host, $router->branch?->name],
+                    $router->is_active ? 'aktif' : 'nonaktif',
+                    route('routers.show', $router)
+                ),
             ];
         }
 
@@ -299,13 +294,14 @@ class GlobalSearchController extends Controller
                             ->orWhere('location', 'like', "%{$query}%")
                             ->orWhere('description', 'like', "%{$query}%");
                     }),
-                'map' => fn (HostingServer $server) => [
-                    'id' => $server->id,
-                    'title' => $server->name,
-                    'subtitle' => implode(' · ', array_filter([$server->host, $server->location, $server->type])),
-                    'badge' => $server->is_active ? 'aktif' : 'nonaktif',
-                    'url' => route('servers.show', $server),
-                ],
+                'map' => fn (HostingServer $server) => $this->quickViewResult(
+                    'server',
+                    $server->id,
+                    $server->name,
+                    [$server->host, $server->location, $server->type],
+                    $server->is_active ? 'aktif' : 'nonaktif',
+                    route('servers.show', $server)
+                ),
             ];
         }
 
@@ -322,13 +318,14 @@ class GlobalSearchController extends Controller
                             ->orWhere('address', 'like', "%{$query}%")
                             ->orWhere('notes', 'like', "%{$query}%");
                     }),
-                'map' => fn (Vendor $vendor) => [
-                    'id' => $vendor->id,
-                    'title' => $vendor->name,
-                    'subtitle' => implode(' · ', array_filter([$vendor->cid, $vendor->address])),
-                    'badge' => 'vendor',
-                    'url' => route('vendors.show', $vendor),
-                ],
+                'map' => fn (Vendor $vendor) => $this->quickViewResult(
+                    'vendor',
+                    $vendor->id,
+                    $vendor->name,
+                    [$vendor->cid, $vendor->address],
+                    'vendor',
+                    route('vendors.show', $vendor)
+                ),
             ];
         }
 
@@ -349,17 +346,18 @@ class GlobalSearchController extends Controller
                             });
                     })
                     ->with('vendor:id,name'),
-                'map' => fn (MetroEthernet $metro) => [
-                    'id' => $metro->id,
-                    'title' => $metro->display_name,
-                    'subtitle' => implode(' · ', array_filter([
+                'map' => fn (MetroEthernet $metro) => $this->quickViewResult(
+                    'metro_ethernet',
+                    $metro->id,
+                    $metro->display_name,
+                    [
                         $metro->vendor?->name,
                         $metro->ip_address,
                         $metro->bandwidth ? $metro->bandwidth . ' Mbps' : null,
-                    ])),
-                    'badge' => $metro->cid ?: 'metro',
-                    'url' => route('metro-ethernets.show', $metro),
-                ],
+                    ],
+                    $metro->cid ?: 'metro',
+                    route('metro-ethernets.show', $metro)
+                ),
             ];
         }
 
@@ -376,13 +374,14 @@ class GlobalSearchController extends Controller
                             ->orWhere('type', 'like', "%{$query}%")
                             ->orWhere('description', 'like', "%{$query}%");
                     }),
-                'map' => fn (Service $service) => [
-                    'id' => $service->id,
-                    'title' => $service->name,
-                    'subtitle' => implode(' · ', array_filter([$service->code, $service->type])),
-                    'badge' => $service->is_active ? 'aktif' : 'nonaktif',
-                    'url' => route('services.show', $service),
-                ],
+                'map' => fn (Service $service) => $this->quickViewResult(
+                    'service',
+                    $service->id,
+                    $service->name,
+                    [$service->code, $service->type],
+                    $service->is_active ? 'aktif' : 'nonaktif',
+                    route('services.show', $service)
+                ),
             ];
         }
 
@@ -405,19 +404,54 @@ class GlobalSearchController extends Controller
                             });
                     })
                     ->with('service:id,name'),
-                'map' => fn (Package $package) => [
-                    'id' => $package->id,
-                    'title' => $package->name,
-                    'subtitle' => implode(' · ', array_filter([
-                        $package->service?->name,
-                        'Rp ' . number_format((float) $package->price, 0, ',', '.'),
-                    ])),
-                    'badge' => $package->is_active ? 'aktif' : 'nonaktif',
-                    'url' => route('packages.show', $package),
-                ],
+                'map' => fn (Package $package) => $this->quickViewResult(
+                    'package',
+                    $package->id,
+                    $package->name,
+                    [$package->service?->name, 'Rp ' . number_format((float) $package->price, 0, ',', '.')],
+                    $package->is_active ? 'aktif' : 'nonaktif',
+                    route('packages.show', $package)
+                ),
             ];
         }
 
         return $definitions;
+    }
+
+    protected function pageResult(int $id, string $title, array $subtitleParts, ?string $badge, string $url): array
+    {
+        return [
+            'id' => $id,
+            'title' => $title,
+            'subtitle' => $this->joinSearchParts($subtitleParts),
+            'badge' => $badge,
+            'action' => 'page',
+            'url' => $url,
+            'page_url' => $url,
+            'detail_url' => null,
+            'detail_type' => null,
+        ];
+    }
+
+    protected function quickViewResult(string $detailType, int $id, string $title, array $subtitleParts, ?string $badge, string $url): array
+    {
+        return [
+            'id' => $id,
+            'title' => $title,
+            'subtitle' => $this->joinSearchParts($subtitleParts),
+            'badge' => $badge,
+            'action' => 'quick_view',
+            'url' => $url,
+            'page_url' => $url,
+            'detail_url' => $url,
+            'detail_type' => $detailType,
+        ];
+    }
+
+    protected function joinSearchParts(array $parts): ?string
+    {
+        $filtered = array_values(array_filter($parts, fn ($part) => filled($part)));
+
+        return $filtered === [] ? null : implode(' | ', $filtered);
     }
 }

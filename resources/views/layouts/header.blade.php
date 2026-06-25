@@ -1,13 +1,11 @@
 <header
     class="sticky top-0 z-30 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 px-4 md:px-8 py-3 flex items-center justify-between">
-    <!-- Hamburger & Search -->
     <div class="flex items-center gap-4 flex-1">
         <button onclick="toggleSidebar()"
             class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-slate-500 dark:text-slate-400 transition-colors">
             <i data-lucide="menu" class="w-6 h-6"></i>
         </button>
 
-        <!-- Global Search (Alpine.js) -->
         <div
             x-data="globalSearch()"
             x-init="init()"
@@ -17,7 +15,6 @@
             @keydown.meta.k.window.prevent="open()"
             @click.outside="close()"
         >
-            <!-- Search Input Trigger -->
             <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <i data-lucide="search" class="w-5 h-5 text-slate-400"></i>
@@ -35,21 +32,17 @@
                     class="block w-full pl-10 pr-16 py-2.5 border border-slate-200 dark:border-slate-600 rounded-2xl leading-5 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all sm:text-sm cursor-pointer"
                 >
                 <div class="absolute inset-y-0 right-0 pr-3 flex items-center gap-2">
-                    <!-- Loading Spinner -->
                     <svg x-show="loading" class="animate-spin h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <!-- Kbd shortcut hint -->
                     <span x-show="!loading && !isOpen" class="text-slate-400 text-xs font-semibold border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-0.5">Ctrl K</span>
-                    <!-- Clear button -->
                     <button x-show="query && !loading" @click="clearSearch()" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
                         <i data-lucide="x" class="w-4 h-4"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- Results Dropdown -->
             <div
                 x-show="isOpen && (results.length > 0 || (query.length >= 2 && !loading))"
                 x-transition:enter="transition ease-out duration-150"
@@ -61,26 +54,23 @@
                 class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden z-50"
                 style="display: none;"
             >
-                <!-- No results -->
                 <div x-show="results.length === 0 && query.length >= 2 && !loading" class="px-4 py-8 text-center">
                     <i data-lucide="search-x" class="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2"></i>
                     <p class="text-sm text-slate-500 dark:text-slate-400">Tidak ada hasil untuk <strong x-text="'&quot;' + query + '&quot;'"></strong></p>
                 </div>
 
-                <!-- Grouped Results -->
                 <div x-show="results.length > 0" class="py-2 max-h-[420px] overflow-y-auto">
                     <template x-for="(group, gIdx) in results" :key="gIdx">
                         <div>
-                            <!-- Group Header -->
                             <div class="px-4 py-2 flex items-center gap-2">
                                 <i :data-lucide="group.icon" class="w-3.5 h-3.5 text-slate-400"></i>
                                 <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400" x-text="group.group"></span>
                             </div>
 
-                            <!-- Group Items -->
                             <template x-for="(item, iIdx) in group.items" :key="item.id">
                                 <a
                                     :href="item.url"
+                                    @click.prevent="activateItem(item)"
                                     :data-search-index="getFlatIndex(gIdx, iIdx)"
                                     @mouseenter="focusedIndex = getFlatIndex(gIdx, iIdx)"
                                     class="flex items-center justify-between px-4 py-2.5 mx-2 rounded-xl transition-colors group cursor-pointer"
@@ -97,18 +87,16 @@
                                             class="text-[10px] font-bold px-2 py-0.5 rounded-full capitalize"
                                             :class="getBadgeClass(item.badge)"
                                         ></span>
-                                        <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-slate-300 group-hover:text-blue-500 transition-colors"></i>
+                                        <i :data-lucide="item.action === 'quick_view' ? 'eye' : 'arrow-right'" class="w-3.5 h-3.5 text-slate-300 group-hover:text-blue-500 transition-colors"></i>
                                     </div>
                                 </a>
                             </template>
 
-                            <!-- Divider between groups -->
                             <div x-show="gIdx < results.length - 1" class="mx-4 my-1 border-t border-slate-100 dark:border-slate-700"></div>
                         </div>
                     </template>
                 </div>
 
-                <!-- Footer -->
                 <div x-show="results.length > 0" class="px-4 py-2 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between gap-3">
                     <div class="flex items-center gap-3 text-[10px] text-slate-400">
                         <span>
@@ -129,16 +117,13 @@
         </div>
     </div>
 
-    <!-- Right Actions -->
     <div class="flex items-center gap-2 md:gap-4">
-        <!-- Dark Mode Toggle -->
         <button onclick="toggleDarkMode()"
             class="p-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
             <i data-lucide="moon" id="dark-icon" class="w-5 h-5 hidden dark:block"></i>
             <i data-lucide="sun" id="light-icon" class="w-5 h-5 block dark:hidden"></i>
         </button>
 
-        <!-- Notifications -->
         <div class="relative">
             <button onclick="toggleDropdown('notification-menu')"
                 class="p-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl relative transition-colors">
@@ -147,7 +132,6 @@
                     class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-800"></span>
             </button>
 
-            <!-- Notification Dropdown -->
             <div id="notification-menu"
                 class="hidden absolute right-0 mt-3 w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl overflow-hidden glass-card z-50">
                 <div
@@ -163,7 +147,6 @@
 
         <div class="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden md:block"></div>
 
-        <!-- Profile Dropdown -->
         <div class="relative">
             <button onclick="toggleDropdown('profile-menu')"
                 class="flex items-center gap-3 p-1 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
@@ -185,7 +168,6 @@
                 <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 hidden md:block"></i>
             </button>
 
-            <!-- Dropdown Menu -->
             <div id="profile-menu"
                 class="hidden absolute right-0 mt-3 w-60 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl py-2 overflow-hidden glass-card z-50">
                 <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
@@ -201,7 +183,6 @@
                     </a>
                 </div>
                 <div class="p-2 border-t border-slate-100 dark:border-slate-700">
-                    <!-- Logout Form -->
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit"
@@ -227,7 +208,6 @@ function globalSearch() {
         _flatItems: [],
 
         init() {
-            // Re-initialize lucide icons after Alpine updates the DOM
             this.$watch('results', () => {
                 this.$nextTick(() => {
                     if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -287,7 +267,6 @@ function globalSearch() {
                 this.total = data.total || 0;
                 this.focusedIndex = -1;
 
-                // Build flat list for keyboard navigation
                 this._flatItems = [];
                 this.results.forEach(group => {
                     group.items.forEach(item => {
@@ -323,13 +302,25 @@ function globalSearch() {
 
         goToFocused() {
             if (this.focusedIndex >= 0 && this._flatItems[this.focusedIndex]) {
-                window.location.href = this._flatItems[this.focusedIndex].url;
+                this.activateItem(this._flatItems[this.focusedIndex]);
                 return;
             }
 
             if (this.query.length >= 2) {
                 window.location.href = this.resultsUrl();
             }
+        },
+
+        activateItem(item) {
+            if (!item) return;
+
+            if (item.action === 'quick_view' && item.detail_url && typeof window.openGlobalSearchQuickView === 'function') {
+                window.openGlobalSearchQuickView(item);
+                this.close();
+                return;
+            }
+
+            window.location.href = item.url;
         },
 
         resultsUrl() {
@@ -340,22 +331,19 @@ function globalSearch() {
 
         getBadgeClass(badge) {
             const map = {
-                // Client status
-                active:     'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
-                inactive:   'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400',
-                // Invoice status
-                paid:       'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
-                unpaid:     'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
-                overdue:    'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',
-                // Ticket status
-                open:       'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400',
-                resolved:   'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
-                closed:     'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400',
-                pending:    'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
-                // Subscription status
-                suspended:  'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400',
+                active: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
+                inactive: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400',
+                paid: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
+                unpaid: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
+                overdue: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',
+                open: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400',
+                resolved: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
+                closed: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400',
+                pending: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
+                suspended: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400',
                 terminated: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',
             };
+
             return map[(badge || '').toLowerCase()] || 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400';
         },
     };

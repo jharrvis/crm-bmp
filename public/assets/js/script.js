@@ -289,6 +289,27 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
+function moveModalToBody(modal) {
+    if (!modal || modal.dataset.portalized === 'true') {
+        return modal;
+    }
+
+    if (modal.parentElement !== document.body) {
+        document.body.appendChild(modal);
+    }
+
+    modal.dataset.portalized = 'true';
+    return modal;
+}
+
+function normalizeModalRoots() {
+    document.querySelectorAll('[id$="Modal"], [id$="Drawer"], #confirmModal').forEach((modal) => {
+        if (modal.classList.contains('fixed') && (modal.classList.contains('inset-0') || modal.classList.contains('inset-x-0') || modal.classList.contains('inset-y-0'))) {
+            moveModalToBody(modal);
+        }
+    });
+}
+
 // Confirm Modal System
 let confirmCallback = null;
 let confirmPromiseResolve = null;
@@ -348,6 +369,7 @@ function showConfirmModal(title, text, callback) {
     const confirmYesBtn = document.getElementById('confirmYesBtn');
 
     if (!modal || !backdrop || !panel) return;
+    moveModalToBody(modal);
 
     document.getElementById('confirmTitle').innerText = title;
     document.getElementById('confirmText').innerText = text;
@@ -437,10 +459,11 @@ function setButtonLoading(btn, spinner, text, isLoading, originalText) {
 // Generic Modal Open/Close
 function openModal(modalId) {
     const modal = document.getElementById(modalId);
+    if (!modal) return;
+
+    moveModalToBody(modal);
     const backdrop = modal.querySelector('[id$="Backdrop"]') || modal.querySelector('.modal-backdrop');
     const panel = modal.querySelector('[id$="Panel"]') || modal.querySelector('.modal-panel');
-
-    if (!modal) return;
 
     modal.classList.remove('hidden');
     setTimeout(() => {
@@ -454,10 +477,10 @@ function openModal(modalId) {
 
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
+    if (!modal) return;
+
     const backdrop = modal.querySelector('[id$="Backdrop"]') || modal.querySelector('.modal-backdrop');
     const panel = modal.querySelector('[id$="Panel"]') || modal.querySelector('.modal-panel');
-
-    if (!modal) return;
 
     if (backdrop) backdrop.classList.add('opacity-0');
     if (panel) {
@@ -470,17 +493,365 @@ function closeModal(modalId) {
     }, 300);
 }
 
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function escapeJsString(value) {
+    return String(value ?? '')
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/\r/g, '\\r')
+        .replace(/\n/g, '\\n');
+}
+
+function renderCopyValue(value, label) {
+    if (!value) {
+        return '<span class="text-sm text-slate-400 dark:text-slate-500">-</span>';
+    }
+
+    const escapedValue = escapeHtml(value);
+    const escapedLabel = escapeHtml(label);
+    const jsValue = escapeJsString(value);
+    const jsLabel = escapeJsString(label);
+
+    return `
+        <div class="flex items-center gap-2">
+            <span class="text-sm font-semibold text-slate-700 dark:text-slate-100 break-all">${escapedValue}</span>
+            <button
+                type="button"
+                class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 dark:border-slate-600 dark:text-slate-300 dark:hover:border-blue-500/40 dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
+                onclick="copySearchQuickViewValue('${jsValue}', '${jsLabel}')"
+            >
+                <i data-lucide="copy" class="h-3.5 w-3.5"></i>
+            </button>
+        </div>
+    `;
+}
+
+function renderQuickViewField(label, value, copyable = false) {
+    return `
+        <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-800/60">
+            <div class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">${escapeHtml(label)}</div>
+            <div class="mt-2">
+                ${copyable ? renderCopyValue(value, label) : `<div class="text-sm font-semibold text-slate-700 dark:text-slate-100">${escapeHtml(value || '-')}</div>`}
+            </div>
+        </div>
+    `;
+}
+
+function renderQuickViewList(items) {
+    if (!items || items.length === 0) {
+        return '<div class="text-sm text-slate-400 dark:text-slate-500">Tidak ada data.</div>';
+    }
+
+    return `
+        <div class="space-y-3">
+            ${items.map((item) => `
+                <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-800/60">
+                    <div class="text-sm font-semibold text-slate-800 dark:text-white">${escapeHtml(item.title || '-')}</div>
+                    ${item.subtitle ? `<div class="mt-1 text-sm text-slate-500 dark:text-slate-400">${escapeHtml(item.subtitle)}</div>` : ''}
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function buildSearchQuickViewContent(item, data) {
+    const branchName = data.branch?.name || '-';
+    const vendorName = data.vendor?.name || '-';
+    const contacts = Array.isArray(data.contacts) ? data.contacts : [];
+    const primaryContact = contacts.find((contact) => contact.is_primary) || contacts[0] || null;
+    const roles = Array.isArray(data.roles) ? data.roles.map((role) => role.name).filter(Boolean) : [];
+
+    const sections = {
+        client: {
+            subtitle: [data.client_code, data.city, branchName].filter(Boolean).join(' | '),
+            body: `
+                <div class="grid gap-3 md:grid-cols-3">
+                    ${renderQuickViewField('Status', data.status)}
+                    ${renderQuickViewField('Cabang', branchName)}
+                    ${renderQuickViewField('Tipe', data.type)}
+                </div>
+                <div class="mt-5 grid gap-3 md:grid-cols-2">
+                    ${renderQuickViewField('Client Code', data.client_code, true)}
+                    ${renderQuickViewField('Nomor Kontak Utama', primaryContact?.phone || primaryContact?.whatsapp, true)}
+                    ${renderQuickViewField('Nama Kontak Utama', primaryContact?.name)}
+                    ${renderQuickViewField('WhatsApp', primaryContact?.whatsapp, true)}
+                </div>
+                <div class="mt-5">
+                    <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Alamat</div>
+                    <div class="mt-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300">${escapeHtml(data.address || '-')}</div>
+                </div>
+                <div class="mt-5">
+                    <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Kontak Lain</div>
+                    <div class="mt-2">${renderQuickViewList(contacts.map((contact) => ({
+                        title: contact.name,
+                        subtitle: [contact.phone, contact.whatsapp, contact.email, contact.position].filter(Boolean).join(' | '),
+                    })))}</div>
+                </div>
+            `,
+        },
+        router: {
+            subtitle: [data.host, data.branch?.name].filter(Boolean).join(' | '),
+            body: `
+                <div class="grid gap-3 md:grid-cols-3">
+                    ${renderQuickViewField('Host / IP', data.host, true)}
+                    ${renderQuickViewField('Port', data.port, true)}
+                    ${renderQuickViewField('Status', data.is_active ? 'Aktif' : 'Nonaktif')}
+                    ${renderQuickViewField('User', data.user, true)}
+                    ${renderQuickViewField('Cabang', branchName)}
+                    ${renderQuickViewField('Deskripsi', data.description)}
+                </div>
+            `,
+        },
+        server: {
+            subtitle: [data.host, data.location, data.type].filter(Boolean).join(' | '),
+            body: `
+                <div class="grid gap-3 md:grid-cols-3">
+                    ${renderQuickViewField('Host / IP', data.host, true)}
+                    ${renderQuickViewField('Port', data.port, true)}
+                    ${renderQuickViewField('Status', data.is_active ? 'Aktif' : 'Nonaktif')}
+                    ${renderQuickViewField('Tipe', data.type)}
+                    ${renderQuickViewField('Lokasi', data.location)}
+                    ${renderQuickViewField('Username', data.username, true)}
+                    ${renderQuickViewField('Max Akun', data.max_accounts)}
+                    ${renderQuickViewField('Deskripsi', data.description)}
+                </div>
+            `,
+        },
+        vendor: {
+            subtitle: [data.cid, data.address].filter(Boolean).join(' | '),
+            body: `
+                <div class="grid gap-3 md:grid-cols-2">
+                    ${renderQuickViewField('CID', data.cid, true)}
+                    ${renderQuickViewField('Alamat', data.address)}
+                </div>
+                <div class="mt-5">
+                    <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Kontak Vendor</div>
+                    <div class="mt-2">${renderQuickViewList((data.contacts || []).map((contact) => ({
+                        title: contact.name,
+                        subtitle: [contact.phone, contact.email, contact.position].filter(Boolean).join(' | '),
+                    })))}</div>
+                </div>
+                <div class="mt-5">
+                    <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Catatan</div>
+                    <div class="mt-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300">${escapeHtml(data.notes || '-')}</div>
+                </div>
+            `,
+        },
+        metro_ethernet: {
+            subtitle: [vendorName, data.ip_address, data.bandwidth ? `${data.bandwidth} Mbps` : null].filter(Boolean).join(' | '),
+            body: `
+                <div class="grid gap-3 md:grid-cols-3">
+                    ${renderQuickViewField('Vendor', vendorName)}
+                    ${renderQuickViewField('CID', data.cid, true)}
+                    ${renderQuickViewField('Bandwidth', data.bandwidth ? `${data.bandwidth} Mbps` : null)}
+                    ${renderQuickViewField('IP Address', data.ip_address, true)}
+                    ${renderQuickViewField('Nama Display', data.display_name || data.name)}
+                </div>
+            `,
+        },
+        branch: {
+            subtitle: [data.code, data.phone].filter(Boolean).join(' | '),
+            body: `
+                <div class="grid gap-3 md:grid-cols-2">
+                    ${renderQuickViewField('Kode Cabang', data.code, true)}
+                    ${renderQuickViewField('Telepon', data.phone, true)}
+                </div>
+                <div class="mt-5">
+                    <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Alamat</div>
+                    <div class="mt-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300">${escapeHtml(data.address || '-')}</div>
+                </div>
+                <div class="mt-5">
+                    <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Karyawan Terkait</div>
+                    <div class="mt-2">${renderQuickViewList((data.users || []).map((user) => ({
+                        title: user.name,
+                    })))}</div>
+                </div>
+            `,
+        },
+        division: {
+            subtitle: data.description || 'Divisi internal',
+            body: `
+                <div class="grid gap-3 md:grid-cols-2">
+                    ${renderQuickViewField('Nama Divisi', data.name)}
+                    ${renderQuickViewField('Deskripsi', data.description)}
+                </div>
+            `,
+        },
+        employee: {
+            subtitle: [data.email, data.division?.name, data.branch?.name].filter(Boolean).join(' | '),
+            body: `
+                <div class="grid gap-3 md:grid-cols-3">
+                    ${renderQuickViewField('Email', data.email, true)}
+                    ${renderQuickViewField('Telepon', data.phone, true)}
+                    ${renderQuickViewField('Role', roles.join(', '))}
+                    ${renderQuickViewField('Cabang', data.branch?.name)}
+                    ${renderQuickViewField('Divisi', data.division?.name)}
+                </div>
+            `,
+        },
+        service: {
+            subtitle: [data.code, data.type].filter(Boolean).join(' | '),
+            body: `
+                <div class="grid gap-3 md:grid-cols-3">
+                    ${renderQuickViewField('Kode', data.code, true)}
+                    ${renderQuickViewField('Tipe', data.type)}
+                    ${renderQuickViewField('Status', data.is_active ? 'Aktif' : 'Nonaktif')}
+                </div>
+                <div class="mt-5">
+                    <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Deskripsi</div>
+                    <div class="mt-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300">${escapeHtml(data.description || '-')}</div>
+                </div>
+            `,
+        },
+        package: {
+            subtitle: [data.service?.name, data.price ? formatSearchQuickViewCurrency(data.price) : null].filter(Boolean).join(' | '),
+            body: `
+                <div class="grid gap-3 md:grid-cols-3">
+                    ${renderQuickViewField('Layanan', data.service?.name)}
+                    ${renderQuickViewField('Harga', data.price ? formatSearchQuickViewCurrency(data.price) : null)}
+                    ${renderQuickViewField('Status', data.is_active ? 'Aktif' : 'Nonaktif')}
+                    ${renderQuickViewField('Bandwidth Down', data.bandwidth_down)}
+                    ${renderQuickViewField('Bandwidth Up', data.bandwidth_up)}
+                    ${renderQuickViewField('Kuota', data.quota)}
+                </div>
+                <div class="mt-5">
+                    <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Deskripsi</div>
+                    <div class="mt-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300">${escapeHtml(data.description || '-')}</div>
+                </div>
+            `,
+        },
+    };
+
+    return sections[item.detail_type] || {
+        subtitle: item.subtitle || '',
+        body: `<div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-400">Detail cepat belum tersedia untuk modul ini.</div>`,
+    };
+}
+
+function formatSearchQuickViewCurrency(value) {
+    const numericValue = Number(value || 0);
+    return `Rp ${numericValue.toLocaleString('id-ID')}`;
+}
+
+function copySearchQuickViewValue(value, label) {
+    if (!value || !navigator.clipboard) {
+        return;
+    }
+
+    navigator.clipboard.writeText(String(value))
+        .then(() => showToast(`${label} berhasil disalin.`))
+        .catch(() => showToast(`Gagal menyalin ${label}.`, 'error'));
+}
+
+async function openGlobalSearchQuickView(item) {
+    if (!item || !item.detail_url) {
+        return;
+    }
+
+    const body = document.getElementById('searchQuickViewBody');
+    const title = document.getElementById('searchQuickViewTitle');
+    const subtitle = document.getElementById('searchQuickViewSubtitle');
+    const label = document.getElementById('searchQuickViewLabel');
+    const pageLink = document.getElementById('searchQuickViewPageLink');
+
+    if (!body || !title || !subtitle || !label || !pageLink) {
+        return;
+    }
+
+    title.textContent = item.title || 'Detail';
+    subtitle.textContent = item.subtitle || '';
+    label.textContent = item.action === 'quick_view' ? 'Quick View' : 'Detail';
+    pageLink.href = item.page_url || item.url || '#';
+    pageLink.classList.toggle('hidden', !pageLink.href || pageLink.href === '#');
+    body.innerHTML = `
+        <div class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-400">
+            <svg class="h-4 w-4 animate-spin text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Memuat detail...
+        </div>
+    `;
+
+    openModal('searchQuickViewModal');
+
+    try {
+        const response = await fetch(item.detail_url, {
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin',
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch quick view');
+        }
+
+        const data = await response.json();
+        const content = buildSearchQuickViewContent(item, data);
+
+        subtitle.textContent = content.subtitle || item.subtitle || '';
+        body.innerHTML = content.body;
+
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    } catch (error) {
+        console.error('Quick view error:', error);
+        body.innerHTML = `
+            <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300">
+                Detail cepat tidak dapat dimuat. Coba buka halaman modul lengkap.
+            </div>
+        `;
+    }
+}
+
+window.copySearchQuickViewValue = copySearchQuickViewValue;
+window.openGlobalSearchQuickView = openGlobalSearchQuickView;
+
 document.addEventListener('click', function (event) {
     const backdrop = document.getElementById('confirmBackdrop');
+    const quickViewBackdrop = document.getElementById('searchQuickViewBackdrop');
 
     if (backdrop && event.target === backdrop) {
         hideConfirmModal();
+    }
+
+    const quickViewTrigger = event.target.closest('[data-search-quick-view]');
+    if (quickViewTrigger) {
+        const payload = quickViewTrigger.getAttribute('data-search-quick-view');
+        if (!payload) {
+            return;
+        }
+
+        try {
+            openGlobalSearchQuickView(JSON.parse(payload));
+        } catch (error) {
+            console.error('Invalid quick view payload:', error);
+        }
+    }
+
+    if (quickViewBackdrop && event.target === quickViewBackdrop) {
+        closeModal('searchQuickViewModal');
     }
 });
 
 document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape' && !document.getElementById('confirmModal')?.classList.contains('hidden')) {
         hideConfirmModal();
+    }
+
+    if (event.key === 'Escape' && !document.getElementById('searchQuickViewModal')?.classList.contains('hidden')) {
+        closeModal('searchQuickViewModal');
     }
 });
 
@@ -516,6 +887,7 @@ window.confirmAction = confirmAction;
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
     applySidebarState(loadSidebarState());
+    normalizeModalRoots();
 
     // Initialize Lucide icons
     if (typeof lucide !== 'undefined') {

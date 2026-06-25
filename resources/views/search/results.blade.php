@@ -109,29 +109,68 @@
 
                         <div class="divide-y divide-slate-100 dark:divide-slate-700">
                             @foreach ($group['items'] as $item)
-                                <a
-                                    href="{{ $item['url'] }}"
-                                    class="flex flex-col gap-3 px-6 py-4 transition hover:bg-slate-50 dark:hover:bg-slate-700/40 md:flex-row md:items-center md:justify-between md:px-8">
-                                    <div class="min-w-0">
-                                        <div class="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
-                                            {{ $item['title'] }}
-                                        </div>
-                                        @if (!empty($item['subtitle']))
-                                            <div class="mt-1 truncate text-sm text-slate-500 dark:text-slate-400">
-                                                {{ $item['subtitle'] }}
+                                @if (($item['action'] ?? 'page') === 'quick_view')
+                                    <div class="flex flex-col gap-3 px-6 py-4 transition hover:bg-slate-50 dark:hover:bg-slate-700/40 md:flex-row md:items-center md:justify-between md:px-8">
+                                        <button
+                                            type="button"
+                                            data-search-quick-view='@json($item)'
+                                            class="min-w-0 flex-1 text-left">
+                                            <div class="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
+                                                {{ $item['title'] }}
                                             </div>
-                                        @endif
-                                    </div>
+                                            @if (!empty($item['subtitle']))
+                                                <div class="mt-1 truncate text-sm text-slate-500 dark:text-slate-400">
+                                                    {{ $item['subtitle'] }}
+                                                </div>
+                                            @endif
+                                        </button>
 
-                                    <div class="flex items-center gap-3 self-start md:self-center">
-                                        @if (!empty($item['badge']))
-                                            <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold capitalize text-slate-600 dark:bg-slate-700 dark:text-slate-300">
-                                                {{ $item['badge'] }}
-                                            </span>
-                                        @endif
-                                        <i data-lucide="arrow-up-right" class="h-4 w-4 text-slate-300 transition group-hover:text-blue-500"></i>
+                                        <div class="flex items-center gap-3 self-start md:self-center">
+                                            @if (!empty($item['badge']))
+                                                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold capitalize text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                                                    {{ $item['badge'] }}
+                                                </span>
+                                            @endif
+                                            <button
+                                                type="button"
+                                                data-search-quick-view='@json($item)'
+                                                class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 dark:border-slate-600 dark:text-slate-200 dark:hover:border-blue-500/40 dark:hover:bg-blue-900/20 dark:hover:text-blue-300">
+                                                <i data-lucide="eye" class="h-3.5 w-3.5"></i>
+                                                Quick View
+                                            </button>
+                                            <a
+                                                href="{{ $item['page_url'] }}"
+                                                class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 dark:border-slate-600 dark:text-slate-200 dark:hover:border-blue-500/40 dark:hover:bg-blue-900/20 dark:hover:text-blue-300">
+                                                <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i>
+                                                Halaman
+                                            </a>
+                                        </div>
                                     </div>
-                                </a>
+                                @else
+                                    <a
+                                        href="{{ $item['url'] }}"
+                                        class="flex flex-col gap-3 px-6 py-4 transition hover:bg-slate-50 dark:hover:bg-slate-700/40 md:flex-row md:items-center md:justify-between md:px-8">
+                                        <div class="min-w-0">
+                                            <div class="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
+                                                {{ $item['title'] }}
+                                            </div>
+                                            @if (!empty($item['subtitle']))
+                                                <div class="mt-1 truncate text-sm text-slate-500 dark:text-slate-400">
+                                                    {{ $item['subtitle'] }}
+                                                </div>
+                                            @endif
+                                        </div>
+
+                                        <div class="flex items-center gap-3 self-start md:self-center">
+                                            @if (!empty($item['badge']))
+                                                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold capitalize text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                                                    {{ $item['badge'] }}
+                                                </span>
+                                            @endif
+                                            <i data-lucide="arrow-up-right" class="h-4 w-4 text-slate-300 transition group-hover:text-blue-500"></i>
+                                        </div>
+                                    </a>
+                                @endif
                             @endforeach
                         </div>
                     </section>

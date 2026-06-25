@@ -24,12 +24,14 @@ Semua perubahan penting pada project ini dicatat di file ini.
 - Timezone aplikasi sekarang mengikuti `APP_TIMEZONE` agar activity log dan timestamp internal bisa memakai region yang benar
 - Global search diperluas ke hampir semua modul data yang dapat diakses user, termasuk organisasi, pelanggan, billing, support, infrastruktur, layanan, dan paket
 - Global search sekarang memiliki halaman hasil pencarian penuh dengan filter modul dan link `Lihat semua hasil` dari dropdown header
+- Global search sekarang mendukung `quick view` untuk modul operasional seperti pelanggan, router, server, vendor, metro ethernet, cabang, divisi, karyawan, layanan, dan paket tanpa perlu pindah halaman
 
 ### Fixed
 
 - Inkonsistensi penempatan menu administratif yang sebelumnya tersebar di `Master Data`
 - Jam pada aplikasi yang sebelumnya selalu mengikuti `UTC` karena timezone config masih hardcoded
 - Legacy role `Client` dan user dummy `Pelanggan A` yang sebelumnya muncul di manajemen role walaupun portal client sudah memakai tabel akun terpisah
+- Overlay modal sekarang dipindahkan ke `document.body` agar backdrop benar-benar fullscreen dan tidak bergeser oleh container layout
 
 ## 2026-06-24
 

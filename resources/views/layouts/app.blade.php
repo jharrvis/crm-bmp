@@ -108,6 +108,59 @@
         </main>
     </div>
 
+    <div id="searchQuickViewModal" class="fixed inset-0 z-[75] hidden">
+        <div id="searchQuickViewBackdrop" class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm opacity-0 transition-opacity duration-300"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4 sm:p-6">
+            <div id="searchQuickViewPanel"
+                class="modal-panel w-full max-w-3xl rounded-[2rem] bg-white shadow-2xl dark:bg-slate-800 scale-95 opacity-0 transition-all duration-300 overflow-hidden">
+                <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5 dark:border-slate-700 sm:px-8">
+                    <div class="min-w-0">
+                        <div id="searchQuickViewLabel" class="text-[11px] font-bold uppercase tracking-[0.2em] text-blue-500">Quick View</div>
+                        <h2 id="searchQuickViewTitle" class="mt-2 truncate text-2xl font-bold text-slate-800 dark:text-white">Detail</h2>
+                        <p id="searchQuickViewSubtitle" class="mt-1 text-sm text-slate-500 dark:text-slate-400"></p>
+                    </div>
+                    <button
+                        type="button"
+                        onclick="closeModal('searchQuickViewModal')"
+                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white">
+                        <i data-lucide="x" class="h-5 w-5"></i>
+                    </button>
+                </div>
+
+                <div id="searchQuickViewBody" class="max-h-[70vh] overflow-y-auto px-6 py-6 dark:bg-slate-800 sm:px-8">
+                    <div class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-400">
+                        <svg class="h-4 w-4 animate-spin text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Memuat detail...
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4 dark:border-slate-700 dark:bg-slate-900/40 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+                    <p id="searchQuickViewHint" class="text-xs text-slate-500 dark:text-slate-400">
+                        Gunakan quick view untuk melihat informasi penting tanpa pindah halaman.
+                    </p>
+                    <div class="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onclick="closeModal('searchQuickViewModal')"
+                            class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-white dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
+                            Tutup
+                        </button>
+                        <a
+                            id="searchQuickViewPageLink"
+                            href="#"
+                            class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700">
+                            <i data-lucide="arrow-up-right" class="h-4 w-4"></i>
+                            Buka Halaman
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="{{ asset('assets/js/script.js') }}"></script>
     <script>
         lucide.createIcons();
