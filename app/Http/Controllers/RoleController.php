@@ -126,7 +126,7 @@ class RoleController extends Controller
             'Infrastruktur' => ['routers', 'servers', 'vendors', 'metro_ethernets', 'zabbix_monitors', 'services', 'packages', 'towers', 'odps'],
             'Bisnis' => ['clients', 'subscriptions', 'invoices', 'payments', 'financial_reports'],
             'Support' => ['tickets', 'work_orders'],
-            'Sistem' => ['system_updates', 'logs', 'roles', 'settings'],
+            'Sistem' => ['system_updates', 'documentation', 'logs', 'roles', 'settings'],
         ];
 
         return view('roles.edit', compact('role', 'permissions', 'rolePermissions', 'moduleGroups'));

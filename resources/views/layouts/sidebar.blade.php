@@ -270,6 +270,7 @@
     {{-- SISTEM GROUP --}}
     @if(
         auth()->user()->can('system_updates.view')
+        || auth()->user()->can('documentation.view')
         || auth()->user()->can('logs.view')
         || auth()->user()->can('roles.view')
         || auth()->user()->can('settings.view')
@@ -280,6 +281,7 @@
 
     @php
         $isSystemActive = request()->routeIs('system-updates.*')
+            || request()->routeIs('documentation.*')
             || request()->routeIs('activity-logs.*')
             || request()->routeIs('roles.*')
             || request()->routeIs('settings.*');
@@ -301,6 +303,12 @@
             <a href="{{ route('system-updates.index') }}"
                 class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('system-updates.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
                 Pembaruan Sistem
+            </a>
+            @endcan
+            @can('documentation.view')
+            <a href="{{ route('documentation.index') }}"
+                class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('documentation.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
+                Dokumentasi
             </a>
             @endcan
             @can('logs.view')

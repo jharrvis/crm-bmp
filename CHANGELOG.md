@@ -7,20 +7,26 @@ Semua perubahan penting pada project ini dicatat di file ini.
 ### Added
 
 - Entry point `global search` di header aplikasi untuk pencarian lintas modul
-- Halaman `Pembaruan Sistem` yang membaca `CHANGELOG.md` dan menampilkan commit terbaru repo lokal
+- Halaman `Pembaruan Sistem` yang membaca `CHANGELOG.md` dan menampilkan commit terbaru dari GitHub repo
 - Halaman `Activity Log` global berbasis `spatie/laravel-activitylog`
+- Halaman `Dokumentasi` di dalam aplikasi yang membaca file markdown dari folder `docs/`
+- Struktur awal dokumentasi `docs/` untuk deployment, permission matrix, modul, dan API portal client
 - Placeholder halaman `Pengaturan` untuk rencana konfigurasi sistem ke depan
 - Group menu baru `Sistem` di sidebar
+- Standar kerja repo melalui `AGENTS.md` untuk dokumentasi, changelog, permission, deployment note, dan API
 
 ### Changed
 
 - `Manajemen Role` dipindahkan ke group menu `Sistem`
 - Struktur permission role dikelompokkan ulang agar modul `Sistem` tampil konsisten di halaman edit role
-- Sidebar disusun ulang agar menu `Pembaruan Sistem`, `Activity Log`, `Manajemen Role`, dan `Pengaturan` berada dalam satu kelompok administratif
+- Sidebar disusun ulang agar menu `Pembaruan Sistem`, `Dokumentasi`, `Activity Log`, `Manajemen Role`, dan `Pengaturan` berada dalam satu kelompok administratif
+- Role management sekarang dapat menampilkan siapa saja user yang memakai setiap role
+- Timezone aplikasi sekarang mengikuti `APP_TIMEZONE` agar activity log dan timestamp internal bisa memakai region yang benar
 
 ### Fixed
 
 - Inkonsistensi penempatan menu administratif yang sebelumnya tersebar di `Master Data`
+- Jam pada aplikasi yang sebelumnya selalu mengikuti `UTC` karena timezone config masih hardcoded
 
 ## 2026-06-24
 

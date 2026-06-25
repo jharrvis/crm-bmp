@@ -83,6 +83,7 @@ Route::middleware('auth')->group(function () {
         ->name('roles.permissions.sync');
     Route::get('system-updates', [\App\Http\Controllers\SystemUpdateController::class, 'index'])->name('system-updates.index');
     Route::post('system-updates/refresh', [\App\Http\Controllers\SystemUpdateController::class, 'refresh'])->name('system-updates.refresh');
+    Route::get('documentation', [\App\Http\Controllers\DocumentationController::class, 'index'])->name('documentation.index');
     Route::get('activity-logs', [\App\Http\Controllers\ActivityLogController::class, 'index'])->name('activity-logs.index');
     Route::get('settings', [\App\Http\Controllers\SystemSettingController::class, 'index'])->name('settings.index');
 });
