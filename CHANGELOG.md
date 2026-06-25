@@ -22,6 +22,8 @@ Semua perubahan penting pada project ini dicatat di file ini.
 - Sidebar disusun ulang agar menu `Pembaruan Sistem`, `Dokumentasi`, `Activity Log`, `Manajemen Role`, dan `Pengaturan` berada dalam satu kelompok administratif
 - Role management sekarang dapat menampilkan siapa saja user yang memakai setiap role
 - Timezone aplikasi sekarang mengikuti `APP_TIMEZONE` agar activity log dan timestamp internal bisa memakai region yang benar
+- Global search diperluas ke hampir semua modul data yang dapat diakses user, termasuk organisasi, pelanggan, billing, support, infrastruktur, layanan, dan paket
+- Global search sekarang memiliki halaman hasil pencarian penuh dengan filter modul dan link `Lihat semua hasil` dari dropdown header
 
 ### Fixed
 

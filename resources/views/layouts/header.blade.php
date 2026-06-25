@@ -109,10 +109,16 @@
                 </div>
 
                 <!-- Footer -->
-                <div x-show="results.length > 0" class="px-4 py-2 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
-                    <span class="text-[10px] text-slate-400">
-                        <span x-text="total"></span> hasil ditemukan
-                    </span>
+                <div x-show="results.length > 0" class="px-4 py-2 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 text-[10px] text-slate-400">
+                        <span>
+                            <span x-text="total"></span> hasil cepat ditampilkan
+                        </span>
+                        <a :href="resultsUrl()"
+                            class="font-semibold text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                            Lihat semua hasil
+                        </a>
+                    </div>
                     <div class="flex items-center gap-3 text-[10px] text-slate-400">
                         <span><kbd class="font-mono bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-600">↑↓</kbd> navigasi</span>
                         <span><kbd class="font-mono bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-600">Enter</kbd> buka</span>
@@ -318,7 +324,18 @@ function globalSearch() {
         goToFocused() {
             if (this.focusedIndex >= 0 && this._flatItems[this.focusedIndex]) {
                 window.location.href = this._flatItems[this.focusedIndex].url;
+                return;
             }
+
+            if (this.query.length >= 2) {
+                window.location.href = this.resultsUrl();
+            }
+        },
+
+        resultsUrl() {
+            const url = new URL('{{ route("search.results") }}', window.location.origin);
+            url.searchParams.set('q', this.query);
+            return url.toString();
         },
 
         getBadgeClass(badge) {
@@ -343,4 +360,4 @@ function globalSearch() {
         },
     };
 }
-</script>
+</script>

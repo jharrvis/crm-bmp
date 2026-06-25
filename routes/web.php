@@ -19,6 +19,7 @@ Route::middleware('auth')->group(function () {
 
     // Global Search
     Route::get('/search', [GlobalSearchController::class, 'search'])->name('search');
+    Route::get('/search/results', [GlobalSearchController::class, 'results'])->name('search.results');
 
     Route::resource('branches', \App\Http\Controllers\BranchController::class);
     Route::resource('divisions', \App\Http\Controllers\DivisionController::class);
