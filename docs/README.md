@@ -15,6 +15,7 @@ Dokumentasi ini menjadi sumber referensi utama untuk:
 - `modules/`
   - dokumentasi modul internal CRM
   - termasuk modul `Activity Log` dan TODO operasionalnya
+  - termasuk modul `Invoices` untuk alur manual invoice, pengiriman, dan signature
 - `deployment.md`
   - catatan deployment, cache clear, migration, dan seeder
 - `permission-matrix.md`

@@ -1,6 +1,7 @@
 <x-app-layout>
     @php
         $statusClasses = [
+            'draft' => 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
             'unpaid' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
             'paid' => 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
             'overdue' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
@@ -8,6 +9,7 @@
         ];
 
         $labels = [
+            'draft' => 'Draft',
             'unpaid' => 'Belum Lunas',
             'paid' => 'Lunas',
             'overdue' => 'Terlambat',
@@ -22,6 +24,7 @@
 
         $invoiceViews = [
             'all' => ['label' => 'Semua', 'count' => $summaryCounts['total']],
+            'draft' => ['label' => 'Draft', 'count' => $summaryCounts['draft']],
             'unpaid' => ['label' => 'Belum Lunas', 'count' => $summaryCounts['unpaid']],
             'paid' => ['label' => 'Lunas', 'count' => $summaryCounts['paid']],
             'overdue' => ['label' => 'Terlambat', 'count' => $summaryCounts['overdue']],
@@ -133,7 +136,7 @@
                             <select name="status"
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
                                 <option value="">Semua</option>
-                                @foreach (['unpaid', 'paid', 'overdue', 'cancelled'] as $status)
+                                @foreach (['draft', 'unpaid', 'paid', 'overdue', 'cancelled'] as $status)
                                     <option value="{{ $status }}" {{ request('status') === $status ? 'selected' : '' }}>
                                         {{ $labels[$status] }}
                                     </option>
@@ -252,6 +255,17 @@
                                         <span class="inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold {{ $statusClasses[$invoice->status] ?? 'bg-slate-100 text-slate-600' }}">
                                             {{ $labels[$invoice->status] ?? ucfirst($invoice->status) }}
                                         </span>
+                                        <div class="mt-2 flex flex-wrap gap-2">
+                                            <span class="inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold {{ $invoice->sent_at ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300' }}">
+                                                {{ $invoice->sent_at ? 'Terkirim' : 'Belum Dikirim' }}
+                                            </span>
+                                            @if($invoice->sent_via_email)
+                                                <span class="inline-flex rounded-full bg-blue-100 px-2.5 py-1 text-[11px] font-semibold text-blue-700 dark:bg-blue-500/15 dark:text-blue-300">Email</span>
+                                            @endif
+                                            @if($invoice->sent_via_whatsapp)
+                                                <span class="inline-flex rounded-full bg-green-100 px-2.5 py-1 text-[11px] font-semibold text-green-700 dark:bg-green-500/15 dark:text-green-300">WhatsApp</span>
+                                            @endif
+                                        </div>
                                         @if($invoice->paid_at)
                                             <div class="mt-2 text-xs text-slate-500 dark:text-slate-400">
                                                 Lunas {{ $invoice->paid_at->translatedFormat('d M Y') }}

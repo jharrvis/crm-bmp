@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\LogsModelActivity;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Invoice extends Model
@@ -15,17 +16,34 @@ class Invoice extends Model
         'invoice_number',
         'invoice_date',
         'due_date',
+        'subtotal_amount',
+        'uses_tax',
+        'tax_rate',
+        'tax_amount',
+        'discount_amount',
         'total_amount',
         'status',
         'paid_at',
         'notes',
+        'signature_path',
+        'sent_at',
+        'sent_via_email',
+        'sent_via_whatsapp',
     ];
 
     protected $casts = [
         'invoice_date' => 'date',
         'due_date' => 'date',
+        'subtotal_amount' => 'decimal:2',
+        'uses_tax' => 'boolean',
+        'tax_rate' => 'decimal:2',
+        'tax_amount' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
         'paid_at' => 'datetime',
         'total_amount' => 'decimal:2',
+        'sent_at' => 'datetime',
+        'sent_via_email' => 'boolean',
+        'sent_via_whatsapp' => 'boolean',
     ];
 
     protected string $activitylogEntityName = 'invoice';
@@ -55,6 +73,20 @@ class Invoice extends Model
 
     public function calculateBillingSummary(): array
     {
+        if ($this->subtotal_amount !== null || $this->tax_amount !== null || $this->discount_amount !== null) {
+            $subtotal = (float) ($this->subtotal_amount ?? 0);
+            $taxAmount = $this->uses_tax ? (float) ($this->tax_amount ?? 0) : 0.0;
+            $discountAmount = (float) ($this->discount_amount ?? 0);
+
+            return [
+                'subtotal' => $subtotal,
+                'ppn_amount' => $taxAmount,
+                'pph23_amount' => 0.0,
+                'discount_amount' => $discountAmount,
+                'total_amount' => (float) $this->total_amount,
+            ];
+        }
+
         $subtotal = 0.0;
         $ppnAmount = 0.0;
         $pph23Amount = 0.0;
@@ -73,8 +105,18 @@ class Invoice extends Model
             'subtotal' => $subtotal,
             'ppn_amount' => $ppnAmount,
             'pph23_amount' => $pph23Amount,
+            'discount_amount' => 0.0,
             'total_amount' => $totalAmount,
         ];
+    }
+
+    public function getSignatureUrlAttribute(): ?string
+    {
+        if (! $this->signature_path) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->signature_path);
     }
 
     public function getAmountInWordsAttribute(): string

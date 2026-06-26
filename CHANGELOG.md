@@ -7,16 +7,26 @@ Semua perubahan penting pada project ini dicatat di file ini.
 ### Added
 
 - Halaman khusus `Buat Invoice Manual` sebagai pengganti drawer/modal di daftar invoice
+- Modul dokumentasi `Invoices` di `docs/modules/invoices.md`
 - Dokumentasi modul `Activity Log` di `docs/modules/activity-log.md`
 
 ### Changed
 
 - Tombol `Buat Invoice Manual` di daftar invoice sekarang menuju halaman create khusus
 - Halaman daftar invoice difokuskan kembali hanya untuk overview, filter, tabel, dan aksi invoice
+- Form invoice manual sekarang mendukung pencarian pelanggan, tanggal invoice, preset jatuh tempo, ringkasan subtotal/PPN/diskon, tanda tangan, draft/final/send action, dan modal kirim email/WhatsApp
+- Daftar invoice sekarang menampilkan status draft dan indikator invoice sudah terkirim atau belum
+- Halaman detail invoice sekarang dapat menampilkan tanda tangan dan membuka link WhatsApp setelah aksi kirim
 
 ### Documentation
 
 - TODO dokumentasi sekarang mencakup metode penghapusan `activity log` berkala menggunakan `php artisan activitylog:clean`
+
+### Deployment Notes
+
+- Jalankan `php artisan migrate` untuk field invoice manual baru
+- Jalankan `npm run build` jika deploy memakai aset hasil build Tailwind
+- Pastikan `php artisan storage:link` tersedia bila signature invoice diakses dari disk `public`
 
 ## 2026-06-25
 

@@ -256,6 +256,13 @@
                         </div>
                     @endif
 
+                    @if(($billingSummary['discount_amount'] ?? 0) > 0)
+                        <div class="border-b border-slate-200 px-5 py-3 font-bold text-slate-800">Discount</div>
+                        <div class="border-b border-slate-200 px-5 py-3 text-right font-semibold text-slate-800">
+                            ({{ number_format($billingSummary['discount_amount'], 0, ',', '.') }})
+                        </div>
+                    @endif
+
                     @if($billingSummary['pph23_amount'] > 0)
                         <div class="border-b border-slate-200 px-5 py-3 font-bold text-slate-800">PPh23 2%</div>
                         <div class="border-b border-slate-200 px-5 py-3 text-right font-semibold text-slate-800">
@@ -270,6 +277,18 @@
                 </div>
             </div>
         </div>
+
+        @if($invoice->signature_url)
+            <div class="mt-12 flex justify-end">
+                <div class="text-center">
+                    <div class="text-sm font-semibold text-slate-600">Mengetahui,</div>
+                    <div class="mt-3 flex h-24 w-56 items-center justify-center">
+                        <img src="{{ $invoice->signature_url }}" alt="Tanda tangan invoice" class="max-h-full max-w-full object-contain">
+                    </div>
+                    <div class="mt-2 text-sm font-bold text-slate-800">Billing BMPnet</div>
+                </div>
+            </div>
+        @endif
 
         <div class="print-footer mt-12 border-t border-slate-200 pt-8">
             <div class="border-t-4 border-blue-800 pt-5">
@@ -302,6 +321,14 @@
             Cetak PDF
         </button>
     </div>
+
+    @if(session('invoice_whatsapp_url'))
+        <script>
+            window.addEventListener('load', function () {
+                window.open(@json(session('invoice_whatsapp_url')), '_blank', 'noopener');
+            });
+        </script>
+    @endif
 </body>
 
 </html>
