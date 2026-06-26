@@ -14,6 +14,7 @@ Dokumentasi ini menjadi sumber referensi utama untuk:
   - dokumentasi endpoint, terutama untuk integrasi Client Portal
 - `modules/`
   - dokumentasi modul internal CRM
+  - termasuk modul `Activity Log` dan TODO operasionalnya
 - `deployment.md`
   - catatan deployment, cache clear, migration, dan seeder
 - `permission-matrix.md`

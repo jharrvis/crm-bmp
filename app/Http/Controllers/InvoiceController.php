@@ -69,27 +69,7 @@ class InvoiceController extends Controller
                 ->sum(fn (Invoice $invoice) => (float) $invoice->total_amount),
         ];
 
-        $clients = Client::query()
-            ->with([
-                'subscriptions' => function ($query) {
-                    $query->where('status', 'active')
-                        ->with(['package.service'])
-                        ->orderBy('subscription_code');
-                },
-            ])
-            ->orderBy('name')
-            ->get(['id', 'name', 'client_code']);
-
-        $packages = Package::query()
-            ->with('service')
-            ->where('is_active', true)
-            ->whereHas('service', function ($query) {
-                $query->where('is_active', true);
-            })
-            ->orderBy('name')
-            ->get(['id', 'service_id', 'name', 'price']);
-
-        return view('invoices.index', compact('invoices', 'view', 'summaryCounts', 'overviewMetrics', 'clients', 'packages'));
+        return view('invoices.index', compact('invoices', 'view', 'summaryCounts', 'overviewMetrics'));
     }
 
     /**
@@ -97,9 +77,9 @@ class InvoiceController extends Controller
      */
     public function create()
     {
-        // Manual invoice creation is handled via modal or specific flow
-        // For now, we can redirect or show a simple view
-        return redirect()->route('invoices.index');
+        [$clients, $packages] = $this->getManualInvoiceFormData();
+
+        return view('invoices.create', compact('clients', 'packages'));
     }
 
     /**
@@ -171,6 +151,31 @@ class InvoiceController extends Controller
             }
             return back()->with('error', 'Gagal membuat invoice.');
         }
+    }
+
+    protected function getManualInvoiceFormData(): array
+    {
+        $clients = Client::query()
+            ->with([
+                'subscriptions' => function ($query) {
+                    $query->where('status', 'active')
+                        ->with(['package.service'])
+                        ->orderBy('subscription_code');
+                },
+            ])
+            ->orderBy('name')
+            ->get(['id', 'name', 'client_code']);
+
+        $packages = Package::query()
+            ->with('service')
+            ->where('is_active', true)
+            ->whereHas('service', function ($query) {
+                $query->where('is_active', true);
+            })
+            ->orderBy('name')
+            ->get(['id', 'service_id', 'name', 'price']);
+
+        return [$clients, $packages];
     }
 
     /**

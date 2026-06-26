@@ -2,6 +2,22 @@
 
 Semua perubahan penting pada project ini dicatat di file ini.
 
+## 2026-06-26
+
+### Added
+
+- Halaman khusus `Buat Invoice Manual` sebagai pengganti drawer/modal di daftar invoice
+- Dokumentasi modul `Activity Log` di `docs/modules/activity-log.md`
+
+### Changed
+
+- Tombol `Buat Invoice Manual` di daftar invoice sekarang menuju halaman create khusus
+- Halaman daftar invoice difokuskan kembali hanya untuk overview, filter, tabel, dan aksi invoice
+
+### Documentation
+
+- TODO dokumentasi sekarang mencakup metode penghapusan `activity log` berkala menggunakan `php artisan activitylog:clean`
+
 ## 2026-06-25
 
 ### Added
