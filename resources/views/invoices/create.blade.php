@@ -52,29 +52,47 @@
             ];
         })->values();
 
-        $oldItems = old('items', [[
+        $invoiceItems = $invoice?->items->map(function ($item) {
+            return [
+                'source' => $item->subscription_id ? 'subscription' : 'manual',
+                'subscription_id' => $item->subscription_id,
+                'package_id' => '',
+                'description' => $item->description,
+                'qty' => $item->qty,
+                'amount' => $item->amount,
+            ];
+        })->values()->all() ?? [[
             'source' => 'subscription',
             'subscription_id' => '',
             'package_id' => '',
             'description' => '',
             'qty' => 1,
             'amount' => '',
-        ]]);
+        ]];
 
-        $selectedClient = $manualInvoiceClients->firstWhere('id', (int) old('client_id'));
-        $selectedSignatureMode = old('signature_mode', 'none');
-        $selectedExistingSignature = old('existing_signature');
+        $oldItems = old('items', $invoiceItems);
+
+        $defaultClientId = old('client_id', $invoice?->client_id);
+        $selectedClient = $manualInvoiceClients->firstWhere('id', (int) $defaultClientId);
+        $selectedSignatureMode = old('signature_mode', $invoice?->signature_path ? 'existing' : 'none');
+        $selectedExistingSignature = old('existing_signature', $invoice?->signature_path);
         $selectedDueMode = old('due_date_mode', '7');
         $oldSendChannels = collect(old('send_channels', []))->map(fn ($value) => (string) $value)->all();
+        $existingSignaturePreview = collect($existingSignatures)->firstWhere('path', $selectedExistingSignature);
+        $formAction = $invoice ? route('invoices.update', $invoice) : route('invoices.store');
+        $formTitle = $invoice ? 'Edit Invoice Manual' : 'Buat Invoice Manual';
+        $formSubtitle = $invoice
+            ? 'Perbarui rincian invoice, tanda tangan, dan opsi kirim tanpa harus membuat ulang dari awal.'
+            : 'Buat invoice satu kali dengan item yang lebih ringkas, pengaturan pajak, tanda tangan, dan opsi kirim langsung.';
     @endphp
 
     <div class="space-y-6">
         <div class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800 md:p-8">
             <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div>
-                    <h1 class="text-2xl font-bold text-slate-800 dark:text-white">Buat Invoice Manual</h1>
+                    <h1 class="text-2xl font-bold text-slate-800 dark:text-white">{{ $formTitle }}</h1>
                     <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                        Buat invoice satu kali dengan item yang lebih ringkas, pengaturan pajak, tanda tangan, dan opsi kirim langsung.
+                        {{ $formSubtitle }}
                     </p>
                 </div>
                 <a
@@ -84,14 +102,13 @@
                     Kembali ke Daftar Invoice
                 </a>
             </div>
-            <div class="mt-5 rounded-[1.5rem] border border-amber-200 bg-amber-50/80 px-4 py-4 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
-                <span class="font-bold">Catatan recurring:</span>
-                invoice recurring lebih baik dipisah dari form ini. Form ini fokus untuk invoice one-off/manual, sedangkan recurring butuh jadwal, template item, tanggal generate, dan kontrol stop/pause.
-            </div>
         </div>
 
-        <form method="POST" action="{{ route('invoices.store') }}" enctype="multipart/form-data" id="manualInvoiceForm" class="space-y-6">
+        <form method="POST" action="{{ $formAction }}" enctype="multipart/form-data" id="manualInvoiceForm" class="space-y-6">
             @csrf
+            @if($invoice)
+                @method('PUT')
+            @endif
             <input type="hidden" name="submit_action" id="submitActionField" value="{{ old('submit_action', 'confirm') }}">
 
             <div class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800 md:p-8">
@@ -99,7 +116,7 @@
                     <div class="xl:col-span-1">
                         <label class="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">Pelanggan <span class="text-red-500">*</span></label>
                         <div class="relative" id="clientCombobox">
-                            <input type="hidden" name="client_id" id="clientIdField" value="{{ old('client_id') }}">
+                            <input type="hidden" name="client_id" id="clientIdField" value="{{ $defaultClientId }}">
                             <input
                                 type="text"
                                 id="clientSearchInput"
@@ -137,7 +154,7 @@
                             name="invoice_date"
                             id="invoiceDateField"
                             required
-                            value="{{ old('invoice_date', now()->toDateString()) }}"
+                            value="{{ old('invoice_date', optional($invoice?->invoice_date)->toDateString() ?? now()->toDateString()) }}"
                             class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-800 outline-none transition focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white">
                         @error('invoice_date')
                             <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
@@ -161,7 +178,7 @@
                                 name="due_date"
                                 id="dueDateField"
                                 required
-                                value="{{ old('due_date', now()->addDays(7)->toDateString()) }}"
+                                value="{{ old('due_date', optional($invoice?->due_date)->toDateString() ?? now()->addDays(7)->toDateString()) }}"
                                 class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-800 outline-none transition focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white">
                         </div>
                         <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
@@ -193,7 +210,7 @@
                             <input type="hidden" name="items[{{ $index }}][subscription_id]" value="{{ $item['subscription_id'] ?? '' }}" class="invoice-item-subscription-id">
                             <input type="hidden" name="items[{{ $index }}][package_id]" value="{{ $item['package_id'] ?? '' }}" class="invoice-item-package-id">
 
-                            <div class="grid grid-cols-1 gap-3 lg:grid-cols-[170px_290px_minmax(0,1.15fr)_90px_150px_150px_48px] lg:items-end">
+                            <div class="grid grid-cols-1 gap-3 lg:grid-cols-[170px_320px_90px_150px_150px_48px] lg:items-start">
                                 <div>
                                     <label class="mb-1 block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Sumber</label>
                                     <select name="items[{{ $index }}][source]"
@@ -209,12 +226,6 @@
                                         <option value="">Pilih item</option>
                                     </select>
                                     <p class="invoice-item-option-hint mt-1 text-[11px] text-slate-500 dark:text-slate-400"></p>
-                                </div>
-                                <div>
-                                    <label class="mb-1 block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Deskripsi</label>
-                                    <input type="text" name="items[{{ $index }}][description]" value="{{ $item['description'] ?? '' }}" required
-                                        class="invoice-item-description w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
-                                        placeholder="Contoh: Biaya instalasi / layanan tambahan">
                                 </div>
                                 <div>
                                     <label class="mb-1 block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Qty</label>
@@ -237,6 +248,12 @@
                                     class="remove-invoice-item inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-red-500 transition hover:bg-red-50 dark:border-slate-700 dark:hover:bg-red-900/20">
                                     <i data-lucide="trash-2" class="h-4 w-4"></i>
                                 </button>
+                                <div class="lg:col-span-5">
+                                    <label class="mb-1 block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Deskripsi</label>
+                                    <textarea name="items[{{ $index }}][description]" rows="2" required
+                                        class="invoice-item-description w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                                        placeholder="Contoh: Biaya instalasi / layanan tambahan">{{ $item['description'] ?? '' }}</textarea>
+                                </div>
                             </div>
                         </div>
                     @endforeach
@@ -257,20 +274,27 @@
             </div>
 
             <div class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800 md:p-8">
-                <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-                    <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50/80 p-5 dark:border-slate-700 dark:bg-slate-900/30">
-                        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                            <div>
-                                <p class="text-sm font-bold text-slate-800 dark:text-white">Ringkasan Tagihan</p>
-                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Subtotal diambil dari jumlah seluruh item. Pajak dan diskon diperhitungkan sebelum total akhir.</p>
-                            </div>
-                            <label class="inline-flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
-                                <input type="checkbox" name="uses_tax" id="usesTaxField" value="1" class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" {{ old('uses_tax') ? 'checked' : '' }}>
-                                Gunakan PPN 11%
-                            </label>
-                        </div>
+                <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+                    <div class="rounded-[1.5rem] border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+                        <label class="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">Catatan</label>
+                        <textarea name="notes" rows="7"
+                            class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-white"
+                            placeholder="Catatan tambahan untuk invoice ini">{{ old('notes', $invoice?->notes) }}</textarea>
+                    </div>
 
-                        <div class="mt-5 grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
+                    <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50/80 p-5 dark:border-slate-700 dark:bg-slate-900/30">
+                        <div class="flex flex-col gap-4">
+                            <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                <div>
+                                    <p class="text-sm font-bold text-slate-800 dark:text-white">Ringkasan Tagihan</p>
+                                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Subtotal diambil dari jumlah seluruh item. Pajak dan diskon diperhitungkan sebelum total akhir.</p>
+                                </div>
+                                <label class="inline-flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
+                                    <input type="checkbox" name="uses_tax" id="usesTaxField" value="1" class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" {{ old('uses_tax', $invoice?->uses_tax) ? 'checked' : '' }}>
+                                    Gunakan PPN 11%
+                                </label>
+                            </div>
+
                             <div class="space-y-3">
                                 <div class="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm dark:border-slate-600 dark:bg-slate-800">
                                     <span class="font-semibold text-slate-500 dark:text-slate-300">Subtotal</span>
@@ -280,115 +304,62 @@
                                     <span class="font-semibold text-slate-500 dark:text-slate-300">PPN (Pajak)</span>
                                     <span id="invoiceTaxValue" class="font-bold text-slate-900 dark:text-white">Rp 0</span>
                                 </div>
-                                <div class="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm dark:border-slate-600 dark:bg-slate-800">
-                                    <span class="font-semibold text-slate-500 dark:text-slate-300">Discount</span>
-                                    <span id="invoiceDiscountValue" class="font-bold text-slate-900 dark:text-white">Rp 0</span>
+                                <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-600 dark:bg-slate-800">
+                                    <label class="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Discount (Opsional)</label>
+                                    <div class="flex items-center gap-3">
+                                        <input type="number" min="0" step="0.01" name="discount_amount" id="discountAmountField"
+                                            value="{{ old('discount_amount', $invoice?->discount_amount ?? 0) }}"
+                                            class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-white"
+                                            placeholder="0">
+                                        <span id="invoiceDiscountValue" class="whitespace-nowrap text-sm font-bold text-slate-900 dark:text-white">Rp 0</span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="flex flex-col rounded-[1.5rem] bg-blue-600 px-5 py-5 text-white">
-                                <label class="text-xs font-bold uppercase tracking-[0.18em] text-blue-100">Discount (Opsional)</label>
-                                <input type="number" min="0" step="0.01" name="discount_amount" id="discountAmountField"
-                                    value="{{ old('discount_amount', 0) }}"
-                                    class="mt-3 rounded-xl border border-blue-400/40 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white outline-none placeholder:text-blue-100/60 focus:border-white/70 focus:ring-2 focus:ring-white/20"
-                                    placeholder="0">
-                                <div class="mt-5 border-t border-white/20 pt-4">
+                                <div class="rounded-[1.5rem] bg-blue-600 px-5 py-5 text-white">
                                     <div class="text-xs font-bold uppercase tracking-[0.18em] text-blue-100">Total</div>
                                     <div id="invoiceGrandTotalValue" class="mt-2 text-3xl font-black">Rp 0</div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <div class="rounded-[1.5rem] border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
-                        <label class="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">Catatan</label>
-                        <textarea name="notes" rows="5"
-                            class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-white"
-                            placeholder="Catatan tambahan untuk invoice ini">{{ old('notes') }}</textarea>
-                    </div>
                 </div>
-            </div>
 
-            <div class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800 md:p-8">
-                <div class="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Tanda Tangan</label>
-                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Pilih tanda tangan yang sudah ada atau unggah file baru. Unggahan baru akan disimpan untuk penggunaan berikutnya.</p>
+                <div class="mt-6 border-t border-slate-200 pt-6 dark:border-slate-700">
+                    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div class="min-w-0">
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Tanda Tangan dan Meterai (Opsional)</label>
+                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Klik kotak di bawah untuk memilih tanda tangan yang sudah ada atau upload baru.</p>
                         </div>
+                        <input type="radio" name="signature_mode" value="none" class="hidden" {{ $selectedSignatureMode === 'none' ? 'checked' : '' }}>
+                        <input type="radio" name="signature_mode" value="existing" class="hidden" {{ $selectedSignatureMode === 'existing' ? 'checked' : '' }}>
+                        <input type="radio" name="signature_mode" value="upload" class="hidden" {{ $selectedSignatureMode === 'upload' ? 'checked' : '' }}>
+                    </div>
 
-                        <div class="grid gap-3 md:grid-cols-3">
-                            <label class="rounded-[1.25rem] border border-slate-200 bg-slate-50/80 px-4 py-4 text-sm font-semibold text-slate-700 transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 dark:border-slate-700 dark:bg-slate-900/30 dark:text-slate-200 dark:has-[:checked]:border-blue-400 dark:has-[:checked]:bg-blue-500/10">
-                                <input type="radio" name="signature_mode" value="none" class="sr-only" {{ $selectedSignatureMode === 'none' ? 'checked' : '' }}>
-                                Tanpa tanda tangan
-                            </label>
-                            <label class="rounded-[1.25rem] border border-slate-200 bg-slate-50/80 px-4 py-4 text-sm font-semibold text-slate-700 transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 dark:border-slate-700 dark:bg-slate-900/30 dark:text-slate-200 dark:has-[:checked]:border-blue-400 dark:has-[:checked]:bg-blue-500/10">
-                                <input type="radio" name="signature_mode" value="existing" class="sr-only" {{ $selectedSignatureMode === 'existing' ? 'checked' : '' }}>
-                                Pilih yang sudah ada
-                            </label>
-                            <label class="rounded-[1.25rem] border border-slate-200 bg-slate-50/80 px-4 py-4 text-sm font-semibold text-slate-700 transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 dark:border-slate-700 dark:bg-slate-900/30 dark:text-slate-200 dark:has-[:checked]:border-blue-400 dark:has-[:checked]:bg-blue-500/10">
-                                <input type="radio" name="signature_mode" value="upload" class="sr-only" {{ $selectedSignatureMode === 'upload' ? 'checked' : '' }}>
-                                Upload baru
-                            </label>
-                        </div>
-
-                        <div id="existingSignatureSection" class="{{ $selectedSignatureMode === 'existing' ? '' : 'hidden' }}">
-                            @if (count($existingSignatures) > 0)
-                                <div class="grid gap-3 md:grid-cols-2">
-                                    @foreach ($existingSignatures as $signature)
-                                        <label class="rounded-[1.25rem] border border-slate-200 bg-white p-4 transition has-[:checked]:border-blue-500 has-[:checked]:ring-2 has-[:checked]:ring-blue-200 dark:border-slate-700 dark:bg-slate-900/30 dark:has-[:checked]:ring-blue-500/30">
-                                            <input type="radio" name="existing_signature" value="{{ $signature['path'] }}" class="sr-only" {{ $selectedExistingSignature === $signature['path'] ? 'checked' : '' }}>
-                                            <div class="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">{{ \Illuminate\Support\Str::headline($signature['name']) }}</div>
-                                            <div class="flex h-24 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
-                                                <img src="{{ $signature['url'] }}" alt="{{ $signature['name'] }}" class="max-h-full max-w-full object-contain">
-                                            </div>
-                                        </label>
-                                    @endforeach
+                    <button type="button" id="signaturePickerButton" onclick="openModal('signaturePickerModal')" class="mt-4 flex w-full items-center justify-center rounded-[1.5rem] border border-dashed border-blue-300 bg-slate-50/80 px-6 py-8 text-center transition hover:border-blue-500 hover:bg-blue-50/50 dark:border-slate-600 dark:bg-slate-900/30 dark:hover:border-blue-400 dark:hover:bg-blue-500/10">
+                        <div id="signaturePreviewState" class="flex flex-col items-center gap-3">
+                            @if($selectedSignatureMode !== 'none' && $existingSignaturePreview)
+                                <div class="flex h-28 w-full max-w-xs items-center justify-center">
+                                    <img src="{{ $existingSignaturePreview['url'] }}" alt="Signature preview" class="max-h-full max-w-full object-contain">
                                 </div>
+                                <div class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ \Illuminate\Support\Str::headline($existingSignaturePreview['name']) }}</div>
+                            @elseif($selectedSignatureMode === 'upload')
+                                <div class="rounded-full bg-blue-100 p-3 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300">
+                                    <i data-lucide="image-plus" class="h-6 w-6"></i>
+                                </div>
+                                <div class="text-sm font-semibold text-slate-700 dark:text-slate-200">Upload tanda tangan baru</div>
                             @else
-                                <div class="rounded-[1.25rem] border border-slate-200 bg-slate-50/80 px-4 py-4 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/30 dark:text-slate-400">
-                                    Belum ada tanda tangan tersimpan. Gunakan opsi upload baru.
+                                <div class="rounded-full bg-blue-100 p-3 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300">
+                                    <i data-lucide="upload" class="h-6 w-6"></i>
                                 </div>
+                                <div class="text-sm font-semibold text-slate-700 dark:text-slate-200">Pilih atau unggah tanda tangan</div>
                             @endif
-                            @error('existing_signature')
-                                <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
-                            @enderror
                         </div>
-
-                        <div id="uploadSignatureSection" class="{{ $selectedSignatureMode === 'upload' ? '' : 'hidden' }}">
-                            <input
-                                type="file"
-                                name="signature_upload"
-                                accept="image/png,image/jpeg,image/webp"
-                                class="w-full rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-700 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-200 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-slate-700 hover:file:bg-slate-300 dark:border-slate-600 dark:bg-slate-900/30 dark:text-slate-200 dark:file:bg-slate-700 dark:file:text-slate-200">
-                            <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Format yang disarankan: PNG transparan, JPG, atau WEBP. Maksimal 2 MB.</p>
-                            @error('signature_upload')
-                                <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    </div>
-
-                    <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50/80 p-5 dark:border-slate-700 dark:bg-slate-900/30">
-                        <div class="flex items-start gap-3">
-                            <div class="mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300">
-                                <i data-lucide="send" class="h-5 w-5"></i>
-                            </div>
-                            <div>
-                                <h2 class="text-sm font-bold text-slate-800 dark:text-white">Aksi Simpan</h2>
-                                <p class="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                                    Gunakan draft untuk revisi internal, simpan dan konfirmasi untuk final tanpa kirim, atau simpan dan kirim untuk langsung pilih email / WhatsApp.
-                                </p>
-                            </div>
-                        </div>
-                        <div class="mt-4 space-y-3 text-sm text-slate-600 dark:text-slate-300">
-                            <div class="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
-                                <span>Status akhir</span>
-                                <span id="saveActionPreview" class="font-bold text-slate-900 dark:text-white">Simpan & Konfirmasi</span>
-                            </div>
-                            <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs leading-relaxed text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
-                                Recurring invoice sebaiknya dibuat sebagai modul terpisah berbasis template dan jadwal, bukan dicampur di form manual ini.
-                            </div>
-                        </div>
-                    </div>
+                    </button>
+                    @error('existing_signature')
+                        <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
+                    @enderror
+                    @error('signature_upload')
+                        <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -398,6 +369,7 @@
                         Batal
                     </a>
                     <div class="relative inline-flex" id="saveActionsDropdown">
+                        <span id="saveActionPreview" class="hidden"></span>
                         <button type="button" id="savePrimaryButton"
                             class="inline-flex items-center gap-2 rounded-l-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700">
                             <i data-lucide="save" class="h-4 w-4"></i>
@@ -434,6 +406,58 @@
                 </div>
             </div>
         </form>
+    </div>
+
+    <div id="signaturePickerModal" class="fixed inset-0 z-[90] hidden">
+        <div id="signaturePickerModalBackdrop" class="modal-backdrop absolute inset-0 bg-slate-900/55 opacity-0 transition-opacity duration-300"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4 sm:p-6">
+            <div id="signaturePickerModalPanel" class="modal-panel w-full max-w-3xl scale-95 opacity-0 overflow-hidden rounded-[2rem] bg-white shadow-2xl transition-all duration-300 dark:bg-slate-800">
+                <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5 dark:border-slate-700 sm:px-8">
+                    <div>
+                        <div class="text-[11px] font-bold uppercase tracking-[0.2em] text-blue-500">Tanda Tangan</div>
+                        <h2 class="mt-2 text-2xl font-bold text-slate-800 dark:text-white">Pilih atau Upload Tanda Tangan</h2>
+                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">File baru akan disimpan untuk pemakaian berikutnya.</p>
+                    </div>
+                    <button type="button" onclick="closeModal('signaturePickerModal')"
+                        class="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white">
+                        <i data-lucide="x" class="h-5 w-5"></i>
+                    </button>
+                </div>
+                <div class="max-h-[72vh] overflow-y-auto px-6 py-6 sm:px-8">
+                    <div class="mb-4">
+                        <button type="button" id="clearSignatureButton" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
+                            <i data-lucide="eraser" class="h-4 w-4"></i>
+                            Tanpa tanda tangan
+                        </button>
+                    </div>
+                    <div id="existingSignatureSection">
+                        @if (count($existingSignatures) > 0)
+                            <div class="grid gap-3 md:grid-cols-2">
+                                @foreach ($existingSignatures as $signature)
+                                    <button type="button" data-signature-select="{{ $signature['path'] }}" data-signature-url="{{ $signature['url'] }}" data-signature-name="{{ \Illuminate\Support\Str::headline($signature['name']) }}"
+                                        class="rounded-[1.25rem] border border-slate-200 bg-white p-4 text-left transition hover:border-blue-400 hover:ring-2 hover:ring-blue-200 dark:border-slate-700 dark:bg-slate-900/30 dark:hover:ring-blue-500/30">
+                                        <input type="radio" name="existing_signature" value="{{ $signature['path'] }}" class="hidden" {{ $selectedExistingSignature === $signature['path'] ? 'checked' : '' }}>
+                                        <div class="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">{{ \Illuminate\Support\Str::headline($signature['name']) }}</div>
+                                        <div class="flex h-24 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
+                                            <img src="{{ $signature['url'] }}" alt="{{ $signature['name'] }}" class="max-h-full max-w-full object-contain">
+                                        </div>
+                                    </button>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                    <div id="uploadSignatureSection" class="mt-6 border-t border-slate-200 pt-5 dark:border-slate-700">
+                        <label class="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">Upload Baru</label>
+                        <input
+                            type="file"
+                            name="signature_upload"
+                            accept="image/png,image/jpeg,image/webp"
+                            class="w-full rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-700 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-200 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-slate-700 hover:file:bg-slate-300 dark:border-slate-600 dark:bg-slate-900/30 dark:text-slate-200 dark:file:bg-slate-700 dark:file:text-slate-200">
+                        <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">PNG/JPG/WEBP, maksimal 2 MB.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="invoiceSendModal" class="fixed inset-0 z-[90] hidden">
@@ -574,8 +598,12 @@
                 const emailSubjectField = document.getElementById('emailSubjectField');
                 const emailBodyField = document.getElementById('emailBodyField');
                 const whatsappBodyField = document.getElementById('whatsappBodyField');
+                const signaturePickerButton = document.getElementById('signaturePickerButton');
+                const signaturePreviewState = document.getElementById('signaturePreviewState');
+                const clearSignatureButton = document.getElementById('clearSignatureButton');
                 const existingSignatureSection = document.getElementById('existingSignatureSection');
                 const uploadSignatureSection = document.getElementById('uploadSignatureSection');
+                const signatureUploadInput = document.querySelector('#uploadSignatureSection input[name="signature_upload"]');
 
                 let activeSaveAction = submitActionField.value || 'confirm';
 
@@ -779,7 +807,7 @@
 
                 function refreshInvoiceItemIndexes() {
                     invoiceItemsContainer.querySelectorAll('.invoice-item-row').forEach((row, index) => {
-                        row.querySelectorAll('input, select[name]').forEach((field) => {
+                        row.querySelectorAll('input, select[name], textarea[name]').forEach((field) => {
                             field.name = field.name.replace(/items\[\d+\]/, `items[${index}]`);
                         });
                     });
@@ -865,7 +893,7 @@
                     row.innerHTML = `
                         <input type="hidden" name="items[${index}][subscription_id]" value="" class="invoice-item-subscription-id">
                         <input type="hidden" name="items[${index}][package_id]" value="" class="invoice-item-package-id">
-                        <div class="grid grid-cols-1 gap-3 lg:grid-cols-[170px_290px_minmax(0,1.15fr)_90px_150px_150px_48px] lg:items-end">
+                        <div class="grid grid-cols-1 gap-3 lg:grid-cols-[170px_320px_90px_150px_150px_48px] lg:items-start">
                             <div>
                                 <label class="mb-1 block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Sumber</label>
                                 <select name="items[${index}][source]" class="invoice-item-source w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white">
@@ -882,10 +910,6 @@
                                 <p class="invoice-item-option-hint mt-1 text-[11px] text-slate-500 dark:text-slate-400"></p>
                             </div>
                             <div>
-                                <label class="mb-1 block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Deskripsi</label>
-                                <input type="text" name="items[${index}][description]" required class="invoice-item-description w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white" placeholder="Contoh: Biaya instalasi / layanan tambahan">
-                            </div>
-                            <div>
                                 <label class="mb-1 block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Qty</label>
                                 <input type="number" min="1" name="items[${index}][qty]" value="1" required class="invoice-item-qty w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white">
                             </div>
@@ -900,6 +924,10 @@
                             <button type="button" class="remove-invoice-item inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-red-500 transition hover:bg-red-50 dark:border-slate-700 dark:hover:bg-red-900/20">
                                 <i data-lucide="trash-2" class="h-4 w-4"></i>
                             </button>
+                            <div class="lg:col-span-5">
+                                <label class="mb-1 block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Deskripsi</label>
+                                <textarea name="items[${index}][description]" rows="2" required class="invoice-item-description w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white" placeholder="Contoh: Biaya instalasi / layanan tambahan"></textarea>
+                            </div>
                         </div>
                     `;
 
@@ -1033,6 +1061,37 @@
 
                     if (mode === 'existing' && existingSignatureCount === 0) {
                         uploadSignatureSection?.classList.remove('hidden');
+                    }
+
+                    if (mode === 'existing') {
+                        const checkedSignature = document.querySelector('input[name="existing_signature"]:checked');
+                        const card = checkedSignature?.closest('[data-signature-select]');
+                        if (card) {
+                            signaturePreviewState.innerHTML = `
+                                <div class="flex h-28 w-full max-w-xs items-center justify-center">
+                                    <img src="${card.dataset.signatureUrl}" alt="Signature preview" class="max-h-full max-w-full object-contain">
+                                </div>
+                                <div class="text-sm font-semibold text-slate-700 dark:text-slate-200">${card.dataset.signatureName}</div>
+                            `;
+                        }
+                    } else if (mode === 'upload') {
+                        signaturePreviewState.innerHTML = `
+                            <div class="rounded-full bg-blue-100 p-3 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300">
+                                <i data-lucide="image-plus" class="h-6 w-6"></i>
+                            </div>
+                            <div class="text-sm font-semibold text-slate-700 dark:text-slate-200">${signatureUploadInput?.files?.[0]?.name || 'Upload tanda tangan baru'}</div>
+                        `;
+                    } else {
+                        signaturePreviewState.innerHTML = `
+                            <div class="rounded-full bg-blue-100 p-3 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300">
+                                <i data-lucide="upload" class="h-6 w-6"></i>
+                            </div>
+                            <div class="text-sm font-semibold text-slate-700 dark:text-slate-200">Pilih atau unggah tanda tangan</div>
+                        `;
+                    }
+
+                    if (window.lucide) {
+                        window.lucide.createIcons();
                     }
                 }
 
@@ -1172,6 +1231,109 @@
                 if (window.lucide) {
                     window.lucide.createIcons();
                 }
+            });
+        </script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const signaturePreviewState = document.getElementById('signaturePreviewState');
+                const clearSignatureButton = document.getElementById('clearSignatureButton');
+                const existingSignatureSection = document.getElementById('existingSignatureSection');
+                const uploadSignatureSection = document.getElementById('uploadSignatureSection');
+                const uploadSignatureInput = document.querySelector('#uploadSignatureSection input[name="signature_upload"]');
+                const signatureModeInputs = document.querySelectorAll('input[name="signature_mode"]');
+                const existingSignatureInputs = document.querySelectorAll('input[name="existing_signature"]');
+                const signatureCards = document.querySelectorAll('[data-signature-select]');
+
+                if (!signaturePreviewState) {
+                    return;
+                }
+
+                existingSignatureSection?.classList.remove('hidden');
+                uploadSignatureSection?.classList.remove('hidden');
+
+                function setSignatureMode(mode) {
+                    signatureModeInputs.forEach((input) => {
+                        input.checked = input.value === mode;
+                    });
+                }
+
+                function updateSignaturePreview(mode = null, overrideFileName = null) {
+                    const activeMode = mode || document.querySelector('input[name="signature_mode"]:checked')?.value || 'none';
+
+                    if (activeMode === 'existing') {
+                        const checkedSignature = document.querySelector('input[name="existing_signature"]:checked');
+                        const card = checkedSignature?.closest('[data-signature-select]');
+
+                        if (card) {
+                            signaturePreviewState.innerHTML = `
+                                <div class="flex h-28 w-full max-w-xs items-center justify-center">
+                                    <img src="${card.dataset.signatureUrl}" alt="Signature preview" class="max-h-full max-w-full object-contain">
+                                </div>
+                                <div class="text-sm font-semibold text-slate-700 dark:text-slate-200">${card.dataset.signatureName}</div>
+                            `;
+                        }
+                    } else if (activeMode === 'upload') {
+                        const fileName = overrideFileName || uploadSignatureInput?.files?.[0]?.name || 'Upload tanda tangan baru';
+                        signaturePreviewState.innerHTML = `
+                            <div class="rounded-full bg-blue-100 p-3 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300">
+                                <i data-lucide="image-plus" class="h-6 w-6"></i>
+                            </div>
+                            <div class="text-sm font-semibold text-slate-700 dark:text-slate-200">${fileName}</div>
+                        `;
+                    } else {
+                        signaturePreviewState.innerHTML = `
+                            <div class="rounded-full bg-blue-100 p-3 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300">
+                                <i data-lucide="upload" class="h-6 w-6"></i>
+                            </div>
+                            <div class="text-sm font-semibold text-slate-700 dark:text-slate-200">Pilih atau unggah tanda tangan</div>
+                        `;
+                    }
+
+                    if (window.lucide) {
+                        window.lucide.createIcons();
+                    }
+                }
+
+                signatureCards.forEach((button) => {
+                    button.addEventListener('click', function () {
+                        const radio = button.querySelector('input[name="existing_signature"]');
+                        if (radio) {
+                            radio.checked = true;
+                        }
+
+                        setSignatureMode('existing');
+                        updateSignaturePreview('existing');
+                        closeModal('signaturePickerModal');
+                    });
+                });
+
+                clearSignatureButton?.addEventListener('click', function () {
+                    existingSignatureInputs.forEach((input) => {
+                        input.checked = false;
+                    });
+
+                    if (uploadSignatureInput) {
+                        uploadSignatureInput.value = '';
+                    }
+
+                    setSignatureMode('none');
+                    updateSignaturePreview('none');
+                    closeModal('signaturePickerModal');
+                });
+
+                uploadSignatureInput?.addEventListener('change', function () {
+                    if (uploadSignatureInput.files?.length) {
+                        existingSignatureInputs.forEach((input) => {
+                            input.checked = false;
+                        });
+
+                        setSignatureMode('upload');
+                        updateSignaturePreview('upload', uploadSignatureInput.files[0].name);
+                        closeModal('signaturePickerModal');
+                    }
+                });
+
+                updateSignaturePreview();
             });
         </script>
     @endpush

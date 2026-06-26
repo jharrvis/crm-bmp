@@ -329,6 +329,15 @@
             });
         </script>
     @endif
+    @if(request()->boolean('autoprint'))
+        <script>
+            window.addEventListener('load', function () {
+                setTimeout(function () {
+                    window.print();
+                }, 300);
+            });
+        </script>
+    @endif
 </body>
 
 </html>

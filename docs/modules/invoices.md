@@ -32,6 +32,8 @@ Fitur utama:
   - tanpa tanda tangan
   - pilih signature yang sudah ada
   - upload signature baru
+- catatan diletakkan di sisi kiri dan ringkasan tagihan di sisi kanan
+- setelah simpan, user kembali ke daftar invoice
 
 ## Aksi Simpan
 
@@ -59,7 +61,7 @@ Perilaku:
 
 - hanya aktif jika pelanggan punya nomor `whatsapp` atau `phone`
 - sistem membuat link `wa.me/{nomor}?text=...`
-- setelah invoice berhasil dibuat, halaman detail invoice akan membuka link WhatsApp di tab baru
+- setelah invoice berhasil dibuat atau dikirim ulang dari daftar invoice, halaman invoice index akan membuka link WhatsApp di tab baru
 
 ## Status Kirim
 
@@ -69,6 +71,11 @@ Daftar invoice menampilkan:
 - badge kanal:
   - `Email`
   - `WhatsApp`
+- aksi cepat:
+  - edit invoice
+  - kirim ulang invoice
+  - print
+  - download PDF melalui tampilan print browser
 
 Field database terkait:
 

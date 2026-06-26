@@ -233,6 +233,14 @@
                                     data-invoice-date="{{ $invoice->invoice_date?->timestamp ?? 0 }}"
                                     data-due-date="{{ $invoice->due_date?->timestamp ?? 0 }}"
                                     data-total="{{ (float) $invoice->total_amount }}"
+                                    data-id="{{ $invoice->id }}"
+                                    data-number="{{ $invoice->invoice_number }}"
+                                    data-client-name="{{ $invoice->client->name }}"
+                                    data-client-email="{{ $invoice->client->primaryContact?->email ?: $invoice->client->contacts->first()?->email }}"
+                                    data-client-whatsapp="{{ $invoice->client->primaryContact?->whatsapp ?: $invoice->client->primaryContact?->phone ?: $invoice->client->contacts->first()?->whatsapp ?: $invoice->client->contacts->first()?->phone }}"
+                                    data-total-label="Rp {{ number_format($invoice->total_amount, 0, ',', '.') }}"
+                                    data-invoice-date-label="{{ optional($invoice->invoice_date)->translatedFormat('d M Y') }}"
+                                    data-due-date-label="{{ optional($invoice->due_date)->translatedFormat('d M Y') }}"
                                 >
                                     <td class="p-4 pl-6 align-top">
                                         <div class="font-bold text-slate-800 dark:text-white">{{ $invoice->invoice_number }}</div>
@@ -286,6 +294,43 @@
                                                     </a>
 
                                                     @can('invoices.update')
+                                                        <a href="{{ route('invoices.edit', $invoice) }}"
+                                                            class="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                                                            <i data-lucide="pencil" class="w-4 h-4"></i>
+                                                            Edit Invoice
+                                                        </a>
+
+                                                        <button
+                                                            type="button"
+                                                            class="open-send-invoice-modal w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                                                            data-invoice-id="{{ $invoice->id }}"
+                                                            data-invoice-number="{{ $invoice->invoice_number }}"
+                                                            data-client-name="{{ $invoice->client->name }}"
+                                                            data-client-email="{{ $invoice->client->primaryContact?->email ?: $invoice->client->contacts->first()?->email }}"
+                                                            data-client-whatsapp="{{ $invoice->client->primaryContact?->whatsapp ?: $invoice->client->primaryContact?->phone ?: $invoice->client->contacts->first()?->whatsapp ?: $invoice->client->contacts->first()?->phone }}"
+                                                            data-total-label="Rp {{ number_format($invoice->total_amount, 0, ',', '.') }}"
+                                                            data-invoice-date-label="{{ optional($invoice->invoice_date)->translatedFormat('d M Y') }}"
+                                                            data-due-date-label="{{ optional($invoice->due_date)->translatedFormat('d M Y') }}">
+                                                            <i data-lucide="send" class="w-4 h-4"></i>
+                                                            Kirim Invoice
+                                                        </button>
+                                                    @endcan
+
+                                                    <a href="{{ route('invoices.show', $invoice) }}?autoprint=1"
+                                                        target="_blank"
+                                                        class="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                                                        <i data-lucide="printer" class="w-4 h-4"></i>
+                                                        Print
+                                                    </a>
+
+                                                    <a href="{{ route('invoices.show', $invoice) }}?autoprint=1&download=pdf"
+                                                        target="_blank"
+                                                        class="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                                                        <i data-lucide="download" class="w-4 h-4"></i>
+                                                        Download PDF
+                                                    </a>
+
+                                                    @can('invoices.update')
                                                         @if($invoice->status === 'unpaid')
                                                             <button type="button" onclick="markAsPaid({{ $invoice->id }}, '{{ $invoice->invoice_number }}')"
                                                                 class="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
@@ -315,6 +360,80 @@
         </div>
     </div>
 
+    <div id="invoiceSendModal" class="fixed inset-0 z-[90] hidden">
+        <div id="invoiceSendModalBackdrop" class="modal-backdrop absolute inset-0 bg-slate-900/55 opacity-0 transition-opacity duration-300"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4 sm:p-6">
+            <div id="invoiceSendModalPanel" class="modal-panel w-full max-w-3xl scale-95 opacity-0 overflow-hidden rounded-[2rem] bg-white shadow-2xl transition-all duration-300 dark:bg-slate-800">
+                <form method="POST" id="invoiceSendForm">
+                    @csrf
+                    <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5 dark:border-slate-700 sm:px-8">
+                        <div>
+                            <div class="text-[11px] font-bold uppercase tracking-[0.2em] text-blue-500">Kirim Invoice</div>
+                            <h2 class="mt-2 text-2xl font-bold text-slate-800 dark:text-white" id="invoiceSendTitle">Kirim Invoice</h2>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400" id="invoiceSendSubtitle">Pilih kanal pengiriman dan sesuaikan template sebelum dikirim.</p>
+                        </div>
+                        <button type="button" onclick="closeModal('invoiceSendModal')"
+                            class="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white">
+                            <i data-lucide="x" class="h-5 w-5"></i>
+                        </button>
+                    </div>
+                    <div class="max-h-[72vh] overflow-y-auto px-6 py-6 sm:px-8">
+                        <div class="grid gap-6 lg:grid-cols-2">
+                            <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50/80 p-5 dark:border-slate-700 dark:bg-slate-900/30">
+                                <label class="flex items-start gap-3">
+                                    <input type="checkbox" name="send_channels[]" value="email" id="sendEmailCheckboxIndex" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                                    <span>
+                                        <span class="block text-sm font-bold text-slate-800 dark:text-white">Kirim via Email</span>
+                                        <span id="sendEmailMetaIndex" class="mt-1 block text-xs text-slate-500 dark:text-slate-400">Email kontak pelanggan akan dipakai sebagai tujuan kirim.</span>
+                                    </span>
+                                </label>
+                                <div id="sendEmailFieldsIndex" class="mt-4 hidden space-y-3">
+                                    <div>
+                                        <label class="mb-1 block text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Subjek Email</label>
+                                        <input type="text" name="email_subject" id="emailSubjectFieldIndex" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white">
+                                    </div>
+                                    <div>
+                                        <label class="mb-1 block text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Isi Email</label>
+                                        <textarea name="email_body" id="emailBodyFieldIndex" rows="8" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50/80 p-5 dark:border-slate-700 dark:bg-slate-900/30">
+                                <label class="flex items-start gap-3">
+                                    <input type="checkbox" name="send_channels[]" value="whatsapp" id="sendWhatsappCheckboxIndex" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                                    <span>
+                                        <span class="block text-sm font-bold text-slate-800 dark:text-white">Kirim via WhatsApp</span>
+                                        <span id="sendWhatsappMetaIndex" class="mt-1 block text-xs text-slate-500 dark:text-slate-400">Link `wa.me` akan dibuka menggunakan nomor kontak pelanggan.</span>
+                                    </span>
+                                </label>
+                                <div id="sendWhatsappFieldsIndex" class="mt-4 hidden space-y-3">
+                                    <div>
+                                        <label class="mb-1 block text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Pesan WhatsApp</label>
+                                        <textarea name="whatsapp_body" id="whatsappBodyFieldIndex" rows="10" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4 dark:border-slate-700 dark:bg-slate-900/40 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+                        <p class="text-xs text-slate-500 dark:text-slate-400">WhatsApp hanya aktif jika pelanggan memiliki nomor WA. Email hanya aktif jika kontak pelanggan memiliki email.</p>
+                        <div class="flex items-center gap-3">
+                            <button type="button" onclick="closeModal('invoiceSendModal')"
+                                class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-white dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
+                                Batal
+                            </button>
+                            <button type="submit"
+                                class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700">
+                                <i data-lucide="send" class="h-4 w-4"></i>
+                                Kirim Sekarang
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', function () {
@@ -332,6 +451,19 @@
                 const resetInvoiceFilters = document.getElementById('resetInvoiceFilters');
                 const viewButtons = Array.from(document.querySelectorAll('[data-view-button]'));
                 const sortButtons = Array.from(document.querySelectorAll('[data-sort-button]'));
+                const invoiceSendForm = document.getElementById('invoiceSendForm');
+                const sendEmailCheckbox = document.getElementById('sendEmailCheckboxIndex');
+                const sendWhatsappCheckbox = document.getElementById('sendWhatsappCheckboxIndex');
+                const sendEmailFields = document.getElementById('sendEmailFieldsIndex');
+                const sendWhatsappFields = document.getElementById('sendWhatsappFieldsIndex');
+                const sendEmailMeta = document.getElementById('sendEmailMetaIndex');
+                const sendWhatsappMeta = document.getElementById('sendWhatsappMetaIndex');
+                const emailSubjectField = document.getElementById('emailSubjectFieldIndex');
+                const emailBodyField = document.getElementById('emailBodyFieldIndex');
+                const whatsappBodyField = document.getElementById('whatsappBodyFieldIndex');
+                const invoiceSendTitle = document.getElementById('invoiceSendTitle');
+                const invoiceSendSubtitle = document.getElementById('invoiceSendSubtitle');
+                const sendInvoiceButtons = Array.from(document.querySelectorAll('.open-send-invoice-modal'));
                 let filterDebounceTimer = null;
                 let currentView = new URLSearchParams(window.location.search).get('view') || '{{ $view }}';
                 let currentSort = { key: null, direction: 'asc' };
@@ -476,6 +608,79 @@
                     updateInvoiceViewButtons();
                 }
 
+                function buildEmailSubject(row) {
+                    return `Invoice ${row.dataset.clientName} - ${row.dataset.invoiceDateLabel}`;
+                }
+
+                function buildEmailBody(row) {
+                    return [
+                        `Yth. ${row.dataset.clientName},`,
+                        '',
+                        'Berikut kami kirimkan invoice terbaru dari BMPnet.',
+                        `Nomor invoice: ${row.dataset.invoiceNumber || row.dataset.number}`,
+                        `Tanggal invoice: ${row.dataset.invoiceDateLabel}`,
+                        `Jatuh tempo: ${row.dataset.dueDateLabel}`,
+                        `Total tagihan: ${row.dataset.totalLabel}`,
+                        '',
+                        'Mohon dapat ditindaklanjuti sesuai jatuh tempo yang tertera.',
+                        '',
+                        'Terima kasih.',
+                        'Tim Billing BMPnet',
+                    ].join('\n');
+                }
+
+                function buildWhatsappBody(row) {
+                    return [
+                        `Halo ${row.dataset.clientName},`,
+                        '',
+                        'Berikut invoice terbaru dari BMPnet.',
+                        `Nomor invoice: ${row.dataset.invoiceNumber || row.dataset.number}`,
+                        `Tanggal invoice: ${row.dataset.invoiceDateLabel}`,
+                        `Jatuh tempo: ${row.dataset.dueDateLabel}`,
+                        `Total tagihan: ${row.dataset.totalLabel}`,
+                        '',
+                        'Terima kasih.',
+                        'Tim Billing BMPnet',
+                    ].join('\n');
+                }
+
+                function resetSendModalFields() {
+                    invoiceSendForm.reset();
+                    sendEmailFields.classList.add('hidden');
+                    sendWhatsappFields.classList.add('hidden');
+                }
+
+                function openSendModalFromRow(row) {
+                    resetSendModalFields();
+                    invoiceSendForm.action = `/invoices/${row.dataset.id}/send`;
+                    invoiceSendTitle.textContent = `Kirim ${row.dataset.number}`;
+                    invoiceSendSubtitle.textContent = `${row.dataset.clientName} | ${row.dataset.totalLabel}`;
+
+                    const hasEmail = Boolean(row.dataset.clientEmail);
+                    const hasWhatsapp = Boolean(row.dataset.clientWhatsapp);
+
+                    sendEmailCheckbox.disabled = !hasEmail;
+                    sendWhatsappCheckbox.disabled = !hasWhatsapp;
+                    sendEmailMeta.textContent = hasEmail ? `Akan dikirim ke ${row.dataset.clientEmail}.` : 'Kontak pelanggan belum memiliki email.';
+                    sendWhatsappMeta.textContent = hasWhatsapp ? `Akan dibuka ke ${row.dataset.clientWhatsapp}.` : 'Kontak pelanggan belum memiliki nomor WhatsApp.';
+
+                    emailSubjectField.value = buildEmailSubject(row);
+                    emailBodyField.value = buildEmailBody(row);
+                    whatsappBodyField.value = buildWhatsappBody(row);
+
+                    if (hasEmail) {
+                        sendEmailCheckbox.checked = true;
+                        sendEmailFields.classList.remove('hidden');
+                    }
+
+                    if (hasWhatsapp) {
+                        sendWhatsappCheckbox.checked = true;
+                        sendWhatsappFields.classList.remove('hidden');
+                    }
+
+                    openModal('invoiceSendModal');
+                }
+
                 toggleAdvancedFilters?.addEventListener('click', function () {
                     advancedFiltersPanel.classList.toggle('hidden');
                 });
@@ -516,9 +721,30 @@
                     });
                 });
 
+                sendEmailCheckbox?.addEventListener('change', function () {
+                    sendEmailFields.classList.toggle('hidden', !sendEmailCheckbox.checked);
+                });
+
+                sendWhatsappCheckbox?.addEventListener('change', function () {
+                    sendWhatsappFields.classList.toggle('hidden', !sendWhatsappCheckbox.checked);
+                });
+
+                sendInvoiceButtons.forEach((button) => {
+                    button.addEventListener('click', function () {
+                        const row = button.closest('tr[data-row-type="invoice"]');
+                        if (row) {
+                            openSendModalFromRow(row);
+                        }
+                    });
+                });
+
                 updateSortIcons();
                 updateInvoiceViewButtons();
                 applyInvoiceFilters();
+
+                @if(session('invoice_whatsapp_url'))
+                    window.open(@json(session('invoice_whatsapp_url')), '_blank', 'noopener');
+                @endif
 
                 if (window.lucide) {
                     window.lucide.createIcons();

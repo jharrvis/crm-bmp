@@ -21,7 +21,7 @@ class InvoiceController extends Controller
     {
         $this->middleware('permission:invoices.view')->only(['index', 'show']);
         $this->middleware('permission:invoices.create')->only(['create', 'store', 'generate']);
-        $this->middleware('permission:invoices.update')->only(['update']);
+        $this->middleware('permission:invoices.update')->only(['edit', 'update', 'send']);
         $this->middleware('permission:invoices.delete')->only(['destroy']);
     }
 
@@ -37,7 +37,7 @@ class InvoiceController extends Controller
         }
 
         $invoices = Invoice::query()
-            ->with('client')
+            ->with(['client.primaryContact', 'client.contacts'])
             ->latest('invoice_date')
             ->latest('id')
             ->get();
@@ -83,8 +83,17 @@ class InvoiceController extends Controller
     public function create()
     {
         [$clients, $packages, $existingSignatures] = $this->getManualInvoiceFormData();
+        $invoice = null;
 
-        return view('invoices.create', compact('clients', 'packages', 'existingSignatures'));
+        return view('invoices.create', compact('clients', 'packages', 'existingSignatures', 'invoice'));
+    }
+
+    public function edit(Invoice $invoice)
+    {
+        [$clients, $packages, $existingSignatures] = $this->getManualInvoiceFormData();
+        $invoice->loadMissing(['client.primaryContact', 'client.contacts', 'items']);
+
+        return view('invoices.create', compact('clients', 'packages', 'existingSignatures', 'invoice'));
     }
 
     /**
@@ -92,6 +101,82 @@ class InvoiceController extends Controller
      * Manual Invoice Creation
      */
     public function store(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $payload = $this->buildManualInvoicePayload($request);
+
+            $invoice = Invoice::create([
+                'client_id' => $payload['client']->id,
+                'invoice_number' => Invoice::generateInvoiceNumber($payload['branchCode']),
+                'invoice_date' => $payload['invoiceDate'],
+                'due_date' => $payload['dueDate'],
+                'subtotal_amount' => $payload['subtotalAmount'],
+                'uses_tax' => $payload['usesTax'],
+                'tax_rate' => $payload['taxRate'],
+                'tax_amount' => $payload['taxAmount'],
+                'discount_amount' => $payload['discountAmount'],
+                'total_amount' => $payload['totalAmount'],
+                'status' => $payload['status'],
+                'notes' => $request->notes,
+                'signature_path' => $payload['signaturePath'],
+            ]);
+
+            foreach ($payload['lineItems'] as $item) {
+                InvoiceItem::create([
+                    'invoice_id' => $invoice->id,
+                    'subscription_id' => $item['subscription_id'],
+                    'description' => $item['description'],
+                    'amount' => $item['amount'],
+                    'qty' => $item['qty'],
+                    'total' => $item['total'],
+                ]);
+            }
+
+            $whatsappUrl = null;
+
+            if ($payload['submitAction'] === 'send') {
+                [$emailSent, $whatsappSent, $whatsappUrl] = $this->dispatchInvoiceDelivery($invoice, $payload['client'], $request);
+
+                if ($emailSent || $whatsappSent) {
+                    $invoice->update([
+                        'sent_at' => now(),
+                        'sent_via_email' => $emailSent,
+                        'sent_via_whatsapp' => $whatsappSent,
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'Invoice berhasil dibuat.', 'invoice' => $invoice]);
+            }
+
+            $successMessage = match ($payload['submitAction']) {
+                'draft' => 'Invoice draft berhasil disimpan.',
+                'send' => 'Invoice berhasil disimpan dan diproses untuk dikirim.',
+                default => 'Invoice berhasil disimpan dan dikonfirmasi.',
+            };
+
+            return redirect()
+                ->route('invoices.index')
+                ->with('success', $successMessage)
+                ->with('invoice_whatsapp_url', $whatsappUrl);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            throw $e;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Gagal membuat invoice: ' . $e->getMessage()], 500);
+            }
+            return back()->withInput()->with('error', 'Gagal membuat invoice: ' . $e->getMessage());
+        }
+    }
+
+    protected function buildManualInvoicePayload(Request $request, ?Invoice $invoice = null): array
     {
         $request->validate([
             'client_id' => 'required|exists:clients,id',
@@ -123,124 +208,68 @@ class InvoiceController extends Controller
         $signatureMode = $request->string('signature_mode', 'none')->toString();
 
         if ($signatureMode === 'existing' && $request->filled('existing_signature') && ! in_array($request->string('existing_signature')->toString(), $existingSignatures, true)) {
-            return back()->withErrors(['existing_signature' => 'Tanda tangan yang dipilih tidak tersedia lagi.'])->withInput();
+            throw \Illuminate\Validation\ValidationException::withMessages(['existing_signature' => 'Tanda tangan yang dipilih tidak tersedia lagi.']);
         }
 
-        if ($signatureMode === 'upload' && ! $request->hasFile('signature_upload')) {
-            return back()->withErrors(['signature_upload' => 'Unggah file tanda tangan terlebih dahulu.'])->withInput();
+        if ($signatureMode === 'upload' && ! $request->hasFile('signature_upload') && ! $invoice?->signature_path) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['signature_upload' => 'Unggah file tanda tangan terlebih dahulu.']);
         }
 
-        if ($submitAction === 'send') {
-            $channels = collect($request->input('send_channels', []))->filter()->values();
-
-            if ($channels->isEmpty()) {
-                return back()->withErrors(['send_channels' => 'Pilih minimal satu kanal pengiriman.'])->withInput();
-            }
+        if ($submitAction === 'send' && collect($request->input('send_channels', []))->filter()->isEmpty()) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['send_channels' => 'Pilih minimal satu kanal pengiriman.']);
         }
 
-        try {
-            DB::beginTransaction();
+        $client = Client::with(['branch', 'primaryContact', 'contacts', 'subscriptions'])->findOrFail($request->client_id);
+        $branchCode = $client->branch ? $client->branch->code : 'GEN';
+        $clientSubscriptionIds = $client->subscriptions()->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $invoiceDate = Carbon::parse($request->invoice_date)->startOfDay();
+        $dueDate = Carbon::parse($request->due_date)->startOfDay();
 
-            $client = Client::with(['branch', 'primaryContact', 'contacts', 'subscriptions'])->findOrFail($request->client_id);
-            $branchCode = $client->branch ? $client->branch->code : 'GEN'; // Fallback
-            $clientSubscriptionIds = $client->subscriptions()->pluck('id')->map(fn ($id) => (int) $id)->all();
-            $invoiceDate = Carbon::parse($request->invoice_date)->startOfDay();
-            $dueDate = Carbon::parse($request->due_date)->startOfDay();
-
-            if ($dueDate->lt($invoiceDate)) {
-                return back()->withErrors(['due_date' => 'Tanggal jatuh tempo tidak boleh sebelum tanggal invoice.'])->withInput();
-            }
-
-            $subtotalAmount = 0;
-            $lineItems = [];
-
-            foreach ($request->items as $item) {
-                $lineTotal = round(((float) $item['amount']) * ((int) $item['qty']), 2);
-                $subtotalAmount += $lineTotal;
-                $lineItems[] = [
-                    'subscription_id' => isset($item['subscription_id']) && in_array((int) $item['subscription_id'], $clientSubscriptionIds, true)
-                        ? (int) $item['subscription_id']
-                        : null,
-                    'description' => $item['description'],
-                    'amount' => (float) $item['amount'],
-                    'qty' => (int) $item['qty'],
-                    'total' => $lineTotal,
-                ];
-            }
-
-            $usesTax = $request->boolean('uses_tax');
-            $taxRate = $usesTax ? 11.0 : null;
-            $taxAmount = $usesTax ? round($subtotalAmount * 0.11, 2) : 0.0;
-            $discountAmount = round((float) ($request->discount_amount ?? 0), 2);
-            $totalAmount = max(0, round($subtotalAmount + $taxAmount - $discountAmount, 2));
-            $signaturePath = $this->resolveSignaturePath($request, $signatureMode);
-            $status = $submitAction === 'draft' ? 'draft' : 'unpaid';
-
-            $invoice = Invoice::create([
-                'client_id' => $client->id,
-                'invoice_number' => Invoice::generateInvoiceNumber($branchCode),
-                'invoice_date' => $invoiceDate,
-                'due_date' => $dueDate,
-                'subtotal_amount' => $subtotalAmount,
-                'uses_tax' => $usesTax,
-                'tax_rate' => $taxRate,
-                'tax_amount' => $taxAmount,
-                'discount_amount' => $discountAmount,
-                'total_amount' => $totalAmount,
-                'status' => $status,
-                'notes' => $request->notes,
-                'signature_path' => $signaturePath,
-            ]);
-
-            foreach ($lineItems as $item) {
-                InvoiceItem::create([
-                    'invoice_id' => $invoice->id,
-                    'subscription_id' => $item['subscription_id'],
-                    'description' => $item['description'],
-                    'amount' => $item['amount'],
-                    'qty' => $item['qty'],
-                    'total' => $item['total'],
-                ]);
-            }
-
-            $whatsappUrl = null;
-
-            if ($submitAction === 'send') {
-                [$emailSent, $whatsappSent, $whatsappUrl] = $this->dispatchInvoiceDelivery($invoice, $client, $request);
-
-                if ($emailSent || $whatsappSent) {
-                    $invoice->update([
-                        'sent_at' => now(),
-                        'sent_via_email' => $emailSent,
-                        'sent_via_whatsapp' => $whatsappSent,
-                    ]);
-                }
-            }
-
-            DB::commit();
-
-            if ($request->wantsJson()) {
-                return response()->json(['success' => true, 'message' => 'Invoice berhasil dibuat.', 'invoice' => $invoice]);
-            }
-
-            $successMessage = match ($submitAction) {
-                'draft' => 'Invoice draft berhasil disimpan.',
-                'send' => 'Invoice berhasil disimpan dan diproses untuk dikirim.',
-                default => 'Invoice berhasil disimpan dan dikonfirmasi.',
-            };
-
-            return redirect()
-                ->route('invoices.show', $invoice)
-                ->with('success', $successMessage)
-                ->with('invoice_whatsapp_url', $whatsappUrl);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            if ($request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'Gagal membuat invoice: ' . $e->getMessage()], 500);
-            }
-            return back()->withInput()->with('error', 'Gagal membuat invoice: ' . $e->getMessage());
+        if ($dueDate->lt($invoiceDate)) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['due_date' => 'Tanggal jatuh tempo tidak boleh sebelum tanggal invoice.']);
         }
+
+        $subtotalAmount = 0;
+        $lineItems = [];
+
+        foreach ($request->items as $item) {
+            $lineTotal = round(((float) $item['amount']) * ((int) $item['qty']), 2);
+            $subtotalAmount += $lineTotal;
+            $lineItems[] = [
+                'subscription_id' => isset($item['subscription_id']) && in_array((int) $item['subscription_id'], $clientSubscriptionIds, true)
+                    ? (int) $item['subscription_id']
+                    : null,
+                'description' => $item['description'],
+                'amount' => (float) $item['amount'],
+                'qty' => (int) $item['qty'],
+                'total' => $lineTotal,
+            ];
+        }
+
+        $usesTax = $request->boolean('uses_tax');
+        $taxRate = $usesTax ? 11.0 : null;
+        $taxAmount = $usesTax ? round($subtotalAmount * 0.11, 2) : 0.0;
+        $discountAmount = round((float) ($request->discount_amount ?? 0), 2);
+        $totalAmount = max(0, round($subtotalAmount + $taxAmount - $discountAmount, 2));
+        $signaturePath = $this->resolveSignaturePath($request, $signatureMode, $invoice?->signature_path);
+        $status = $submitAction === 'draft' ? 'draft' : 'unpaid';
+
+        return compact(
+            'client',
+            'branchCode',
+            'invoiceDate',
+            'dueDate',
+            'subtotalAmount',
+            'usesTax',
+            'taxRate',
+            'taxAmount',
+            'discountAmount',
+            'totalAmount',
+            'signaturePath',
+            'status',
+            'lineItems',
+            'submitAction',
+        );
     }
 
     protected function getManualInvoiceFormData(): array
@@ -287,7 +316,7 @@ class InvoiceController extends Controller
             ->all();
     }
 
-    protected function resolveSignaturePath(Request $request, string $signatureMode): ?string
+    protected function resolveSignaturePath(Request $request, string $signatureMode, ?string $currentSignaturePath = null): ?string
     {
         if ($signatureMode === 'upload' && $request->hasFile('signature_upload')) {
             return $request->file('signature_upload')->store('invoice-signatures', 'public');
@@ -297,7 +326,11 @@ class InvoiceController extends Controller
             return $request->string('existing_signature')->toString();
         }
 
-        return null;
+        if ($signatureMode === 'none') {
+            return null;
+        }
+
+        return $currentSignaturePath;
     }
 
     protected function dispatchInvoiceDelivery(Invoice $invoice, Client $client, Request $request): array
@@ -416,8 +449,7 @@ class InvoiceController extends Controller
      */
     public function update(Request $request, Invoice $invoice)
     {
-        // Simple status update for now
-        if ($request->has('status')) {
+        if ($request->has('status') && ! $request->has('client_id')) {
             $invoice->status = $request->status;
             if ($request->status == 'paid' && !$invoice->paid_at) {
                 $invoice->paid_at = now();
@@ -426,9 +458,105 @@ class InvoiceController extends Controller
                 $invoice->paid_at = null;
             }
             $invoice->save();
+
+            return response()->json(['success' => true, 'message' => 'Status invoice diperbarui.']);
         }
 
-        return response()->json(['success' => true, 'message' => 'Status invoice diperbarui.']);
+        try {
+            DB::beginTransaction();
+            $payload = $this->buildManualInvoicePayload($request, $invoice);
+
+            $invoice->update([
+                'client_id' => $payload['client']->id,
+                'invoice_date' => $payload['invoiceDate'],
+                'due_date' => $payload['dueDate'],
+                'subtotal_amount' => $payload['subtotalAmount'],
+                'uses_tax' => $payload['usesTax'],
+                'tax_rate' => $payload['taxRate'],
+                'tax_amount' => $payload['taxAmount'],
+                'discount_amount' => $payload['discountAmount'],
+                'total_amount' => $payload['totalAmount'],
+                'status' => $payload['status'],
+                'notes' => $request->notes,
+                'signature_path' => $payload['signaturePath'],
+            ]);
+
+            $invoice->items()->delete();
+            foreach ($payload['lineItems'] as $item) {
+                InvoiceItem::create([
+                    'invoice_id' => $invoice->id,
+                    'subscription_id' => $item['subscription_id'],
+                    'description' => $item['description'],
+                    'amount' => $item['amount'],
+                    'qty' => $item['qty'],
+                    'total' => $item['total'],
+                ]);
+            }
+
+            $whatsappUrl = null;
+
+            if ($payload['submitAction'] === 'send') {
+                [$emailSent, $whatsappSent, $whatsappUrl] = $this->dispatchInvoiceDelivery($invoice->fresh('client.primaryContact', 'client.contacts'), $payload['client'], $request);
+                if ($emailSent || $whatsappSent) {
+                    $invoice->update([
+                        'sent_at' => now(),
+                        'sent_via_email' => $emailSent,
+                        'sent_via_whatsapp' => $whatsappSent,
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            $successMessage = match ($payload['submitAction']) {
+                'draft' => 'Draft invoice berhasil diperbarui.',
+                'send' => 'Invoice berhasil diperbarui dan diproses untuk dikirim.',
+                default => 'Invoice berhasil diperbarui.',
+            };
+
+            return redirect()
+                ->route('invoices.index')
+                ->with('success', $successMessage)
+                ->with('invoice_whatsapp_url', $whatsappUrl);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            throw $e;
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return back()->withInput()->with('error', 'Gagal memperbarui invoice: ' . $e->getMessage());
+        }
+    }
+
+    public function send(Request $request, Invoice $invoice)
+    {
+        $request->validate([
+            'send_channels' => 'required|array|min:1',
+            'send_channels.*' => ['string', Rule::in(['email', 'whatsapp'])],
+            'email_subject' => 'nullable|string|max:255',
+            'email_body' => 'nullable|string',
+            'whatsapp_body' => 'nullable|string',
+        ]);
+
+        try {
+            $invoice->loadMissing(['client.primaryContact', 'client.contacts']);
+            [$emailSent, $whatsappSent, $whatsappUrl] = $this->dispatchInvoiceDelivery($invoice, $invoice->client, $request);
+
+            if ($emailSent || $whatsappSent) {
+                $invoice->update([
+                    'status' => $invoice->status === 'draft' ? 'unpaid' : $invoice->status,
+                    'sent_at' => now(),
+                    'sent_via_email' => $emailSent,
+                    'sent_via_whatsapp' => $whatsappSent,
+                ]);
+            }
+
+            return redirect()
+                ->route('invoices.index')
+                ->with('success', 'Invoice berhasil diproses untuk dikirim.')
+                ->with('invoice_whatsapp_url', $whatsappUrl);
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Gagal mengirim invoice: ' . $e->getMessage());
+        }
     }
 
     /**

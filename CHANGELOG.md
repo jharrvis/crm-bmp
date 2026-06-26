@@ -17,6 +17,9 @@ Semua perubahan penting pada project ini dicatat di file ini.
 - Form invoice manual sekarang mendukung pencarian pelanggan, tanggal invoice, preset jatuh tempo, ringkasan subtotal/PPN/diskon, tanda tangan, draft/final/send action, dan modal kirim email/WhatsApp
 - Daftar invoice sekarang menampilkan status draft dan indikator invoice sudah terkirim atau belum
 - Halaman detail invoice sekarang dapat menampilkan tanda tangan dan membuka link WhatsApp setelah aksi kirim
+- Form invoice manual sekarang menempatkan catatan di kiri, ringkasan tagihan di kanan, serta area tanda tangan tepat di atas tombol simpan
+- Daftar invoice sekarang memiliki aksi edit, kirim ulang, print, dan download PDF dari dropdown aksi
+- Pembuatan dan update invoice yang memilih kanal WhatsApp sekarang kembali ke daftar invoice lalu langsung membuka link `wa.me`
 
 ### Documentation
 
