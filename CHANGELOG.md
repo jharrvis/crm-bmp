@@ -12,6 +12,7 @@ Semua perubahan penting pada project ini dicatat di file ini.
 ### Changed
 
 - Halaman daftar role sekarang hanya menampilkan jumlah user per role, bukan daftar user. Daftar user lengkap tetap tersedia di halaman detail role.
+- Thread percakapan pada halaman detail ticket sekarang ditampilkan sebagai bubble chat kanan/kiri untuk membedakan pesan client, staff, dan internal note dengan lebih jelas.
 
 ## 2026-06-26
 
