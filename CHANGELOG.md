@@ -2,30 +2,26 @@
 
 Semua perubahan penting pada project ini dicatat di file ini.
 
-## 2026-06-26
-
-### Changed
-
-- Halaman daftar role sekarang hanya menampilkan jumlah user per role, bukan daftar user. Daftar user lengkap hanya tampil di halaman detail role.
-- Halaman profil sekarang menampilkan fitur upload foto profil dengan preview sebelum simpan.
-- Halaman detail pelanggan sekarang menampilkan tab Tagihan dengan ringkasan dan daftar invoice terkait, dilindungi permission `invoices.view`.
+## 2026-06-27
 
 ### Added
 
 - Halaman khusus `Buat Invoice Manual` sebagai pengganti drawer/modal di daftar invoice
 - Modul dokumentasi `Invoices` di `docs/modules/invoices.md`
 - Dokumentasi modul `Activity Log` di `docs/modules/activity-log.md`
+- Fitur upload foto profil dengan preview sebelum simpan di halaman profil
+- Tab `Tagihan` di halaman detail pelanggan dengan ringkasan dan daftar invoice terkait, dilindungi permission `invoices.view`
 
 ### Changed
 
+- Halaman daftar role sekarang hanya menampilkan jumlah user per role, bukan daftar user. Daftar user lengkap tetap tersedia di halaman detail role.
 - Tombol `Buat Invoice Manual` di daftar invoice sekarang menuju halaman create khusus
 - Halaman daftar invoice difokuskan kembali hanya untuk overview, filter, tabel, dan aksi invoice
 - Form invoice manual sekarang mendukung pencarian pelanggan, tanggal invoice, preset jatuh tempo, ringkasan subtotal/PPN/diskon, tanda tangan, draft/final/send action, dan modal kirim email/WhatsApp
-- Daftar invoice sekarang menampilkan status draft dan indikator invoice sudah terkirim atau belum
-- Halaman detail invoice sekarang dapat menampilkan tanda tangan dan membuka link WhatsApp setelah aksi kirim
 - Form invoice manual sekarang menempatkan catatan di kiri, ringkasan tagihan di kanan, serta area tanda tangan tepat di atas tombol simpan
-- Daftar invoice sekarang memiliki aksi edit, kirim ulang, print, dan download PDF dari dropdown aksi
+- Daftar invoice sekarang menampilkan status draft, indikator invoice sudah terkirim atau belum, serta aksi edit, kirim ulang, print, dan download PDF dari dropdown aksi
 - Pembuatan dan update invoice yang memilih kanal WhatsApp sekarang kembali ke daftar invoice lalu langsung membuka link `wa.me`
+- Halaman detail invoice sekarang dapat menampilkan tanda tangan dan mendukung mode print otomatis
 
 ### Documentation
 
