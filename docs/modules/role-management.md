@@ -45,4 +45,4 @@ Mengelola role, permission, dan visibilitas akses menu/modul di aplikasi CRM.
 
 - Role sistem tidak boleh dihapus.
 - Perubahan role dan sinkronisasi permission tercatat di `Activity Log`.
-- Halaman role sekarang juga menampilkan siapa saja user yang memakai role tersebut.
+- Halaman daftar role menampilkan jumlah user per role; daftar user hanya tampil di halaman detail role.

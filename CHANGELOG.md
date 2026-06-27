@@ -4,6 +4,11 @@ Semua perubahan penting pada project ini dicatat di file ini.
 
 ## 2026-06-26
 
+### Changed
+
+- Halaman daftar role sekarang hanya menampilkan jumlah user per role, bukan daftar user. Daftar user lengkap hanya tampil di halaman detail role.
+- Halaman profil sekarang menampilkan fitur upload foto profil dengan preview sebelum simpan.
+
 ### Added
 
 - Halaman khusus `Buat Invoice Manual` sebagai pengganti drawer/modal di daftar invoice

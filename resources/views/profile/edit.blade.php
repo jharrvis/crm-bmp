@@ -26,9 +26,38 @@
                 @csrf
             </form>
 
-            <form method="post" action="{{ route('profile.update') }}" class="ml-12 space-y-5 max-w-xl">
+            <form method="post" action="{{ route('profile.update') }}" class="ml-12 space-y-5 max-w-xl" enctype="multipart/form-data">
                 @csrf
                 @method('patch')
+
+                {{-- Avatar Upload --}}
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Foto Profil</label>
+                    <div class="flex items-center gap-5">
+                        <div class="relative shrink-0">
+                            <div id="avatarPreview"
+                                class="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg overflow-hidden">
+                                @if($user->avatar)
+                                    <img src="{{ asset('storage/' . $user->avatar) }}" alt="{{ $user->name }}" class="w-full h-full object-cover">
+                                @else
+                                    {{ strtoupper(substr($user->name, 0, 2)) }}
+                                @endif
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label for="avatar"
+                                class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl text-sm font-bold hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors border border-blue-200 dark:border-blue-800">
+                                <i data-lucide="camera" class="w-4 h-4"></i>
+                                Pilih Foto
+                            </label>
+                            <input type="file" id="avatar" name="avatar" accept="image/*" class="hidden" onchange="previewAvatar(this)">
+                            <p class="text-xs text-slate-400">Format: JPG, PNG. Maks: 2MB</p>
+                            @error('avatar')
+                                <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
 
                 <div>
                     <label for="name" class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nama
@@ -243,6 +272,17 @@
 
     @push('scripts')
         <script>
+            function previewAvatar(input) {
+                const preview = document.getElementById('avatarPreview');
+                if (input.files && input.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        preview.innerHTML = '<img src="' + e.target.result + '" class="w-full h-full object-cover">';
+                    };
+                    reader.readAsDataURL(input.files[0]);
+                }
+            }
+
             function openDeleteAccountModal() {
                 const modal = document.getElementById('deleteAccountModal');
                 const backdrop = document.getElementById('deleteAccountBackdrop');

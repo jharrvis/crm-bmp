@@ -22,9 +22,6 @@ class RoleController extends Controller
     public function index()
     {
         $roles = Role::withCount('users', 'permissions')
-            ->with([
-                'users' => fn ($query) => $query->select('users.id', 'users.name', 'users.email')->orderBy('name'),
-            ])
             ->orderBy('is_system', 'desc')
             ->orderBy('name')
             ->get();
@@ -38,6 +35,7 @@ class RoleController extends Controller
     public function create()
     {
         $roles = Role::all();
+
         return view('roles.create', compact('roles'));
     }
 
@@ -60,7 +58,7 @@ class RoleController extends Controller
 
         // Copy permissions from existing role if specified
         $sourceRole = null;
-        if (!empty($validated['copy_from'])) {
+        if (! empty($validated['copy_from'])) {
             $sourceRole = Role::find($validated['copy_from']);
             $role->syncPermissions($sourceRole->permissions);
         }
@@ -143,7 +141,7 @@ class RoleController extends Controller
         }
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:roles,name,' . $role->id,
+            'name' => 'required|string|max:255|unique:roles,name,'.$role->id,
             'description' => 'nullable|string|max:255',
             'permissions' => 'array',
             'permissions.*' => 'exists:permissions,name',
@@ -230,7 +228,7 @@ class RoleController extends Controller
         if ($role->users()->count() > 0) {
             return response()->json([
                 'success' => false,
-                'message' => 'Role masih digunakan oleh ' . $role->users()->count() . ' user.',
+                'message' => 'Role masih digunakan oleh '.$role->users()->count().' user.',
             ], 400);
         }
 

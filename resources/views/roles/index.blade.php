@@ -120,26 +120,6 @@
                         </div>
                     </div>
 
-                    @if($role->users->isNotEmpty())
-                        <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
-                            <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Pengguna dengan Role Ini</p>
-                            <div class="space-y-2">
-                                @foreach($role->users->take(3) as $user)
-                                    <div class="flex items-center justify-between gap-3 rounded-xl bg-slate-50 dark:bg-slate-700/40 px-3 py-2">
-                                        <div class="min-w-0">
-                                            <div class="truncate text-sm font-semibold text-slate-700 dark:text-slate-200">{{ $user->name }}</div>
-                                            <div class="truncate text-xs text-slate-400">{{ $user->email }}</div>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                            @if($role->users_count > 3)
-                                <div class="mt-2 text-xs font-medium text-slate-400">
-                                    +{{ $role->users_count - 3 }} user lainnya
-                                </div>
-                            @endif
-                        </div>
-                    @endif
                 </div>
 
                 {{-- Card Footer / Actions --}}
