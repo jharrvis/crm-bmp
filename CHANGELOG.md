@@ -6,15 +6,23 @@ Semua perubahan penting pada project ini dicatat di file ini.
 
 ### Added
 
-- Halaman khusus `Buat Invoice Manual` sebagai pengganti drawer/modal di daftar invoice
-- Modul dokumentasi `Invoices` di `docs/modules/invoices.md`
-- Dokumentasi modul `Activity Log` di `docs/modules/activity-log.md`
 - Fitur upload foto profil dengan preview sebelum simpan di halaman profil
 - Tab `Tagihan` di halaman detail pelanggan dengan ringkasan dan daftar invoice terkait, dilindungi permission `invoices.view`
 
 ### Changed
 
 - Halaman daftar role sekarang hanya menampilkan jumlah user per role, bukan daftar user. Daftar user lengkap tetap tersedia di halaman detail role.
+
+## 2026-06-26
+
+### Added
+
+- Halaman khusus `Buat Invoice Manual` sebagai pengganti drawer/modal di daftar invoice
+- Modul dokumentasi `Invoices` di `docs/modules/invoices.md`
+- Dokumentasi modul `Activity Log` di `docs/modules/activity-log.md`
+
+### Changed
+
 - Tombol `Buat Invoice Manual` di daftar invoice sekarang menuju halaman create khusus
 - Halaman daftar invoice difokuskan kembali hanya untuk overview, filter, tabel, dan aksi invoice
 - Form invoice manual sekarang mendukung pencarian pelanggan, tanggal invoice, preset jatuh tempo, ringkasan subtotal/PPN/diskon, tanda tangan, draft/final/send action, dan modal kirim email/WhatsApp
