@@ -8,6 +8,7 @@ Semua perubahan penting pada project ini dicatat di file ini.
 
 - Halaman daftar role sekarang hanya menampilkan jumlah user per role, bukan daftar user. Daftar user lengkap hanya tampil di halaman detail role.
 - Halaman profil sekarang menampilkan fitur upload foto profil dengan preview sebelum simpan.
+- Halaman detail pelanggan sekarang menampilkan tab Tagihan dengan ringkasan dan daftar invoice terkait, dilindungi permission `invoices.view`.
 
 ### Added
 

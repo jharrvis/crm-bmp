@@ -61,6 +61,12 @@
                     class="px-6 py-4 text-sm font-bold border-b-2 text-slate-500 border-transparent hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors">
                     Layanan Langganan
                 </button>
+                @can('invoices.view')
+                <button onclick="switchTab('invoices')" id="tab-invoices"
+                    class="px-6 py-4 text-sm font-bold border-b-2 text-slate-500 border-transparent hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors">
+                    Tagihan
+                </button>
+                @endcan
                 @role('Owner|Admin')
                 <button onclick="switchTab('portal')" id="tab-portal"
                     class="px-6 py-4 text-sm font-bold border-b-2 text-slate-500 border-transparent hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors">
@@ -374,6 +380,103 @@
                     @endif
                 </div>
 
+                @can('invoices.view')
+                <!-- 4. Tagihan (Invoices) -->
+                <div id="content-invoices" class="hidden space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30 p-5">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Tagihan</p>
+                            <p class="mt-2 text-2xl font-black text-slate-900 dark:text-white">{{ $invoices->count() }}</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30 p-5">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Lunas</p>
+                            <p class="mt-2 text-2xl font-black text-green-600 dark:text-green-400">{{ $invoices->where('status', 'paid')->count() }}</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30 p-5">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Belum Lunas</p>
+                            <p class="mt-2 text-2xl font-black text-red-600 dark:text-red-400">{{ $invoices->whereIn('status', ['unpaid', 'overdue'])->count() }}</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30 p-5">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Nilai Outstanding</p>
+                            <p class="mt-2 text-2xl font-black text-slate-900 dark:text-white">
+                                Rp {{ number_format($invoices->whereIn('status', ['unpaid', 'overdue'])->sum('total_amount'), 0, ',', '.') }}
+                            </p>
+                        </div>
+                    </div>
+
+                    @if($invoices->count() > 0)
+                        <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-slate-50 dark:bg-slate-700/50">
+                                    <tr class="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                        <th class="p-4">No. Invoice</th>
+                                        <th class="p-4">Tanggal</th>
+                                        <th class="p-4">Jatuh Tempo</th>
+                                        <th class="p-4">Total</th>
+                                        <th class="p-4">Status</th>
+                                        <th class="p-4 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+                                    @foreach($invoices as $invoice)
+                                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                                            <td class="p-4 font-mono text-sm font-bold text-slate-600 dark:text-slate-300">
+                                                {{ $invoice->invoice_number }}
+                                            </td>
+                                            <td class="p-4 text-sm text-slate-600 dark:text-slate-300">
+                                                {{ $invoice->invoice_date?->format('d M Y') ?? '-' }}
+                                            </td>
+                                            <td class="p-4 text-sm text-slate-600 dark:text-slate-300">
+                                                {{ $invoice->due_date?->format('d M Y') ?? '-' }}
+                                            </td>
+                                            <td class="p-4 font-bold text-slate-700 dark:text-slate-200">
+                                                Rp {{ number_format($invoice->total_amount, 0, ',', '.') }}
+                                            </td>
+                                            <td class="p-4">
+                                                @php
+                                                    $statusClasses = [
+                                                        'draft' => 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
+                                                        'unpaid' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+                                                        'paid' => 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+                                                        'overdue' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+                                                        'cancelled' => 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400',
+                                                    ];
+                                                    $labels = [
+                                                        'draft' => 'Draft',
+                                                        'unpaid' => 'Belum Lunas',
+                                                        'paid' => 'Lunas',
+                                                        'overdue' => 'Terlambat',
+                                                        'cancelled' => 'Batal',
+                                                    ];
+                                                @endphp
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusClasses[$invoice->status] ?? 'bg-slate-100 text-slate-600' }}">
+                                                    {{ $labels[$invoice->status] ?? ucfirst($invoice->status) }}
+                                                </span>
+                                            </td>
+                                            <td class="p-4 text-center">
+                                                <a href="{{ route('invoices.show', $invoice) }}"
+                                                    class="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg inline-flex items-center gap-1 text-sm font-bold transition-colors"
+                                                    title="Lihat Detail Invoice">
+                                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div class="text-center py-12 bg-slate-50 dark:bg-slate-700/30 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700">
+                            <div class="bg-slate-100 dark:bg-slate-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i data-lucide="file-text" class="w-8 h-8 text-slate-400"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-700 dark:text-slate-200">Belum ada tagihan</h3>
+                            <p class="text-slate-500 dark:text-slate-400">Pelanggan ini belum memiliki tagihan apapun.</p>
+                        </div>
+                    @endif
+                </div>
+                @endcan
+
                 @role('Owner|Admin')
                 @php
                     $portalAccount = $client->portalAccount;
@@ -624,7 +727,7 @@
                     cancelEdit();
                 }
 
-                ['info', 'contacts', 'services', 'portal'].forEach(t => {
+                ['info', 'contacts', 'services', 'invoices', 'portal'].forEach(t => {
                     const btn = document.getElementById(`tab-${t}`);
                     const content = document.getElementById(`content-${t}`);
 

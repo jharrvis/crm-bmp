@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Client;
 use App\Models\Branch;
+use App\Models\Client;
 use App\Models\ClientContact;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
-
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 
 class ClientController extends Controller
@@ -48,6 +47,7 @@ class ClientController extends Controller
         }
 
         $branches = Branch::all();
+
         return view('clients.index', compact('branches'));
     }
 
@@ -91,11 +91,11 @@ class ClientController extends Controller
 
             $client = Client::create([
                 'client_code' => $client_code,
-                ...$validated
+                ...$validated,
             ]);
 
             // Save Contacts
-            if (!empty($request->contacts)) {
+            if (! empty($request->contacts)) {
                 foreach ($request->contacts as $index => $contactData) {
                     ClientContact::create([
                         'client_id' => $client->id,
@@ -104,7 +104,7 @@ class ClientController extends Controller
                         'email' => $contactData['email'] ?? null,
                         'position' => $contactData['position'] ?? null,
                         'whatsapp' => $contactData['whatsapp'] ?? null,
-                        'is_primary' => $index === 0 // First contact is primary by default/logic
+                        'is_primary' => $index === 0, // First contact is primary by default/logic
                     ]);
                 }
             }
@@ -115,17 +115,19 @@ class ClientController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Klien berhasil ditambahkan.',
-                    'client' => $client->load('branch', 'primaryContact')
+                    'client' => $client->load('branch', 'primaryContact'),
                 ]);
             }
+
             return redirect()->route('clients.index')->with('success', 'Klien berhasil ditambahkan.');
 
         } catch (\Exception $e) {
             DB::rollBack();
             if ($request->wantsJson() || $request->ajax()) {
-                return response()->json(['success' => false, 'message' => 'Gagal menambahkan klien: ' . $e->getMessage()], 500);
+                return response()->json(['success' => false, 'message' => 'Gagal menambahkan klien: '.$e->getMessage()], 500);
             }
-            return redirect()->back()->with('error', 'Gagal menambahkan klien: ' . $e->getMessage())->withInput();
+
+            return redirect()->back()->with('error', 'Gagal menambahkan klien: '.$e->getMessage())->withInput();
         }
     }
 
@@ -139,9 +141,11 @@ class ClientController extends Controller
         }
 
         $client->load(['branch', 'contacts', 'subscriptions.package.service', 'portalAccount.sessions']);
+
+        $invoices = $client->invoices()->latest()->get();
         $packages = \App\Models\Package::where('is_active', true)->get(); // For "Add Service" modal if needed here
 
-        return view('clients.show', compact('client', 'packages'));
+        return view('clients.show', compact('client', 'packages', 'invoices'));
     }
 
     public function edit(Client $client)
@@ -187,19 +191,19 @@ class ClientController extends Controller
             // Let's keep code permanent for now.
 
             // Sync Contacts
-            // Strategy: Delete all existing and re-create, OR update existing. 
+            // Strategy: Delete all existing and re-create, OR update existing.
             // For simplicity in this modal UI, we might delete all and recreate is easiest BUT loses timestamps/ids.
             // Better: Since form sends all current contacts, we can delete those not in list, update those with ID, create new.
             // But modal UI implementation for "Update" typically needs to send IDs.
             // For MVP Phase 3 -> Let's do simple: Delete all and recreate.
             // Sync Contacts only if provided in request
             if ($request->has('contacts')) {
-                // Determine if we are replacing all or just updating specific ones. 
+                // Determine if we are replacing all or just updating specific ones.
                 // Given the current logic is delete-all-and-recreate, let's keep it but only if 'contacts' key exists.
                 // This allows atomic updates to other fields without wiping contacts.
                 $client->contacts()->delete();
 
-                if (!empty($request->contacts)) {
+                if (! empty($request->contacts)) {
                     foreach ($request->contacts as $index => $contactData) {
                         ClientContact::create([
                             'client_id' => $client->id,
@@ -208,7 +212,7 @@ class ClientController extends Controller
                             'email' => $contactData['email'] ?? null,
                             'position' => $contactData['position'] ?? null,
                             'whatsapp' => $contactData['whatsapp'] ?? null,
-                            'is_primary' => $index === 0
+                            'is_primary' => $index === 0,
                         ]);
                     }
                 }
@@ -220,17 +224,19 @@ class ClientController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Klien berhasil diperbarui.',
-                    'client' => $client->load('branch', 'primaryContact', 'contacts')
+                    'client' => $client->load('branch', 'primaryContact', 'contacts'),
                 ]);
             }
+
             return redirect()->route('clients.index')->with('success', 'Klien berhasil diperbarui.');
 
         } catch (\Exception $e) {
             DB::rollBack();
             if ($request->wantsJson() || $request->ajax()) {
-                return response()->json(['success' => false, 'message' => 'Gagal update klien: ' . $e->getMessage()], 500);
+                return response()->json(['success' => false, 'message' => 'Gagal update klien: '.$e->getMessage()], 500);
             }
-            return redirect()->back()->with('error', 'Gagal update klien: ' . $e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal update klien: '.$e->getMessage());
         }
     }
 
@@ -244,9 +250,10 @@ class ClientController extends Controller
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Klien berhasil dihapus.'
+                'message' => 'Klien berhasil dihapus.',
             ]);
         }
+
         return redirect()->route('clients.index')->with('success', 'Klien berhasil dihapus.');
     }
 
@@ -257,14 +264,14 @@ class ClientController extends Controller
 
         $latestMatchingCode = Client::query()
             ->where('branch_id', $branch->id)
-            ->where('client_code', 'like', $prefix . '%')
+            ->where('client_code', 'like', $prefix.'%')
             ->select('client_code')
             ->orderByDesc('client_code')
             ->value('client_code');
 
         $nextNumber = 1;
 
-        if ($latestMatchingCode && preg_match('/^' . preg_quote($prefix, '/') . '(\d{3})$/', $latestMatchingCode, $matches)) {
+        if ($latestMatchingCode && preg_match('/^'.preg_quote($prefix, '/').'(\d{3})$/', $latestMatchingCode, $matches)) {
             $nextNumber = ((int) $matches[1]) + 1;
         }
 
