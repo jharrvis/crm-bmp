@@ -14,8 +14,12 @@ Dokumentasi ini menjadi sumber referensi utama untuk:
   - dokumentasi endpoint, terutama untuk integrasi Client Portal
 - `modules/`
   - dokumentasi modul internal CRM
-  - termasuk modul `Activity Log` dan TODO operasionalnya
-  - termasuk modul `Invoices` untuk alur manual invoice, pengiriman, dan signature
+  - `activity-log.md` — Activity Log dan TODO operasionalnya
+  - `clients.md` — Manajemen pelanggan, kontak PIC, dan portal account
+  - `invoices.md` — Alur manual invoice, pengiriman, dan signature
+  - `role-management.md` — CRUD role, permission sync, dan integrasi sidebar
+  - `subscriptions.md` — Langganan internet/hosting/domain, pricing model, dan integrasi teknis
+  - `tickets.md` — Tiket support, queue, canned response, dan integrasi client portal
 - `deployment.md`
   - catatan deployment, cache clear, migration, dan seeder
 - `permission-matrix.md`

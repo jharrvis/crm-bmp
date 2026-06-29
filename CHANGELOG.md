@@ -2,6 +2,20 @@
 
 Semua perubahan penting pada project ini dicatat di file ini.
 
+## 2026-06-29
+
+### Changed
+
+- `AGENTS.md` disempurnakan: tambah standar kode teknis (naming convention, arsitektur, validation, error handling), standar queue/job, standar testing, standar branching, standar environment variables. Numbering section diperbaiki. Daftar modul disinkronkan dengan kode aktual. Referensi skill operasional diupdate dengan lokasi yang benar. Tambah section known permission gaps.
+- `docs/README.md` diupdate dengan index modul lengkap.
+
+### Added
+
+- Dokumentasi modul `Clients` di `docs/modules/clients.md`: data pelanggan, kontak PIC, portal account, alur bisnis, permission matrix.
+- Dokumentasi modul `Subscriptions` di `docs/modules/subscriptions.md`: langganan connectivity/hosting/domain, pricing model, integrasi Zabbix/HestiaCP, known issues.
+- Dokumentasi modul `Tickets` di `docs/modules/tickets.md`: tiket support, queue system, canned response, SLA tracking, bulk update, integrasi client portal.
+- Port 5 CRM skills ke opencode (`crm-doc-maintainer`, `crm-release-checker`, `crm-api-doc-writer`, `crm-permission-auditor`, `crm-activitylog-auditor`).
+
 ## 2026-06-27
 
 ### Added

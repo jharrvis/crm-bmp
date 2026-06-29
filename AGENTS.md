@@ -71,32 +71,48 @@ Ke depan, setiap modul utama sebaiknya punya dokumen sendiri, minimal berisi:
 - ketergantungan ke modul lain
 - catatan penting atau known limitation
 
-Contoh modul yang harus dipetakan:
+Daftar modul yang harus dipetakan:
 
 - Dashboard
 - Global Search
-- Cabang
+- Cabang (Branch)
 - Divisi
-- Karyawan
+- Karyawan (Employee)
 - Manajemen Role
 - Clients / Pelanggan
 - Client Contacts
+- Client Portal Account Management
 - Subscriptions / Langganan
 - Services
 - Packages
-- Invoices
+- Invoices / Tagihan
 - Payments / Laporan Keuangan
 - Tickets
+- Ticket Canned Responses
 - Infrastructure
   - Routers
   - Hosting Servers
   - Vendors
   - Metro Ethernet
   - Zabbix Monitors
+- Network Topology
 - System Updates
 - Activity Log
 - Settings
 - Client Portal
+- Profile
+
+### 3.2.1 Known Permission Gaps
+
+Berikut permission yang sudah didefinisikan di `PermissionSeeder` tapi belum ada implementasi (model/controller/view):
+
+- `payments` (view, create, update, delete, verify)
+- `financial_reports` (view)
+- `work_orders` (view, create, update, delete, assign, complete)
+- `towers` (view, create, update, delete)
+- `odps` (view, create, update, delete)
+
+Permission ini dipertahankan di seeder sebagai placeholder untuk implementasi mendatang. Jangan hapus tanpa keputusan eksplisit.
 
 ### 3.3 Dokumen API
 
@@ -275,7 +291,141 @@ Perubahan UI yang layak dicatat di changelog:
 - perubahan invoice printable
 - perubahan auth screen
 
-## 11. Standar Data dan Deployment
+## 11. Standar Kode Teknis
+
+### 11.1 Naming Convention
+
+- **Controller**: singular PascalCase (`ClientController`, `InvoiceController`)
+- **Model**: singular PascalCase (`Client`, `Invoice`, `InvoiceItem`)
+- **Migration**: snake_case dengan verb (`create_invoices_table`, `add_ppn_fields_to_subscriptions_table`)
+- **View folder**: plural kebab-case (`invoices/`, `clients/`, `activity-logs/`)
+- **Route**: plural kebab-case (`/invoices`, `/metro-ethernets`)
+- **Permission**: `module.action` format (`invoices.view`, `clients.create`, `tickets.assign`)
+
+### 11.2 Arsitektur Kode
+
+- Logic bisnis yang kompleks atau reusable harus dipindah ke `app/Services/`.
+- Controller hanya menangani HTTP concern: validasi input, memanggil service/model, mengembalikan response/view.
+- Jika logic di controller melebihi ~50 baris untuk satu method, pertimbangkan untuk extract ke service class.
+- Gunakan Eloquent relationship untuk query, hindari raw query kecuali untuk kebutuhan performance kritis.
+
+### 11.3 Validation
+
+- Gunakan `FormRequest` untuk validasi yang kompleks atau dipakai di lebih dari satu tempat.
+- Inline `$request->validate()` boleh dipakai untuk validasi sederhana.
+- Pesan error harus dalam Bahasa Indonesia jika user-facing.
+
+### 11.4 Error Handling
+
+- Gunakan `try-catch` pada operasi database transaction.
+- Return response yang konsisten: redirect dengan flash message untuk web, JSON untuk API.
+- Jangan expose detail error internal ke user (gunakan generic message + log detail).
+
+### 11.5 Konfigurasi
+
+- Jangan hardcode value yang bisa berubah (tax rate, due days, API URL, dll).
+- Gunakan `config/*.php` yang membaca dari `.env`.
+- Setiap file config baru harus punya default yang aman.
+
+### 11.6 Model
+
+- Setiap model bisnis utama harus menggunakan trait `LogsModelActivity` untuk audit trail.
+- Definisikan `$fillable` secara eksplisit, jangan gunakan `$guarded = []`.
+- Definisikan `$casts` untuk field yang memerlukan type casting (date, decimal, boolean).
+
+## 12. Standar Queue dan Job
+
+### 12.1 Kapan Menggunakan Queue
+
+Gunakan queue untuk:
+- pengiriman email dan notifikasi
+- PDF generation
+- bulk operations (generate invoice bulanan, blast WhatsApp)
+- API call ke service eksternal (WhatsApp API, Zabbix API)
+- operasi yang memakan waktu lebih dari 5 detik
+
+Jangan gunakan queue untuk:
+- operasi yang user butuh hasilnya langsung (CRUD response, redirect)
+- validasi input
+- operasi database sederhana
+
+### 12.2 Konvensi Job
+
+- Lokasi: `app/Jobs/`
+- Naming: PascalCase, Verb + Noun (`GenerateMonthlyInvoices`, `SendInvoiceReminder`, `MarkOverdueInvoices`)
+- Implement `ShouldQueue` interface
+- Gunakan `tries` dan `backoff` property untuk retry strategy
+- Log hasil eksekusi (berhasil/gagal) ke activity log jika relevan
+
+### 12.3 Scheduled Jobs
+
+- Daftarkan di `routes/console.php`
+- Dokumentasikan jadwal di dokumen modul terkait
+- Pastikan job idempotent (aman dijalankan ulang)
+
+### 12.4 Development
+
+- `composer dev` sudah menjalankan queue worker secara otomatis
+- Production harus menjalankan `php artisan queue:work` sebagai persistent process
+
+## 13. Standar Testing
+
+### 13.1 Framework
+
+- Gunakan PHPUnit (`composer test`)
+- Lokasi: `tests/Feature/` untuk HTTP/integration tests, `tests/Unit/` untuk logic murni
+
+### 13.2 Kapan Wajib Test
+
+- Logic kalkulasi (billing, tax, pricing, discount)
+- Service class baru
+- API endpoint (request/response contract)
+- Perubahan logic yang berpotensi regresi tinggi
+
+### 13.3 Kapan Opsional
+
+- CRUD sederhana yang hanya proxy ke Eloquent
+- View rendering
+- Perubahan UI-only (CSS, layout)
+
+### 13.4 Konvensi
+
+- Naming: snake_case deskriptif (`test_can_create_invoice`, `test_unauthorized_user_cannot_delete`)
+- Satu test method, satu assertion utama
+- Gunakan factory dan seeder untuk test data
+
+## 14. Standar Branching dan Git
+
+### 14.1 Branch Strategy
+
+- Default branch: `master`
+- Feature branch: `feature/nama-fitur` (contoh: `feature/payment-recording`)
+- Bugfix branch: `fix/deskripsi-bug` (contoh: `fix/invoice-number-race-condition`)
+- Hotfix: langsung ke `master` jika urgent, wajib sertakan deployment note
+
+### 14.2 Merge
+
+- Squash merge untuk feature branch agar history bersih
+- Jangan rebase atau force-push branch yang sudah di-push kecuali ada alasan kuat dan dikomunikasikan
+
+### 14.3 Commit Message
+
+Commit message harus:
+
+- singkat
+- menjelaskan hasil, bukan proses berpikir
+- fokus pada satu scope perubahan
+
+Contoh:
+
+- `Add in-app documentation module`
+- `Implement MVP activity logging`
+- `Show assigned users in role management`
+- `Fix invoice deletion handling`
+
+## 15. Standar Data, Environment, dan Deployment
+
+### 15.1 Data dan Schema
 
 Jika perubahan menyentuh data:
 
@@ -283,6 +433,23 @@ Jika perubahan menyentuh data:
 - sebutkan seeder yang perlu dijalankan
 - sebutkan apakah aman untuk re-run
 - sebutkan dampak ke data lama
+
+### 15.2 Environment Variables
+
+- Setiap env variable baru wajib ditambahkan ke `.env.example` dengan nilai default yang aman.
+- Jangan simpan default value yang production-specific di `.env.example`.
+- Jika env var bersifat secret, gunakan placeholder seperti `your-key-here`.
+- Kelompokkan env vars berdasarkan concern:
+  - App (APP_NAME, APP_TIMEZONE, dll)
+  - Database
+  - Mail
+  - Queue
+  - Zabbix integration
+  - Client Portal
+  - Billing (BILLING_PPN_RATE, BILLING_DUE_DAYS, dll)
+  - GitHub integration
+
+### 15.3 Deployment
 
 Jika perubahan perlu langkah production:
 
@@ -292,7 +459,7 @@ Jika perubahan perlu langkah production:
   - opsional
   - hanya untuk production tertentu
 
-## 12. Checklist Sebelum Commit
+## 16. Checklist Sebelum Commit
 
 Minimal cek:
 
@@ -304,24 +471,7 @@ Minimal cek:
 - [ ] syntax check / test minimum sudah dilakukan jika memungkinkan
 - [ ] permission/role diperiksa jika menyentuh menu atau akses
 
-## 12.0 Skill Operasional yang Disarankan
-
-Jika environment agent mendukung skill lokal, gunakan skill berikut untuk menjaga konsistensi repo ini:
-
-- `crm-doc-maintainer`
-  - untuk memastikan `CHANGELOG.md`, `docs/`, dan deployment note ikut diperbarui
-- `crm-release-checker`
-  - untuk mengecek dampak release sebelum commit, push, atau deploy
-- `crm-api-doc-writer`
-  - untuk menjaga dokumentasi endpoint API tetap sinkron dengan route/controller
-- `crm-permission-auditor`
-  - untuk mengecek konsistensi permission, sidebar, route, controller, dan role management
-- `crm-activitylog-auditor`
-  - untuk mengecek apakah aksi penting sudah tercatat di Activity Log dan field sensitif tidak ikut terlog
-
-Skill di atas tidak menggantikan penilaian engineer, tetapi menjadi checklist operasional tambahan agar perubahan tidak lepas dari standar repo.
-
-## 12.1 Kapan Harus Commit
+### 16.1 Kapan Harus Commit
 
 Commit sebaiknya dilakukan ketika salah satu kondisi ini terpenuhi:
 
@@ -337,22 +487,7 @@ Hindari:
 - commit setengah jadi tanpa konteks yang jelas
 - commit file temp, cache, atau artefak lokal yang tidak relevan
 
-## 12.2 Standar Isi Commit
-
-Commit message harus:
-
-- singkat
-- menjelaskan hasil, bukan proses berpikir
-- fokus pada satu scope perubahan
-
-Contoh:
-
-- `Add in-app documentation module`
-- `Implement MVP activity logging`
-- `Show assigned users in role management`
-- `Fix invoice deletion handling`
-
-## 12.3 Kapan Harus Push ke GitHub
+### 16.2 Kapan Harus Push ke GitHub
 
 Push sebaiknya dilakukan jika:
 
@@ -369,7 +504,7 @@ Jangan push jika:
 - migration/seeder/deploy note belum jelas padahal dibutuhkan
 - masih ada file lokal yang tidak sengaja ikut berubah
 
-## 12.4 Default Workflow Commit dan Push
+### 16.3 Default Workflow Commit dan Push
 
 Urutan kerja yang disarankan:
 
@@ -380,7 +515,7 @@ Urutan kerja yang disarankan:
 5. commit dengan message yang jelas
 6. push ke GitHub jika perubahan sudah siap dibagikan atau dideploy
 
-## 12.5 Persetujuan Push dan Batasan Environment
+### 16.4 Persetujuan Push dan Batasan Environment
 
 Catatan penting:
 
@@ -393,7 +528,7 @@ Artinya:
 - `AGENTS.md` hanya bisa menetapkan kebiasaan kerja
 - keputusan akhir soal perlu atau tidaknya approval tetap ditentukan platform yang menjalankan agent
 
-## 13. Checklist Sebelum Push ke Production
+## 17. Checklist Sebelum Push ke Production
 
 - [ ] branch sudah sinkron
 - [ ] migration yang diperlukan sudah diketahui
@@ -402,7 +537,36 @@ Artinya:
 - [ ] perubahan environment variable sudah dicatat
 - [ ] risiko rewrite history dipahami jika force-push dilakukan
 
-## 14. Larangan
+## 18. Skill Operasional
+
+Gunakan skill berikut untuk menjaga konsistensi repo ini. Skill tersedia di dua lokasi:
+
+- **opencode**: `C:\Users\ThinkPad\.agents\skills\`
+- **Codex CLI**: `C:\Users\ThinkPad\.codex\skills\`
+
+Cara menggunakan: panggil skill melalui skill tool saat task cocok dengan deskripsinya.
+
+Daftar skill:
+
+- `crm-doc-maintainer`
+  - untuk memastikan `CHANGELOG.md`, `docs/`, dan deployment note ikut diperbarui
+  - gunakan saat perubahan memengaruhi fitur, UI, permission, route, deployment, atau API
+- `crm-release-checker`
+  - untuk mengecek dampak release sebelum commit, push, atau deploy
+  - gunakan saat perubahan menyentuh migration, seeder, permission, config, atau environment
+- `crm-api-doc-writer`
+  - untuk menjaga dokumentasi endpoint API tetap sinkron dengan route/controller
+  - gunakan saat endpoint client portal berubah
+- `crm-permission-auditor`
+  - untuk mengecek konsistensi permission, sidebar, route, controller, dan role management
+  - gunakan saat modul baru ditambah atau permission berubah
+- `crm-activitylog-auditor`
+  - untuk mengecek apakah aksi penting sudah tercatat di Activity Log dan field sensitif tidak ikut terlog
+  - gunakan saat model atau controller baru ditambah
+
+Skill di atas tidak menggantikan penilaian engineer, tetapi menjadi checklist operasional tambahan agar perubahan tidak lepas dari standar repo.
+
+## 19. Larangan
 
 Jangan:
 
@@ -411,8 +575,10 @@ Jangan:
 - menambah menu baru tanpa masuk ke struktur dokumentasi
 - mendorong perubahan production-sensitive tanpa deployment note
 - menyimpan secret nyata di repo
+- hardcode value yang bisa berubah (tax rate, API URL, due days)
+- membuat controller yang melebihi 500 baris tanpa mempertimbangkan extract ke service
 
-## 15. Prioritas Dokumentasi ke Depan
+## 20. Prioritas Dokumentasi ke Depan
 
 Urutan yang disarankan:
 
@@ -427,8 +593,9 @@ Urutan yang disarankan:
 4. Buat dokumentasi permission matrix.
 5. Buat dokumentasi deployment dan environment.
 6. Buat dokumentasi integrasi client portal dan infrastruktur.
+7. Implementasi modul yang masih placeholder (Payments, Financial Reports, Work Orders).
 
-## 16. Ringkasan Operasional
+## 21. Ringkasan Operasional
 
 Aturan sederhananya:
 
@@ -437,3 +604,6 @@ Aturan sederhananya:
 - selalu update dokumentasi yang relevan
 - selalu update changelog untuk perubahan yang user rasakan
 - selalu tulis langkah deploy jika production perlu aksi manual
+- gunakan skill operasional untuk validasi sebelum commit
+- jangan hardcode, gunakan config
+- jangan skip testing untuk logic kritis
