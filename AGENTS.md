@@ -566,7 +566,71 @@ Daftar skill:
 
 Skill di atas tidak menggantikan penilaian engineer, tetapi menjadi checklist operasional tambahan agar perubahan tidak lepas dari standar repo.
 
-## 19. Larangan
+## 19. Standar Keamanan Kode
+
+### 19.1 Input dan Output
+
+- Selalu gunakan `{{ }}` di Blade untuk output yang melibatkan data user. Hindari `{!! !!}` kecuali sudah dipastikan aman dan ada komentar alasannya.
+- Validasi semua input di server-side sebelum diproses, tidak boleh hanya mengandalkan validasi client-side.
+- Gunakan Eloquent atau Query Builder dengan parameter binding. Jangan interpolasi variabel langsung ke raw query string.
+- Whitelist tipe file yang diizinkan untuk upload. Selalu validasi mime type di server-side (jangan hanya ekstensi).
+- Batasi ukuran file upload secara eksplisit di validasi dan di konfigurasi server.
+
+### 19.2 Authentication dan Authorization
+
+- Semua route yang memerlukan login harus dilindungi middleware `auth`.
+- Semua route yang memerlukan permission tertentu harus menggunakan middleware `permission:module.action`.
+- Jangan mengandalkan hanya role check (`@role()`) untuk halaman yang seharusnya permission-driven.
+- Rate limiting wajib pada endpoint sensitif: login, OTP request, OTP verify, password reset.
+- CSRF protection wajib pada semua form web. Pastikan `@csrf` ada di setiap form POST/PUT/DELETE.
+- Authorization check harus dilakukan di controller, bukan hanya di view (jangan hanya sembunyikan tombol).
+
+### 19.3 Data Protection dan Enkripsi
+
+- Credential sensitif (PPPoE secret, hosting password, API key, auth code domain) wajib disimpan dengan `encrypt()`.
+- Password user wajib di-hash dengan `Hash::make()`. Tidak boleh simpan plain text password.
+- Field sensitif harus dikecualikan dari activity log (gunakan `$activitylogExcludeAttributes` di model).
+- Data yang dikirim ke client portal hanya boleh berisi field yang diperlukan. Jangan return seluruh model.
+- Jangan log nilai sensitif seperti password, token, secret, atau credential ke log file manapun.
+
+### 19.4 Secret Management
+
+- File `.env` tidak boleh di-commit ke repository (sudah ada di `.gitignore`, pertahankan).
+- `.env.example` hanya boleh berisi placeholder, bukan nilai production (`your-api-key-here`, bukan nilai asli).
+- Secret tidak boleh di-hardcode di kode sumber, config file, atau comment.
+- Jika secret tidak sengaja ter-commit, rotasi secret tersebut segera dan hapus dari git history.
+- Akses ke secret production harus dibatasi hanya untuk yang memerlukan (principle of least privilege).
+
+### 19.5 API Security
+
+- Semua endpoint client portal harus dilindungi middleware `client_portal.auth`.
+- Validasi kepemilikan resource: pastikan client hanya bisa akses data miliknya sendiri (cek `client_id`).
+- Token client portal memiliki TTL yang configurable via `CLIENT_PORTAL_TOKEN_TTL_DAYS`.
+- Rate limiting pada OTP request sudah ada (`CLIENT_PORTAL_OTP_REQUEST_LIMIT`). Pertahankan dan dokumentasikan.
+- Response error API tidak boleh mengandung stack trace atau detail internal di production.
+- CORS policy harus dikonfigurasi eksplisit, tidak boleh `*` untuk production yang menggunakan auth.
+
+### 19.6 File Upload
+
+- File upload user harus disimpan di path yang tidak dapat diakses langsung via URL jika bersifat sensitif.
+- Untuk file non-sensitif (attachment tiket, signature invoice), gunakan disk `public` dengan `storage:link`.
+- Jangan percaya nama file dari user. Generate nama file baru saat menyimpan (`store()` bukan `storeAs()` dengan nama asli).
+- Scan atau validasi konten file jika memungkinkan, bukan hanya ekstensi dan mime type.
+
+### 19.7 Dependency Security
+
+- Jalankan `composer audit` sebelum deploy ke production untuk cek CVE pada dependencies.
+- Update dependency secara berkala, terutama jika ada security advisory.
+- Jangan gunakan package yang sudah abandoned tanpa alternatif yang jelas.
+- Lock version dependency di `composer.lock` dan commit file tersebut ke repo.
+
+### 19.8 Mass Assignment Protection
+
+- Selalu definisikan `$fillable` secara eksplisit di setiap model. Jangan gunakan `$guarded = []`.
+- Jangan langsung pass `$request->all()` ke `create()` atau `update()` tanpa filtering terlebih dahulu.
+- Gunakan `$request->validated()` (dari FormRequest) atau `$request->only([...])` untuk data yang akan disimpan.
+
+## 20. Larangan
 
 Jangan:
 

@@ -6,6 +6,12 @@ Semua perubahan penting pada project ini dicatat di file ini.
 
 ### Changed
 
+- `AGENTS.md` ditambahkan Section 19: Standar Keamanan Kode, mencakup input/output escaping, authentication & authorization, data protection & enkripsi, secret management, API security, file upload, dependency security, dan mass assignment protection.
+
+## 2026-06-29
+
+### Changed
+
 - `AGENTS.md` disempurnakan: tambah standar kode teknis (naming convention, arsitektur, validation, error handling), standar queue/job, standar testing, standar branching, standar environment variables. Numbering section diperbaiki. Daftar modul disinkronkan dengan kode aktual. Referensi skill operasional diupdate dengan lokasi yang benar. Tambah section known permission gaps.
 - `docs/README.md` diupdate dengan index modul lengkap.
 
