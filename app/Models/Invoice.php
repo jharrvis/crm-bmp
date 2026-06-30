@@ -58,6 +58,11 @@ class Invoice extends Model
         return $this->hasMany(InvoiceItem::class);
     }
 
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
     public function resolveBranch(): ?Branch
     {
         foreach ($this->items as $item) {
@@ -121,7 +126,7 @@ class Invoice extends Model
 
     public function getAmountInWordsAttribute(): string
     {
-        return Str::title(trim($this->spellNumber((int) round((float) $this->total_amount)))) . ' rupiah';
+        return Str::title(trim($this->spellNumber((int) round((float) $this->total_amount)))).' rupiah';
     }
 
     private function spellNumber(int $value): string
@@ -138,63 +143,75 @@ class Invoice extends Model
         }
 
         if ($value < 20) {
-            return $this->spellNumber($value - 10) . ' belas';
+            return $this->spellNumber($value - 10).' belas';
         }
 
         if ($value < 100) {
             $remainder = $value % 10;
-            return $this->spellNumber((int) floor($value / 10)) . ' puluh' . ($remainder > 0 ? ' ' . $this->spellNumber($remainder) : '');
+
+            return $this->spellNumber((int) floor($value / 10)).' puluh'.($remainder > 0 ? ' '.$this->spellNumber($remainder) : '');
         }
 
         if ($value < 200) {
             $remainder = $value - 100;
-            return 'seratus' . ($remainder > 0 ? ' ' . $this->spellNumber($remainder) : '');
+
+            return 'seratus'.($remainder > 0 ? ' '.$this->spellNumber($remainder) : '');
         }
 
         if ($value < 1000) {
             $remainder = $value % 100;
-            return $this->spellNumber((int) floor($value / 100)) . ' ratus' . ($remainder > 0 ? ' ' . $this->spellNumber($remainder) : '');
+
+            return $this->spellNumber((int) floor($value / 100)).' ratus'.($remainder > 0 ? ' '.$this->spellNumber($remainder) : '');
         }
 
         if ($value < 2000) {
             $remainder = $value - 1000;
-            return 'seribu' . ($remainder > 0 ? ' ' . $this->spellNumber($remainder) : '');
+
+            return 'seribu'.($remainder > 0 ? ' '.$this->spellNumber($remainder) : '');
         }
 
         if ($value < 1000000) {
             $remainder = $value % 1000;
-            return $this->spellNumber((int) floor($value / 1000)) . ' ribu' . ($remainder > 0 ? ' ' . $this->spellNumber($remainder) : '');
+
+            return $this->spellNumber((int) floor($value / 1000)).' ribu'.($remainder > 0 ? ' '.$this->spellNumber($remainder) : '');
         }
 
         if ($value < 1000000000) {
             $remainder = $value % 1000000;
-            return $this->spellNumber((int) floor($value / 1000000)) . ' juta' . ($remainder > 0 ? ' ' . $this->spellNumber($remainder) : '');
+
+            return $this->spellNumber((int) floor($value / 1000000)).' juta'.($remainder > 0 ? ' '.$this->spellNumber($remainder) : '');
         }
 
         if ($value < 1000000000000) {
             $remainder = $value % 1000000000;
-            return $this->spellNumber((int) floor($value / 1000000000)) . ' miliar' . ($remainder > 0 ? ' ' . $this->spellNumber($remainder) : '');
+
+            return $this->spellNumber((int) floor($value / 1000000000)).' miliar'.($remainder > 0 ? ' '.$this->spellNumber($remainder) : '');
         }
 
         $remainder = $value % 1000000000000;
-        return $this->spellNumber((int) floor($value / 1000000000000)) . ' triliun' . ($remainder > 0 ? ' ' . $this->spellNumber($remainder) : '');
+
+        return $this->spellNumber((int) floor($value / 1000000000000)).' triliun'.($remainder > 0 ? ' '.$this->spellNumber($remainder) : '');
     }
 
     // Generate Invoice Number helper
     public static function generateInvoiceNumber($branchCode)
     {
-        $yearMonth = now()->format('ym');
-        $prefix = "INV-{$branchCode}-{$yearMonth}-";
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($branchCode) {
+            $yearMonth = now()->format('ym');
+            $prefix = "INV-{$branchCode}-{$yearMonth}-";
 
-        $latest = self::where('invoice_number', 'like', "{$prefix}%")
-            ->orderBy('id', 'desc')
-            ->first();
+            $latest = self::where('invoice_number', 'like', "{$prefix}%")
+                ->lockForUpdate()
+                ->orderBy('id', 'desc')
+                ->first();
 
-        if (!$latest) {
-            return $prefix . '0001';
-        }
+            if (! $latest) {
+                return $prefix.'0001';
+            }
 
-        $lastNumber = (int) substr($latest->invoice_number, -4);
-        return $prefix . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+            $lastNumber = (int) substr($latest->invoice_number, -4);
+
+            return $prefix.str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+        });
     }
 }

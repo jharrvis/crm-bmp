@@ -91,10 +91,10 @@ class Subscription extends Model
     {
         $basePrice = $this->custom_price ?? ($this->package?->price * $this->billing_period_months) ?? 0;
         $ppnAmount = $this->uses_ppn
-            ? (float) ($this->ppn_amount ?? round($this->calculatePpnAmount($basePrice), 2))
+            ? (float) ($this->ppn_amount ?? round(self::calculatePpnAmount($basePrice), 2))
             : 0.0;
         $pph23Amount = $this->uses_pph23
-            ? (float) ($this->pph23_amount ?? round($this->calculatePph23Amount($basePrice), 2))
+            ? (float) ($this->pph23_amount ?? round(self::calculatePph23Amount($basePrice), 2))
             : 0.0;
 
         return ((float) $basePrice + $ppnAmount) - $pph23Amount;
@@ -107,11 +107,11 @@ class Subscription extends Model
 
     public static function calculatePpnAmount(float $basePrice): float
     {
-        return $basePrice * 0.11;
+        return $basePrice * (setting('billing.ppn_rate', 11) / 100);
     }
 
     public static function calculatePph23Amount(float $basePrice): float
     {
-        return $basePrice * 0.02;
+        return $basePrice * (setting('billing.pph23_rate', 2) / 100);
     }
 }

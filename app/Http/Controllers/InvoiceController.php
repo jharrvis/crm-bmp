@@ -2,18 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\InvoiceDeliveryMail;
+use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
-use App\Models\Subscription;
-use App\Models\Client;
 use App\Models\Package;
-use App\Mail\InvoiceDeliveryMail;
+use App\Models\Subscription;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
-use Carbon\Carbon;
 
 class InvoiceController extends Controller
 {
@@ -30,11 +30,73 @@ class InvoiceController extends Controller
      */
     public function index(Request $request)
     {
-        $view = $request->string('view', 'all')->toString();
+        $status = $request->query('status', 'all');
 
-        if (! in_array($view, ['all', 'draft', 'unpaid', 'paid', 'overdue', 'cancelled'], true)) {
-            $view = 'all';
+        $query = Invoice::with(['client.branch', 'items.subscription.package']);
+
+        if ($status !== 'all') {
+            $query->where('status', $status);
         }
+
+        if ($request->filled('client_id')) {
+            $query->where('client_id', $request->client_id);
+        }
+        
+        if ($request->filled('date_from')) {
+            $query->whereDate('invoice_date', '>=', $request->date_from);
+        }
+        
+        if ($request->filled('date_to')) {
+            $query->whereDate('invoice_date', '<=', $request->date_to);
+        }
+        
+        if ($request->filled('due_from')) {
+            $query->whereDate('due_date', '>=', $request->due_from);
+        }
+        
+        if ($request->filled('due_to')) {
+            $query->whereDate('due_date', '<=', $request->due_to);
+        }
+
+        if ($request->filled('q')) {
+            $q = $request->q;
+            $query->where(function ($query) use ($q) {
+                $query->where('invoice_number', 'like', "%{$q}%")
+                      ->orWhereHas('client', function ($q2) use ($q) {
+                          $q2->where('name', 'like', "%{$q}%")
+                             ->orWhere('client_code', 'like', "%{$q}%");
+                      });
+            });
+        }
+
+        $invoices = $query->orderBy('invoice_date', 'desc')->orderBy('id', 'desc')->paginate(25)->withQueryString();
+
+        $summaryCounts = [
+            'total' => Invoice::count(),
+            'draft' => Invoice::where('status', 'draft')->count(),
+            'unpaid' => Invoice::where('status', 'unpaid')->count(),
+            'paid' => Invoice::where('status', 'paid')->count(),
+            'overdue' => Invoice::where('status', 'overdue')->count(),
+            'cancelled' => Invoice::where('status', 'cancelled')->count(),
+        ];
+
+        $overviewMetrics = [
+            'overdue_amount' => Invoice::where('status', 'overdue')->sum('total_amount'),
+            'due_soon_amount' => Invoice::whereIn('status', ['draft', 'unpaid'])
+                ->whereBetween('due_date', [now(), now()->addDays(30)])
+                ->sum('total_amount'),
+            'average_paid_days' => Invoice::where('status', 'paid')
+                ->whereNotNull('paid_at')
+                ->selectRaw('ROUND(AVG(DATEDIFF(paid_at, invoice_date))) as avg_days')
+                ->value('avg_days') ?? 0,
+            'paid_this_month' => Invoice::where('status', 'paid')
+                ->whereMonth('paid_at', now()->month)
+                ->whereYear('paid_at', now()->year)
+                ->sum('total_amount'),
+        ];
+
+        return view('invoices.index', compact('invoices', 'summaryCounts', 'overviewMetrics', 'status'));
+    }
 
         $invoices = Invoice::query()
             ->with(['client.primaryContact', 'client.contacts'])
@@ -170,9 +232,10 @@ class InvoiceController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             if ($request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'Gagal membuat invoice: ' . $e->getMessage()], 500);
+                return response()->json(['success' => false, 'message' => 'Gagal membuat invoice: '.$e->getMessage()], 500);
             }
-            return back()->withInput()->with('error', 'Gagal membuat invoice: ' . $e->getMessage());
+
+            return back()->withInput()->with('error', 'Gagal membuat invoice: '.$e->getMessage());
         }
     }
 
@@ -247,8 +310,8 @@ class InvoiceController extends Controller
         }
 
         $usesTax = $request->boolean('uses_tax');
-        $taxRate = $usesTax ? 11.0 : null;
-        $taxAmount = $usesTax ? round($subtotalAmount * 0.11, 2) : 0.0;
+        $taxRate = $usesTax ? setting('billing.ppn_rate', 11.0) : null;
+        $taxAmount = $usesTax ? round($subtotalAmount * ((float) $taxRate / 100), 2) : 0.0;
         $discountAmount = round((float) ($request->discount_amount ?? 0), 2);
         $totalAmount = max(0, round($subtotalAmount + $taxAmount - $discountAmount, 2));
         $signaturePath = $this->resolveSignaturePath($request, $signatureMode, $invoice?->signature_path);
@@ -371,7 +434,7 @@ class InvoiceController extends Controller
             }
 
             $whatsappSent = true;
-            $whatsappUrl = 'https://wa.me/' . $normalizedWhatsapp . '?text=' . urlencode($request->string('whatsapp_body')->toString());
+            $whatsappUrl = 'https://wa.me/'.$normalizedWhatsapp.'?text='.urlencode($request->string('whatsapp_body')->toString());
         }
 
         return [$emailSent, $whatsappSent, $whatsappUrl];
@@ -383,30 +446,28 @@ class InvoiceController extends Controller
      */
     public function generate()
     {
-        $activeSubscriptions = Subscription::where('status', 'active')->with(['client.branch', 'package'])->get();
-        $generatedCount = 0;
+        // Panggil job yang baru dibuat untuk logic yang konsisten
+        \App\Jobs\GenerateMonthlyInvoices::dispatchSync();
 
-        DB::beginTransaction();
-        try {
-            foreach ($activeSubscriptions as $sub) {
-                // Check if invoice already exists for this month (simple check)
-                // Logic: check invoice items linked to this subscription created anywhere in this month
-                $exists = InvoiceItem::where('subscription_id', $sub->id)
-                    ->whereHas('invoice', function ($q) {
-                        $q->whereMonth('invoice_date', now()->month)
-                            ->whereYear('invoice_date', now()->year);
-                    })->exists();
-
-                if ($exists)
-                    continue;
+        return response()->json(['success' => true, 'message' => "Proses generate invoice bulanan selesai."]);
+    }
 
                 // Create Invoice
                 $branchCode = $sub->client->branch->code ?? 'UNK';
+                $usesTax = $sub->uses_ppn;
+                $taxRate = $usesTax ? setting('billing.ppn_rate', 11.0) : null;
+                $taxAmount = $usesTax ? $sub->ppn_amount : 0.0;
+
                 $invoice = Invoice::create([
                     'client_id' => $sub->client_id,
                     'invoice_number' => Invoice::generateInvoiceNumber($branchCode),
                     'invoice_date' => now(),
-                    'due_date' => now()->addDays(7), // Due in 7 days
+                    'due_date' => now()->addDays(setting('billing.default_due_days', 7)),
+                    'subtotal_amount' => $sub->base_price,
+                    'uses_tax' => $usesTax,
+                    'tax_rate' => $taxRate,
+                    'tax_amount' => $taxAmount,
+                    'discount_amount' => 0.0,
                     'total_amount' => $sub->effective_price,
                     'status' => 'unpaid',
                     'notes' => null,
@@ -416,7 +477,17 @@ class InvoiceController extends Controller
                 InvoiceItem::create([
                     'invoice_id' => $invoice->id,
                     'subscription_id' => $sub->id,
-                    'description' => "Langganan " . $sub->package->name . " (Periode " . now()->format('F Y') . ")",
+                    'description' => 'Langganan '.$sub->package->name.' (Periode '.now()->format('F Y').')',
+                    'amount' => $sub->base_price,
+                    'qty' => 1,
+                    'total' => $sub->base_price,
+                ]);
+
+                // Create Item
+                InvoiceItem::create([
+                    'invoice_id' => $invoice->id,
+                    'subscription_id' => $sub->id,
+                    'description' => 'Langganan '.$sub->package->name.' (Periode '.now()->format('F Y').')',
                     'amount' => $sub->base_price,
                     'qty' => 1,
                     'total' => $sub->base_price,
@@ -430,6 +501,7 @@ class InvoiceController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
@@ -440,6 +512,7 @@ class InvoiceController extends Controller
     public function show(Invoice $invoice)
     {
         $invoice->load(['client.branch', 'items.subscription.client.branch', 'items.subscription.package']);
+
         return view('invoices.show', compact('invoice'));
     }
 
@@ -451,7 +524,7 @@ class InvoiceController extends Controller
     {
         if ($request->has('status') && ! $request->has('client_id')) {
             $invoice->status = $request->status;
-            if ($request->status == 'paid' && !$invoice->paid_at) {
+            if ($request->status == 'paid' && ! $invoice->paid_at) {
                 $invoice->paid_at = now();
             }
             if ($request->status == 'unpaid') {
@@ -523,7 +596,8 @@ class InvoiceController extends Controller
             throw $e;
         } catch (\Throwable $e) {
             DB::rollBack();
-            return back()->withInput()->with('error', 'Gagal memperbarui invoice: ' . $e->getMessage());
+
+            return back()->withInput()->with('error', 'Gagal memperbarui invoice: '.$e->getMessage());
         }
     }
 
@@ -555,7 +629,7 @@ class InvoiceController extends Controller
                 ->with('success', 'Invoice berhasil diproses untuk dikirim.')
                 ->with('invoice_whatsapp_url', $whatsappUrl);
         } catch (\Throwable $e) {
-            return back()->with('error', 'Gagal mengirim invoice: ' . $e->getMessage());
+            return back()->with('error', 'Gagal mengirim invoice: '.$e->getMessage());
         }
     }
 

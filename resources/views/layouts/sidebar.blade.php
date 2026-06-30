@@ -92,6 +92,15 @@
     </a>
     @endcan
 
+    <!-- Pembayaran (Payments) -->
+    @can('payments.view')
+    <a href="{{ route('payments.index') }}"
+        class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all group whitespace-nowrap {{ request()->routeIs('payments.*') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
+        <i data-lucide="credit-card" class="w-5 h-5 shrink-0 transition-colors"></i>
+        <span class="font-medium text-sm menu-text transition-opacity duration-200">Pembayaran</span>
+    </a>
+    @endcan
+
     @can('tickets.view')
     <a href="{{ route('tickets.index') }}"
         class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all group whitespace-nowrap {{ request()->routeIs('tickets.*') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
@@ -326,7 +335,7 @@
             @can('settings.view')
             <a href="{{ route('settings.index') }}"
                 class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('settings.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
-                Pengaturan
+                Pengaturan Sistem
             </a>
             @endcan
         </div>

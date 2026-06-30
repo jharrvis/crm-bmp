@@ -62,6 +62,11 @@ Route::middleware('auth')->group(function () {
         Route::post('invoices/generate', [\App\Http\Controllers\InvoiceController::class, 'generate'])->name('invoices.generate');
         Route::post('invoices/{invoice}/send', [\App\Http\Controllers\InvoiceController::class, 'send'])->name('invoices.send');
         Route::resource('invoices', \App\Http\Controllers\InvoiceController::class);
+
+        Route::resource('payments', \App\Http\Controllers\PaymentController::class)->except(['show', 'edit', 'update', 'destroy']);
+        Route::post('payments/{payment}/verify', [\App\Http\Controllers\PaymentController::class, 'verify'])->name('payments.verify');
+        Route::post('payments/{payment}/reject', [\App\Http\Controllers\PaymentController::class, 'reject'])->name('payments.reject');
+
         Route::resource('tickets', \App\Http\Controllers\TicketController::class)->only(['index', 'store', 'show', 'update']);
         Route::post('tickets/bulk-update', [\App\Http\Controllers\TicketController::class, 'bulkUpdate'])->name('tickets.bulk-update');
         Route::post('tickets/{ticket}/reply', [\App\Http\Controllers\TicketController::class, 'reply'])->name('tickets.reply');
@@ -88,6 +93,7 @@ Route::middleware('auth')->group(function () {
     Route::get('documentation', [\App\Http\Controllers\DocumentationController::class, 'index'])->name('documentation.index');
     Route::get('activity-logs', [\App\Http\Controllers\ActivityLogController::class, 'index'])->name('activity-logs.index');
     Route::get('settings', [\App\Http\Controllers\SystemSettingController::class, 'index'])->name('settings.index');
+    Route::put('settings', [\App\Http\Controllers\SystemSettingController::class, 'update'])->name('settings.update');
 });
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

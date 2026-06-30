@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Subscription;
 use App\Models\Client;
+use App\Models\HostingServer;
 use App\Models\MetroEthernet;
 use App\Models\Package;
 use App\Models\Router;
-use App\Models\HostingServer;
+use App\Models\Subscription;
 use App\Models\SubscriptionConnectivity;
 use App\Models\SubscriptionHosting;
 use App\Models\Vendor;
@@ -137,7 +137,7 @@ class SubscriptionController extends Controller
                 'pph23_amount' => $pph23Amount,
                 'discount_percent' => null,
                 'discount_notes' => null,
-                'notes' => $request->notes
+                'notes' => $request->notes,
             ]);
 
             // Save Details
@@ -184,9 +184,9 @@ class SubscriptionController extends Controller
                 $hestia = new \App\Services\HestiaCPService($server);
 
                 // Create User
-                // Use default package 'default' or mapping from our package? 
+                // Use default package 'default' or mapping from our package?
                 // For now use 'default' or maybe custom logic.
-                // Assuming package name in Hestia matches our CRM package name could be a strategy, 
+                // Assuming package name in Hestia matches our CRM package name could be a strategy,
                 // or just use 'default'. Let's use 'default' for stability first.
                 $userPass = $request->password;
                 $createRes = $hestia->createUser(
@@ -207,7 +207,7 @@ class SubscriptionController extends Controller
                     // Better to throw so transaction determines fate.
                     // But maybe user already exists?
                     // Let's log warning and continue, marking status as pending/error?
-                    \Illuminate\Support\Facades\Log::warning("Hestia User Creation Failed: " . $createRes['message']);
+                    \Illuminate\Support\Facades\Log::warning('Hestia User Creation Failed: '.$createRes['message']);
                     // Optional: $subscription->update(['notes' => $subscription->notes . " [Hestia Error: " . $createRes['message'] . "]"]);
                 }
 
@@ -224,23 +224,54 @@ class SubscriptionController extends Controller
                 ]);
             }
 
+            $prorataService = new ProrataCalculationService;
+            $prorataItems = $prorataService->calculateNewSubscription($subscription);
+
+            if ($prorataItems) {
+                $subtotal = collect($prorataItems)->sum('amount');
+                $taxAmount = $usesPpn ? round($subtotal * (setting('billing.ppn_rate', 11) / 100), 2) : 0;
+                $totalAmount = $subtotal + $taxAmount;
+
+                $branchCode = $client->branch ? $client->branch->code : 'GEN';
+                $invoice = Invoice::create([
+                    'client_id' => $subscription->client_id,
+                    'invoice_number' => Invoice::generateInvoiceNumber($branchCode),
+                    'invoice_date' => now(),
+                    'due_date' => now()->addDays(setting('billing.default_due_days', 7)),
+                    'subtotal_amount' => $subtotal,
+                    'uses_tax' => $usesPpn,
+                    'tax_rate' => $usesPpn ? setting('billing.ppn_rate', 11) : null,
+                    'tax_amount' => $taxAmount,
+                    'discount_amount' => 0,
+                    'total_amount' => $totalAmount,
+                    'status' => 'unpaid',
+                    'notes' => 'Prorata pendaftaran layanan baru.',
+                ]);
+
+                foreach ($prorataItems as $item) {
+                    InvoiceItem::create(array_merge($item, ['invoice_id' => $invoice->id]));
+                }
+            }
+
             DB::commit();
 
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Layanan berhasil ditambahkan.',
-                    'subscription' => $subscription->load('package.service', 'client')
+                    'subscription' => $subscription->load('package.service', 'client'),
                 ]);
             }
+
             return redirect()->route('subscriptions.index')->with('success', 'Layanan berhasil ditambahkan.');
 
         } catch (\Exception $e) {
             DB::rollBack();
             if ($request->wantsJson() || $request->ajax()) {
-                return response()->json(['success' => false, 'message' => 'Gagal: ' . $e->getMessage()], 500);
+                return response()->json(['success' => false, 'message' => 'Gagal: '.$e->getMessage()], 500);
             }
-            return redirect()->back()->with('error', 'Gagal: ' . $e->getMessage())->withInput();
+
+            return redirect()->back()->with('error', 'Gagal: '.$e->getMessage())->withInput();
         }
     }
 
@@ -296,7 +327,7 @@ class SubscriptionController extends Controller
             $subscription->update([
                 'status' => $request->status,
                 'installed_at' => $request->installed_at,
-                // Recalculate billing dates if needed? 
+                // Recalculate billing dates if needed?
                 'custom_price' => $request->custom_price,
                 'billing_period_months' => $billingPeriodMonths,
                 'uses_ppn' => $usesPpn,
@@ -305,7 +336,7 @@ class SubscriptionController extends Controller
                 'pph23_amount' => $pph23Amount,
                 'discount_percent' => null,
                 'discount_notes' => null,
-                'notes' => $request->notes
+                'notes' => $request->notes,
             ]);
 
             // Update Details
@@ -409,22 +440,60 @@ class SubscriptionController extends Controller
                 );
             }
 
+            $prorataService = new ProrataCalculationService;
+            $oldBasePrice = $subscription->getOriginal('base_price') ?? $subscription->base_price;
+            $prorataItems = null;
+
+            if ($subscription->wasChanged(['package_id', 'custom_price', 'billing_period_months'])) {
+                $prorataItems = $prorataService->calculateUpgradeDowngrade($subscription, $oldBasePrice, now());
+            } elseif ($subscription->wasChanged('status') && in_array($request->status, ['suspended', 'terminated'])) {
+                $prorataItems = $prorataService->calculateSuspendTerminate($subscription, now());
+            }
+
+            if ($prorataItems) {
+                $subtotal = collect($prorataItems)->sum('amount');
+                $taxAmount = $usesPpn ? round($subtotal * (setting('billing.ppn_rate', 11) / 100), 2) : 0;
+                $totalAmount = $subtotal + $taxAmount;
+
+                $branchCode = $subscription->client->branch ? $subscription->client->branch->code : 'GEN';
+                $invoice = Invoice::create([
+                    'client_id' => $subscription->client_id,
+                    'invoice_number' => Invoice::generateInvoiceNumber($branchCode),
+                    'invoice_date' => now(),
+                    'due_date' => now()->addDays(setting('billing.default_due_days', 7)),
+                    'subtotal_amount' => $subtotal,
+                    'uses_tax' => $usesPpn,
+                    'tax_rate' => $usesPpn ? setting('billing.ppn_rate', 11) : null,
+                    'tax_amount' => $taxAmount,
+                    'discount_amount' => 0,
+                    'total_amount' => $totalAmount,
+                    'status' => 'unpaid',
+                    'notes' => 'Prorata perubahan/penghentian layanan.',
+                ]);
+
+                foreach ($prorataItems as $item) {
+                    InvoiceItem::create(array_merge($item, ['invoice_id' => $invoice->id]));
+                }
+            }
+
             DB::commit();
 
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Layanan berhasil diperbarui.',
-                    'subscription' => $subscription->load('package.service', 'client')
+                    'subscription' => $subscription->load('package.service', 'client'),
                 ]);
             }
+
             return redirect()->route('subscriptions.index')->with('success', 'Layanan berhasil diperbarui.');
 
         } catch (\Exception $e) {
             DB::rollBack();
             if ($request->wantsJson() || $request->ajax()) {
-                return response()->json(['success' => false, 'message' => 'Gagal: ' . $e->getMessage()], 500);
+                return response()->json(['success' => false, 'message' => 'Gagal: '.$e->getMessage()], 500);
             }
+
             return redirect()->back();
         }
     }
@@ -439,9 +508,10 @@ class SubscriptionController extends Controller
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Layanan berhasil dihapus.'
+                'message' => 'Layanan berhasil dihapus.',
             ]);
         }
+
         return redirect()->route('subscriptions.index');
     }
 
@@ -481,19 +551,19 @@ class SubscriptionController extends Controller
     protected function generateSubscriptionCode(Client $client, Package $package): string
     {
         $serviceCode = strtoupper((string) ($package->service?->code ?? 'SRV'));
-        $basePrefix = $client->client_code . '-' . $serviceCode;
+        $basePrefix = $client->client_code.'-'.$serviceCode;
 
         $latestMatchingCode = Subscription::query()
             ->where('client_id', $client->id)
             ->whereHas('package', fn ($query) => $query->where('service_id', $package->service_id))
-            ->where('subscription_code', 'like', $basePrefix . '%')
+            ->where('subscription_code', 'like', $basePrefix.'%')
             ->select('subscription_code')
             ->orderByDesc('subscription_code')
             ->value('subscription_code');
 
         $nextNumber = 1;
 
-        if ($latestMatchingCode && preg_match('/^' . preg_quote($basePrefix, '/') . '(\d{2})$/', $latestMatchingCode, $matches)) {
+        if ($latestMatchingCode && preg_match('/^'.preg_quote($basePrefix, '/').'(\d{2})$/', $latestMatchingCode, $matches)) {
             $nextNumber = ((int) $matches[1]) + 1;
         } else {
             $existingCount = Subscription::query()

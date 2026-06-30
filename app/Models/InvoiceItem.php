@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsModelActivity;
 use Illuminate\Database\Eloquent\Model;
 
 class InvoiceItem extends Model
 {
+    use LogsModelActivity;
+
     protected $fillable = [
         'invoice_id',
         'subscription_id',
@@ -13,12 +16,22 @@ class InvoiceItem extends Model
         'amount',
         'qty',
         'total',
+        'is_prorated',
+        'proration_start_date',
+        'proration_end_date',
+        'proration_days',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'total' => 'decimal:2',
+        'is_prorated' => 'boolean',
+        'proration_start_date' => 'date',
+        'proration_end_date' => 'date',
+        'proration_days' => 'integer',
     ];
+
+    protected string $activitylogEntityName = 'item tagihan';
 
     public function invoice()
     {
@@ -32,7 +45,7 @@ class InvoiceItem extends Model
 
     public function getBillingBaseAmountAttribute(): float
     {
-        if (!$this->subscription) {
+        if (! $this->subscription) {
             return (float) $this->amount;
         }
 
@@ -54,7 +67,7 @@ class InvoiceItem extends Model
 
     public function getBillingPpnAmountAttribute(): float
     {
-        if (!$this->subscription || !$this->subscription->uses_ppn) {
+        if (! $this->subscription || ! $this->subscription->uses_ppn) {
             return 0.0;
         }
 
@@ -63,7 +76,7 @@ class InvoiceItem extends Model
 
     public function getBillingPph23AmountAttribute(): float
     {
-        if (!$this->subscription || !$this->subscription->uses_pph23) {
+        if (! $this->subscription || ! $this->subscription->uses_pph23) {
             return 0.0;
         }
 

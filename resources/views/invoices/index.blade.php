@@ -165,12 +165,19 @@
                         </div>
                     </div>
                     <div class="mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-slate-200 dark:border-slate-700 pt-4">
-                        <p id="invoiceVisibleCount" class="text-sm text-slate-500 dark:text-slate-400">{{ $invoices->count() }} invoice tampil</p>
-                        <button type="button" id="resetInvoiceFilters"
-                            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
-                            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-                            Reset Filter
-                        </button>
+                        <p id="invoiceVisibleCount" class="text-sm text-slate-500 dark:text-slate-400">Menampilkan {{ $invoices->firstItem() ?? 0 }} - {{ $invoices->lastItem() ?? 0 }} dari {{ $invoices->total() }} invoice</p>
+                        <div class="flex gap-2">
+                            <button type="submit"
+                                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+                                <i data-lucide="filter" class="w-4 h-4"></i>
+                                Terapkan Filter
+                            </button>
+                            <a href="{{ route('invoices.index') }}"
+                                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                                Reset
+                            </a>
+                        </div>
                     </div>
                 </div>
             </form>
@@ -357,6 +364,12 @@
                     </table>
                 </div>
             </div>
+            
+            @if($invoices->hasPages())
+                <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                    {{ $invoices->links() }}
+                </div>
+            @endif
         </div>
     </div>
 
