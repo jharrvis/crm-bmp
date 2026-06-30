@@ -267,7 +267,7 @@ class InvoiceController extends Controller
         }
 
         $usesTax = $request->boolean('uses_tax');
-        $taxRate = $usesTax ? setting('billing.ppn_rate', 11.0) : null;
+        $taxRate = $usesTax ? \App\Models\SystemSetting::get('billing.ppn_rate', 11.0) : null;
         $taxAmount = $usesTax ? round($subtotalAmount * ((float) $taxRate / 100), 2) : 0.0;
         $discountAmount = round((float) ($request->discount_amount ?? 0), 2);
         $totalAmount = max(0, round($subtotalAmount + $taxAmount - $discountAmount, 2));

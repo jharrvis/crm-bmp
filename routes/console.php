@@ -13,6 +13,6 @@ Artisan::command('inspire', function () {
 Schedule::job(new MarkOverdueInvoices)->dailyAt('01:00');
 
 Schedule::job(new GenerateMonthlyInvoices)->dailyAt('00:05')->when(function () {
-    return setting('billing.auto_generate_enabled', false)
-        && now()->day === (int) setting('billing.auto_generate_day', 1);
+    return \App\Models\SystemSetting::get('billing.auto_generate_enabled', false)
+        && now()->day === (int) \App\Models\SystemSetting::get('billing.auto_generate_day', 1);
 });

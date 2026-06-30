@@ -23,14 +23,14 @@ class GenerateMonthlyInvoices implements ShouldQueue
 
     public function handle(): void
     {
-        if (! setting('billing.auto_generate_enabled', false)) {
+        if (! \App\Models\SystemSetting::get('billing.auto_generate_enabled', false)) {
             Log::info('Auto-generate invoice is disabled.');
 
             return;
         }
 
         // Normally ran daily and checks inside schedule(), but we verify here too
-        $generateDay = (int) setting('billing.auto_generate_day', 1);
+        $generateDay = (int) \App\Models\SystemSetting::get('billing.auto_generate_day', 1);
         if (now()->day !== $generateDay) {
             return;
         }
@@ -40,8 +40,8 @@ class GenerateMonthlyInvoices implements ShouldQueue
             ->get();
 
         $generatedCount = 0;
-        $dueDays = (int) setting('billing.default_due_days', 7);
-        $ppnRate = (float) setting('billing.ppn_rate', 11);
+        $dueDays = (int) \App\Models\SystemSetting::get('billing.default_due_days', 7);
+        $ppnRate = (float) \App\Models\SystemSetting::get('billing.ppn_rate', 11);
 
         foreach ($activeSubscriptions as $sub) {
             try {

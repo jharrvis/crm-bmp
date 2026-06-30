@@ -229,7 +229,7 @@ class SubscriptionController extends Controller
 
             if ($prorataItems) {
                 $subtotal = collect($prorataItems)->sum('amount');
-                $taxAmount = $usesPpn ? round($subtotal * (setting('billing.ppn_rate', 11) / 100), 2) : 0;
+                $taxAmount = $usesPpn ? round($subtotal * (\App\Models\SystemSetting::get('billing.ppn_rate', 11) / 100), 2) : 0;
                 $totalAmount = $subtotal + $taxAmount;
 
                 $branchCode = $client->branch ? $client->branch->code : 'GEN';
@@ -237,10 +237,10 @@ class SubscriptionController extends Controller
                     'client_id' => $subscription->client_id,
                     'invoice_number' => Invoice::generateInvoiceNumber($branchCode),
                     'invoice_date' => now(),
-                    'due_date' => now()->addDays(setting('billing.default_due_days', 7)),
+                    'due_date' => now()->addDays(\App\Models\SystemSetting::get('billing.default_due_days', 7)),
                     'subtotal_amount' => $subtotal,
                     'uses_tax' => $usesPpn,
-                    'tax_rate' => $usesPpn ? setting('billing.ppn_rate', 11) : null,
+                    'tax_rate' => $usesPpn ? \App\Models\SystemSetting::get('billing.ppn_rate', 11) : null,
                     'tax_amount' => $taxAmount,
                     'discount_amount' => 0,
                     'total_amount' => $totalAmount,
@@ -452,7 +452,7 @@ class SubscriptionController extends Controller
 
             if ($prorataItems) {
                 $subtotal = collect($prorataItems)->sum('amount');
-                $taxAmount = $usesPpn ? round($subtotal * (setting('billing.ppn_rate', 11) / 100), 2) : 0;
+                $taxAmount = $usesPpn ? round($subtotal * (\App\Models\SystemSetting::get('billing.ppn_rate', 11) / 100), 2) : 0;
                 $totalAmount = $subtotal + $taxAmount;
 
                 $branchCode = $subscription->client->branch ? $subscription->client->branch->code : 'GEN';
@@ -460,10 +460,10 @@ class SubscriptionController extends Controller
                     'client_id' => $subscription->client_id,
                     'invoice_number' => Invoice::generateInvoiceNumber($branchCode),
                     'invoice_date' => now(),
-                    'due_date' => now()->addDays(setting('billing.default_due_days', 7)),
+                    'due_date' => now()->addDays(\App\Models\SystemSetting::get('billing.default_due_days', 7)),
                     'subtotal_amount' => $subtotal,
                     'uses_tax' => $usesPpn,
-                    'tax_rate' => $usesPpn ? setting('billing.ppn_rate', 11) : null,
+                    'tax_rate' => $usesPpn ? \App\Models\SystemSetting::get('billing.ppn_rate', 11) : null,
                     'tax_amount' => $taxAmount,
                     'discount_amount' => 0,
                     'total_amount' => $totalAmount,

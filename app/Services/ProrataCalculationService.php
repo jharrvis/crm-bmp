@@ -13,14 +13,14 @@ class ProrataCalculationService
      */
     public function calculateNewSubscription(Subscription $sub): ?array
     {
-        if (! setting('billing.proration_enabled', true)) {
+        if (! \App\Models\SystemSetting::get('billing.proration_enabled', true)) {
             return null;
         }
 
         $startDate = Carbon::parse($sub->installed_at)->startOfDay();
 
         // If it starts on the generate day, it's a full month, no proration needed
-        $generateDay = (int) setting('billing.auto_generate_day', 1);
+        $generateDay = (int) \App\Models\SystemSetting::get('billing.auto_generate_day', 1);
         if ($startDate->day === $generateDay) {
             return null;
         }
@@ -70,12 +70,12 @@ class ProrataCalculationService
      */
     public function calculateUpgradeDowngrade(Subscription $sub, float $oldBasePrice, Carbon $changeDate): ?array
     {
-        if (! setting('billing.proration_enabled', true)) {
+        if (! \App\Models\SystemSetting::get('billing.proration_enabled', true)) {
             return null;
         }
 
         $startDate = $changeDate->copy()->startOfDay();
-        $generateDay = (int) setting('billing.auto_generate_day', 1);
+        $generateDay = (int) \App\Models\SystemSetting::get('billing.auto_generate_day', 1);
 
         // Find the END of the current billing cycle
         $endDate = $startDate->copy();
@@ -147,12 +147,12 @@ class ProrataCalculationService
      */
     public function calculateSuspendTerminate(Subscription $sub, Carbon $terminationDate): ?array
     {
-        if (! setting('billing.proration_enabled', true)) {
+        if (! \App\Models\SystemSetting::get('billing.proration_enabled', true)) {
             return null;
         }
 
         $startDate = $terminationDate->copy()->startOfDay();
-        $generateDay = (int) setting('billing.auto_generate_day', 1);
+        $generateDay = (int) \App\Models\SystemSetting::get('billing.auto_generate_day', 1);
 
         $endDate = $startDate->copy();
         if ($startDate->day >= $generateDay) {

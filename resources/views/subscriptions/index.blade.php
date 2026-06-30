@@ -910,8 +910,8 @@
                     const basePrice = customPrice > 0 ? customPrice : (packagePrice * billingPeriodMonths);
                     const usesPpn = document.getElementById('uses_ppn').checked;
                     const usesPph23 = document.getElementById('uses_pph23').checked;
-                    const ppnAmount = usesPpn ? (basePrice * @json(setting('billing.ppn_rate', 11) / 100)) : 0;
-                    const pph23Amount = usesPph23 ? (basePrice * @json(setting('billing.pph23_rate', 2) / 100)) : 0;
+                    const ppnAmount = usesPpn ? (basePrice * @json(\App\Models\SystemSetting::get('billing.ppn_rate', 11) / 100)) : 0;
+                    const pph23Amount = usesPph23 ? (basePrice * @json(\App\Models\SystemSetting::get('billing.pph23_rate', 2) / 100)) : 0;
                     const totalAmount = basePrice + ppnAmount - pph23Amount;
 
                     return { basePrice, ppnAmount, pph23Amount, totalAmount };

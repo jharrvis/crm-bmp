@@ -825,7 +825,7 @@
                         updateRowTotal(row);
                     });
 
-                    const tax = usesTaxField.checked ? subtotal * @json(setting('billing.ppn_rate', 11) / 100) : 0;
+                    const tax = usesTaxField.checked ? subtotal * @json(\App\Models\SystemSetting::get('billing.ppn_rate', 11) / 100) : 0;
                     const discount = Number(discountAmountField.value || 0);
                     const grandTotal = Math.max(0, subtotal + tax - discount);
 

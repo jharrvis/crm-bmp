@@ -107,11 +107,11 @@ class Subscription extends Model
 
     public static function calculatePpnAmount(float $basePrice): float
     {
-        return $basePrice * (setting('billing.ppn_rate', 11) / 100);
+        return $basePrice * (\App\Models\SystemSetting::get('billing.ppn_rate', 11) / 100);
     }
 
     public static function calculatePph23Amount(float $basePrice): float
     {
-        return $basePrice * (setting('billing.pph23_rate', 2) / 100);
+        return $basePrice * (\App\Models\SystemSetting::get('billing.pph23_rate', 2) / 100);
     }
 }
