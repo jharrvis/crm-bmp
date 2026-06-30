@@ -2,6 +2,24 @@
 
 Semua perubahan penting pada project ini dicatat di file ini.
 
+## 2026-06-30
+
+### Added
+
+- **Sistem Pengaturan Global** (`SystemSettings`): konfigurasi yang bisa diubah via UI untuk billing (PPN, PPh23, due days, tanggal generate, prorata toggle, reminder schedule).
+- **Modul Pembayaran** (`Payments`): mencatat pembayaran untuk tagihan. Mendukung status `pending`, `verified`, dan `rejected`.
+- **Status Invoice `partially_paid`**: status baru saat pembayaran kurang dari total tagihan.
+- **Prorata Kalkulator**: penghitungan proporsional untuk tagihan saat registrasi baru, upgrade/downgrade, dan penghentian layanan di tengah siklus bulan.
+- **Job Auto Generate Tagihan Bulanan**: cron job (`GenerateMonthlyInvoices`) yang otomatis membuat tagihan setiap bulan pada tanggal yang ditentukan di pengaturan.
+- **Job Auto Overdue**: cron job (`MarkOverdueInvoices`) yang menandai status `overdue` secara otomatis.
+
+### Changed
+
+- Tarif pajak (PPN dan PPh23) tidak lagi hardcoded, melainkan mengambil nilai dari `SystemSettings`.
+- Data tax breakdown sekarang disimpan pada saat tagihan bulanan dibuat secara otomatis, sehingga item tagihan konsisten dengan total tagihan.
+- Penomoran tagihan sekarang mendukung lock level database (transaction lock for update) untuk mencegah nomor kembar.
+- Halaman daftar tagihan sekarang di-load menggunakan server-side pagination, tidak lagi meload seluruh data sekaligus.
+
 ## 2026-06-29
 
 ### Changed
