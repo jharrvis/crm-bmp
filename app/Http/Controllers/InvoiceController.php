@@ -7,7 +7,6 @@ use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Package;
-use App\Models\Subscription;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -41,19 +40,19 @@ class InvoiceController extends Controller
         if ($request->filled('client_id')) {
             $query->where('client_id', $request->client_id);
         }
-        
+
         if ($request->filled('date_from')) {
             $query->whereDate('invoice_date', '>=', $request->date_from);
         }
-        
+
         if ($request->filled('date_to')) {
             $query->whereDate('invoice_date', '<=', $request->date_to);
         }
-        
+
         if ($request->filled('due_from')) {
             $query->whereDate('due_date', '>=', $request->due_from);
         }
-        
+
         if ($request->filled('due_to')) {
             $query->whereDate('due_date', '<=', $request->due_to);
         }
@@ -62,10 +61,10 @@ class InvoiceController extends Controller
             $q = $request->q;
             $query->where(function ($query) use ($q) {
                 $query->where('invoice_number', 'like', "%{$q}%")
-                      ->orWhereHas('client', function ($q2) use ($q) {
-                          $q2->where('name', 'like', "%{$q}%")
-                             ->orWhere('client_code', 'like', "%{$q}%");
-                      });
+                    ->orWhereHas('client', function ($q2) use ($q) {
+                        $q2->where('name', 'like', "%{$q}%")
+                            ->orWhere('client_code', 'like', "%{$q}%");
+                    });
             });
         }
 
@@ -89,59 +88,17 @@ class InvoiceController extends Controller
                 ->whereNotNull('paid_at')
                 ->selectRaw('ROUND(AVG(DATEDIFF(paid_at, invoice_date))) as avg_days')
                 ->value('avg_days') ?? 0,
-            'paid_this_month' => Invoice::where('status', 'paid')
+            'paid_this_month_amount' => Invoice::where('status', 'paid')
                 ->whereMonth('paid_at', now()->month)
                 ->whereYear('paid_at', now()->year)
                 ->sum('total_amount'),
         ];
 
-        return view('invoices.index', compact('invoices', 'summaryCounts', 'overviewMetrics', 'status'));
+        $view = $status;
+
+        return view('invoices.index', compact('invoices', 'summaryCounts', 'overviewMetrics', 'status', 'view'));
     }
 
-        $invoices = Invoice::query()
-            ->with(['client.primaryContact', 'client.contacts'])
-            ->latest('invoice_date')
-            ->latest('id')
-            ->get();
-
-        $today = Carbon::today();
-        $nextThirtyDays = Carbon::today()->addDays(30);
-        $allInvoices = Invoice::query()->get();
-
-        $summaryCounts = [
-            'total' => $allInvoices->count(),
-            'draft' => $allInvoices->where('status', 'draft')->count(),
-            'unpaid' => $allInvoices->where('status', 'unpaid')->count(),
-            'paid' => $allInvoices->where('status', 'paid')->count(),
-            'overdue' => $allInvoices->where('status', 'overdue')->count(),
-            'cancelled' => $allInvoices->where('status', 'cancelled')->count(),
-        ];
-
-        $averagePaidDays = round(
-            $allInvoices
-                ->filter(fn (Invoice $invoice) => $invoice->paid_at && $invoice->invoice_date)
-                ->avg(fn (Invoice $invoice) => $invoice->invoice_date->diffInDays($invoice->paid_at)) ?? 0
-        );
-
-        $overviewMetrics = [
-            'overdue_amount' => $allInvoices
-                ->filter(fn (Invoice $invoice) => in_array($invoice->status, ['unpaid', 'overdue'], true) && $invoice->due_date && $invoice->due_date->lt($today))
-                ->sum(fn (Invoice $invoice) => (float) $invoice->total_amount),
-            'due_soon_amount' => $allInvoices
-                ->filter(fn (Invoice $invoice) => in_array($invoice->status, ['unpaid', 'overdue'], true) && $invoice->due_date && $invoice->due_date->between($today, $nextThirtyDays))
-                ->sum(fn (Invoice $invoice) => (float) $invoice->total_amount),
-            'average_paid_days' => $averagePaidDays,
-            'paid_this_month_amount' => $allInvoices
-                ->filter(fn (Invoice $invoice) => $invoice->status === 'paid' && $invoice->paid_at && $invoice->paid_at->isSameMonth($today))
-                ->sum(fn (Invoice $invoice) => (float) $invoice->total_amount),
-        ];
-
-        return view('invoices.index', compact('invoices', 'view', 'summaryCounts', 'overviewMetrics'));
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         [$clients, $packages, $existingSignatures] = $this->getManualInvoiceFormData();
@@ -449,61 +406,7 @@ class InvoiceController extends Controller
         // Panggil job yang baru dibuat untuk logic yang konsisten
         \App\Jobs\GenerateMonthlyInvoices::dispatchSync();
 
-        return response()->json(['success' => true, 'message' => "Proses generate invoice bulanan selesai."]);
-    }
-
-                // Create Invoice
-                $branchCode = $sub->client->branch->code ?? 'UNK';
-                $usesTax = $sub->uses_ppn;
-                $taxRate = $usesTax ? setting('billing.ppn_rate', 11.0) : null;
-                $taxAmount = $usesTax ? $sub->ppn_amount : 0.0;
-
-                $invoice = Invoice::create([
-                    'client_id' => $sub->client_id,
-                    'invoice_number' => Invoice::generateInvoiceNumber($branchCode),
-                    'invoice_date' => now(),
-                    'due_date' => now()->addDays(setting('billing.default_due_days', 7)),
-                    'subtotal_amount' => $sub->base_price,
-                    'uses_tax' => $usesTax,
-                    'tax_rate' => $taxRate,
-                    'tax_amount' => $taxAmount,
-                    'discount_amount' => 0.0,
-                    'total_amount' => $sub->effective_price,
-                    'status' => 'unpaid',
-                    'notes' => null,
-                ]);
-
-                // Create Item
-                InvoiceItem::create([
-                    'invoice_id' => $invoice->id,
-                    'subscription_id' => $sub->id,
-                    'description' => 'Langganan '.$sub->package->name.' (Periode '.now()->format('F Y').')',
-                    'amount' => $sub->base_price,
-                    'qty' => 1,
-                    'total' => $sub->base_price,
-                ]);
-
-                // Create Item
-                InvoiceItem::create([
-                    'invoice_id' => $invoice->id,
-                    'subscription_id' => $sub->id,
-                    'description' => 'Langganan '.$sub->package->name.' (Periode '.now()->format('F Y').')',
-                    'amount' => $sub->base_price,
-                    'qty' => 1,
-                    'total' => $sub->base_price,
-                ]);
-
-                $generatedCount++;
-            }
-            DB::commit();
-
-            return response()->json(['success' => true, 'message' => "Berhasil generate $generatedCount invoice baru."]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
-        }
+        return response()->json(['success' => true, 'message' => 'Proses generate invoice bulanan selesai.']);
     }
 
     /**
