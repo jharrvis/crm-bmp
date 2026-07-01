@@ -368,7 +368,7 @@ class InvoiceController extends Controller
                 throw new \RuntimeException('Pelanggan belum memiliki email kontak untuk pengiriman invoice.');
             }
 
-            Mail::to($recipientEmail)->send(new InvoiceDeliveryMail(
+            Mail::to($recipientEmail)->queue(new InvoiceDeliveryMail(
                 $invoice->loadMissing('client.primaryContact'),
                 $request->string('email_subject')->toString(),
                 $request->string('email_body')->toString()
@@ -385,6 +385,10 @@ class InvoiceController extends Controller
             }
 
             $normalizedWhatsapp = preg_replace('/[^0-9]/', '', $rawWhatsapp);
+
+            if (str_starts_with($normalizedWhatsapp, '0')) {
+                $normalizedWhatsapp = '62'.substr($normalizedWhatsapp, 1);
+            }
 
             if ($normalizedWhatsapp === '') {
                 throw new \RuntimeException('Nomor WhatsApp pelanggan tidak valid.');

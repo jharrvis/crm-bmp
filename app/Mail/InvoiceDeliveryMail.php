@@ -4,12 +4,13 @@ namespace App\Mail;
 
 use App\Models\Invoice;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class InvoiceDeliveryMail extends Mailable
+class InvoiceDeliveryMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
@@ -17,8 +18,7 @@ class InvoiceDeliveryMail extends Mailable
         public Invoice $invoice,
         public string $customSubject,
         public string $customBody,
-    ) {
-    }
+    ) {}
 
     public function envelope(): Envelope
     {
