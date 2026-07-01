@@ -330,7 +330,7 @@
                                                         Print
                                                     </a>
 
-                                                    <a href="{{ route('invoices.show', $invoice) }}?autoprint=1&download=pdf"
+                                                    <a href="{{ route('invoices.show', $invoice) }}?download=pdf"
                                                         target="_blank"
                                                         class="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                                                         <i data-lucide="download" class="w-4 h-4"></i>
