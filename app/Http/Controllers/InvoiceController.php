@@ -416,9 +416,15 @@ class InvoiceController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Invoice $invoice)
+    public function show(Request $request, Invoice $invoice)
     {
-        $invoice->load(['client.branch', 'items.subscription.client.branch', 'items.subscription.package']);
+        $invoice->load(['client.branch', 'items.subscription.package']);
+
+        if ($request->query('download') === 'pdf') {
+            $pdfService = new \App\Services\InvoicePdfService;
+
+            return $pdfService->download($invoice);
+        }
 
         return view('invoices.show', compact('invoice'));
     }

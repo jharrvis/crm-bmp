@@ -5,14 +5,28 @@ Semua perubahan penting pada project ini dicatat di file ini.
 ## 2026-07-01
 
 ### Added
-
 - **Sistem Pengingat Tagihan Otomatis** (`InvoiceReminder`): Mengirim email peringatan sebelum jatuh tempo dan pemberitahuan overdue secara otomatis setiap jam 08:00 pagi.
 - Jadwal reminder mengikuti pengaturan global (`billing.reminder_days_before` dan `billing.reminder_days_after`).
+- **PDF Invoice**: Download PDF invoice via DomPDF, dengan template khusus `invoices/pdf.blade.php` yang kompatibel untuk cetak A4.
+- **Client Portal Payment Confirmation**: Client dapat mengirim konfirmasi pembayaran via endpoint API portal.
+- **Laporan Keuangan** (`FinancialReportController`): Halaman ringkasan pendapatan, tagihan, piutang, aging report, dan daftar pembayaran terbaru per periode.
+- Menu sidebar **Laporan Keuangan** untuk akses cepat ke halaman report.
 
 ### Changed
-
 - **Email Queue**: Pengiriman email tagihan sekarang dilakukan secara asynchronous melalui queue untuk mencegah proses request yang lama/blocking.
 - **Normalisasi WhatsApp**: Nomor WhatsApp tujuan sekarang dinormalisasi (mengubah awalan `0` menjadi `62`) agar API web `wa.me` berfungsi dengan baik saat membuka link chat.
+- **Invoice Delivery Mail** sekarang menggunakan `ShouldQueue` untuk pengiriman asynchronous.
+- **SystemSetting** menggantikan helper `setting()` — semua pemanggilan di controller, model, job, dan blade view menggunakan `\App\Models\SystemSetting::get()`.
+
+### Fixed
+- Race condition pada `generateInvoiceNumber()`: sekarang menggunakan database transaction + `lockForUpdate()`.
+- Helper `setting()` tidak reliable di production (error autoload), diganti dengan method statis SystemSetting.
+
+### Deployment Notes
+- Jalankan `composer update` untuk menginstal `barryvdh/laravel-dompdf`.
+- Jalankan `php artisan migrate` untuk tabel `invoice_reminders`.
+- Jalankan `php artisan queue:restart` jika queue worker sedang berjalan.
+- Konfigurasi queue worker untuk production: `php artisan queue:work`.
 
 ## 2026-06-30
 

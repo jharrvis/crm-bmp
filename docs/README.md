@@ -17,6 +17,8 @@ Dokumentasi ini menjadi sumber referensi utama untuk:
   - `activity-log.md` — Activity Log dan TODO operasionalnya
   - `clients.md` — Manajemen pelanggan, kontak PIC, dan portal account
   - `invoices.md` — Alur manual invoice, pengiriman, dan signature
+  - `payments.md` — Pencatatan pembayaran, verifikasi, dan status tagihan
+  - `financial-reports.md` — Laporan keuangan, aging report, dan ringkasan pendapatan
   - `role-management.md` — CRUD role, permission sync, dan integrasi sidebar
   - `subscriptions.md` — Langganan internet/hosting/domain, pricing model, dan integrasi teknis
   - `tickets.md` — Tiket support, queue, canned response, dan integrasi client portal

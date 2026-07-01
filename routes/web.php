@@ -67,6 +67,9 @@ Route::middleware('auth')->group(function () {
         Route::post('payments/{payment}/verify', [\App\Http\Controllers\PaymentController::class, 'verify'])->name('payments.verify');
         Route::post('payments/{payment}/reject', [\App\Http\Controllers\PaymentController::class, 'reject'])->name('payments.reject');
 
+        // Financial Reports
+        Route::get('reports/financial', [\App\Http\Controllers\FinancialReportController::class, 'index'])->name('reports.financial.index');
+
         Route::resource('tickets', \App\Http\Controllers\TicketController::class)->only(['index', 'store', 'show', 'update']);
         Route::post('tickets/bulk-update', [\App\Http\Controllers\TicketController::class, 'bulkUpdate'])->name('tickets.bulk-update');
         Route::post('tickets/{ticket}/reply', [\App\Http\Controllers\TicketController::class, 'reply'])->name('tickets.reply');

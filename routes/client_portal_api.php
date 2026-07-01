@@ -26,6 +26,7 @@ Route::prefix('client-portal')->group(function () {
         Route::get('invoices', [ClientPortalInvoiceController::class, 'index']);
         Route::get('invoices/{invoice}', [ClientPortalInvoiceController::class, 'show']);
         Route::get('invoices/{invoice}/download', [ClientPortalInvoiceController::class, 'download']);
+        Route::post('invoices/{invoice}/payment-confirmation', [ClientPortalInvoiceController::class, 'paymentConfirmation']);
 
         Route::get('tickets', [ClientPortalTicketController::class, 'index']);
         Route::post('tickets', [ClientPortalTicketController::class, 'store']);
