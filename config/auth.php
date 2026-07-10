@@ -2,6 +2,8 @@
 
 return [
 
+    'registration_enabled' => env('AUTH_REGISTRATION_ENABLED', false),
+
     /*
     |--------------------------------------------------------------------------
     | Authentication Defaults

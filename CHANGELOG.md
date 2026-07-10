@@ -2,6 +2,13 @@
 
 Semua perubahan penting pada project ini dicatat di file ini.
 
+## 2026-07-10
+
+### Changed
+
+- Fitur register user publik sekarang dinonaktifkan secara default karena akun staff dan client hanya dibuat oleh admin.
+- Route, halaman, dan link UI register sekarang tidak bisa diakses saat `AUTH_REGISTRATION_ENABLED=false`, tetapi implementasinya tetap disimpan untuk kebutuhan aktivasi di masa depan.
+
 ## 2026-07-01
 
 ### Added

@@ -74,10 +74,12 @@
                     </button>
                 </form>
 
-                <p class="mt-6 text-center text-sm text-slate-600 dark:text-slate-400">
-                    Don't have an account? 
-                    <a href="{{ route('register') }}" class="font-medium text-blue-600 hover:underline dark:text-blue-500">Sign Up</a>
-                </p>
+                @if (config('auth.registration_enabled') && Route::has('register'))
+                    <p class="mt-6 text-center text-sm text-slate-600 dark:text-slate-400">
+                        Don't have an account?
+                        <a href="{{ route('register') }}" class="font-medium text-blue-600 hover:underline dark:text-blue-500">Sign Up</a>
+                    </p>
+                @endif
 
                 <p class="mt-12 text-center text-xs text-slate-500 dark:text-slate-500">
                     &copy; 2026 PT BMPnet ISP Management System. All rights reserved.
