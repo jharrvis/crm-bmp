@@ -98,9 +98,23 @@
                                     placeholder="admin">
                             </div>
                             <div>
-                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Password
-                                    <span class="text-red-500">*</span></label>
-                                <input type="password" id="password" name="password" required
+                                <div class="mb-2 flex items-center justify-between gap-2">
+                                    <label for="password" class="block text-sm font-bold text-slate-700 dark:text-slate-300">Password
+                                        <span class="text-red-500">*</span></label>
+                                    <div class="flex items-center gap-1">
+                                        <button type="button" id="toggleRouterPasswordButton" onclick="window.toggleRouterPassword()"
+                                            class="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+                                            title="Tampilkan password" aria-label="Tampilkan password">
+                                            <i data-lucide="eye" class="h-4 w-4"></i>
+                                        </button>
+                                        <button type="button" onclick="window.copyRouterPassword()"
+                                            class="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+                                            title="Salin password" aria-label="Salin password">
+                                            <i data-lucide="copy" class="h-4 w-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <input type="password" id="password" name="password" required autocomplete="off"
                                     class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                                     placeholder="Password Router">
                                 <p class="text-xs text-slate-400 mt-1 hidden" id="passwordHint">Kosongkan jika tidak
@@ -237,6 +251,8 @@
                         document.getElementById('dataForm').reset();
                         document.getElementById('dataId').value = '';
                         document.getElementById('password').required = true;
+                        document.getElementById('password').type = 'password';
+                        window.setRouterPasswordVisibility(false);
                         document.getElementById('passwordHint').classList.add('hidden');
                     }
                     lucide.createIcons();
@@ -251,6 +267,40 @@
                     panel.classList.remove('scale-100', 'opacity-100');
                     panel.classList.add('scale-95', 'opacity-0');
                     setTimeout(() => modal.classList.add('hidden'), 300);
+                };
+
+                window.setRouterPasswordVisibility = function (isVisible) {
+                    const button = document.getElementById('toggleRouterPasswordButton');
+                    const action = isVisible ? 'Sembunyikan' : 'Tampilkan';
+
+                    button.title = `${action} password`;
+                    button.setAttribute('aria-label', `${action} password`);
+                    button.innerHTML = `<i data-lucide="${isVisible ? 'eye-off' : 'eye'}" class="h-4 w-4"></i>`;
+                    lucide.createIcons();
+                };
+
+                window.toggleRouterPassword = function () {
+                    const passwordInput = document.getElementById('password');
+                    const isVisible = passwordInput.type === 'password';
+
+                    passwordInput.type = isVisible ? 'text' : 'password';
+                    window.setRouterPasswordVisibility(isVisible);
+                };
+
+                window.copyRouterPassword = async function () {
+                    const password = document.getElementById('password').value;
+
+                    if (!password) {
+                        showToast('Password router belum tersedia untuk disalin.', 'error');
+                        return;
+                    }
+
+                    try {
+                        await navigator.clipboard.writeText(password);
+                        showToast('Password router berhasil disalin.');
+                    } catch (error) {
+                        showToast('Gagal menyalin password router.', 'error');
+                    }
                 };
 
                 // Edit Data
@@ -272,7 +322,9 @@
 
                         // Password Handling
                         const passInput = document.getElementById('password');
-                        passInput.value = '';
+                        passInput.value = item.password || '';
+                        passInput.type = 'password';
+                        window.setRouterPasswordVisibility(false);
                         passInput.required = false;
                         document.getElementById('passwordHint').classList.remove('hidden');
 

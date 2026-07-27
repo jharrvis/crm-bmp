@@ -2,6 +2,12 @@
 
 Semua perubahan penting pada project ini dicatat di file ini.
 
+## 2026-07-27
+
+### Changed
+
+- Form tambah dan edit Router sekarang menyediakan kontrol untuk menampilkan/menyembunyikan serta menyalin password router, tanpa menyimpan password ke Activity Log.
+
 ## 2026-07-10
 
 ### Changed
