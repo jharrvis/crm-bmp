@@ -269,8 +269,7 @@ class GlobalSearchController extends Controller
                             ->orWhere('description', 'like', "%{$query}%");
                     })
                     ->with('branch:id,name'),
-                'map' => fn (Router $router) => $this->quickViewResult(
-                    'router',
+                'map' => fn (Router $router) => $this->pageResult(
                     $router->id,
                     $router->name,
                     [$router->host, $router->branch?->name],

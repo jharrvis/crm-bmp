@@ -37,4 +37,9 @@ class Router extends Model
     {
         return $this->belongsTo(Branch::class);
     }
+
+    public function connectivities()
+    {
+        return $this->hasMany(SubscriptionConnectivity::class);
+    }
 }

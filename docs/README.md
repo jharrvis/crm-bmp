@@ -22,6 +22,7 @@ Dokumentasi ini menjadi sumber referensi utama untuk:
   - `role-management.md` — CRUD role, permission sync, dan integrasi sidebar
   - `subscriptions.md` — Langganan internet/hosting/domain, pricing model, dan integrasi teknis
   - `tickets.md` — Tiket support, queue, canned response, dan integrasi client portal
+  - `infrastructure.md` - dokumentasi Router dan data infrastruktur jaringan yang dikelola CRM
 - `deployment.md`
   - catatan deployment, cache clear, migration, dan seeder
 - `permission-matrix.md`

@@ -67,7 +67,18 @@ class RouterController extends Controller
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json($router->load('branch'));
         }
-        return redirect()->route('routers.index');
+
+        $router->load('branch');
+        $connectivities = $router->connectivities()
+            ->with([
+                'subscription:id,client_id,package_id,subscription_code,status',
+                'subscription.client:id,name,client_code',
+                'subscription.package:id,name',
+            ])
+            ->latest()
+            ->paginate(15);
+
+        return view('routers.show', compact('router', 'connectivities'));
     }
 
     public function edit(Router $router)

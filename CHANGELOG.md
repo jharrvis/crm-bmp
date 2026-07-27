@@ -4,6 +4,10 @@ Semua perubahan penting pada project ini dicatat di file ini.
 
 ## 2026-07-27
 
+### Added
+
+- Halaman detail Router menampilkan identitas perangkat, kredensial yang dapat ditampilkan/disalin, serta daftar langganan yang terhubung. Hasil Router di Pencarian Global sekarang langsung membuka halaman ini.
+
 ### Changed
 
 - Form tambah dan edit Router sekarang menyediakan kontrol untuk menampilkan/menyembunyikan serta menyalin password router, tanpa menyimpan password ke Activity Log.
