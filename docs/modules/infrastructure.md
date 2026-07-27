@@ -24,7 +24,9 @@ Modul Infrastruktur menyimpan data perangkat dan referensi jaringan yang dipakai
 
 ### Detail Router
 
-Halaman detail Router menampilkan host, port API, cabang, status, deskripsi, username, dan password router. Password disimpan dengan encrypted cast Laravel, dikecualikan dari Activity Log, dan tersedia melalui kontrol tampilkan/sembunyikan atau salin bagi pengguna yang mempunyai `routers.view`.
+Halaman detail Router menampilkan host, port API, cabang, status, peran, deskripsi, username, dan password router. Tombol Edit membuka form Router dengan data perangkat yang sudah terisi. Password disimpan dengan encrypted cast Laravel, dikecualikan dari Activity Log, dan tersedia melalui kontrol tampilkan/sembunyikan atau salin bagi pengguna yang mempunyai `routers.view`.
+
+Peran Router bersifat opsional. Pilihan standar: Core, POP, Distribusi, Akses, Customer Gateway, dan Management. Pilihan Lainnya membuka isian peran custom.
 
 Daftar langganan yang terkait ditentukan dari relasi `subscription_connectivities.router_id`, termasuk pelanggan, kode langganan, paket, alamat IP, dan PPPoE user bila tersedia.
 

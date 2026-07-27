@@ -16,9 +16,9 @@
             </div>
 
             @can('routers.update')
-                <a href="{{ route('routers.index') }}" class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-blue-500/40 dark:hover:bg-blue-900/20 dark:hover:text-blue-300">
-                    <i data-lucide="settings-2" class="h-4 w-4"></i>
-                    Kelola Router
+                <a href="{{ route('routers.index', ['edit' => $router->id]) }}" class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-blue-500/40 dark:hover:bg-blue-900/20 dark:hover:text-blue-300">
+                    <i data-lucide="pencil" class="h-4 w-4"></i>
+                    Edit Router
                 </a>
             @endcan
         </div>
@@ -53,6 +53,16 @@
                     <div>
                         <dt class="text-xs font-bold uppercase tracking-wide text-slate-400">Tipe</dt>
                         <dd class="mt-1 font-semibold capitalize text-slate-800 dark:text-slate-100">{{ $router->type ?? 'MikroTik' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-bold uppercase tracking-wide text-slate-400">Peran Router</dt>
+                        <dd class="mt-1 font-semibold text-slate-800 dark:text-slate-100">
+                            @if ($router->router_role === 'other')
+                                {{ $router->custom_role ?: 'Lainnya' }}
+                            @else
+                                {{ \App\Models\Router::ROLE_OPTIONS[$router->router_role] ?? 'Tidak ditentukan' }}
+                            @endif
+                        </dd>
                     </div>
                     <div class="sm:col-span-2">
                         <dt class="text-xs font-bold uppercase tracking-wide text-slate-400">Deskripsi</dt>

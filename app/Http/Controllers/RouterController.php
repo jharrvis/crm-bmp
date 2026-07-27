@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Router;
 use App\Models\Branch;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class RouterController extends Controller
 {
@@ -43,8 +44,12 @@ class RouterController extends Controller
             'port' => 'required|integer',
             'user' => 'required|string|max:255',
             'password' => 'required|string',
+            'router_role' => ['nullable', Rule::in(array_keys(Router::ROLE_OPTIONS))],
+            'custom_role' => 'nullable|required_if:router_role,other|string|max:100',
             'description' => 'nullable|string',
         ]);
+
+        $this->normalizeRouterRole($validated);
 
         $router = Router::create($validated);
 
@@ -97,8 +102,12 @@ class RouterController extends Controller
             'host' => 'required|string|max:255',
             'port' => 'required|integer',
             'user' => 'required|string|max:255',
+            'router_role' => ['nullable', Rule::in(array_keys(Router::ROLE_OPTIONS))],
+            'custom_role' => 'nullable|required_if:router_role,other|string|max:100',
             'description' => 'nullable|string',
         ]);
+
+        $this->normalizeRouterRole($validated);
 
         if ($request->filled('password')) {
             $validated['password'] = $request->password;
@@ -125,6 +134,13 @@ class RouterController extends Controller
         }
 
         return redirect()->route('routers.index')->with('success', 'Router berhasil diperbarui.');
+    }
+
+    private function normalizeRouterRole(array &$validated): void
+    {
+        if (($validated['router_role'] ?? null) !== 'other') {
+            $validated['custom_role'] = null;
+        }
     }
 
     /**

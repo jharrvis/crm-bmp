@@ -7,12 +7,17 @@ Semua perubahan penting pada project ini dicatat di file ini.
 ### Added
 
 - Halaman detail Router menampilkan identitas perangkat, kredensial yang dapat ditampilkan/disalin, serta daftar langganan yang terhubung. Hasil Router di Pencarian Global sekarang langsung membuka halaman ini.
+- Router sekarang dapat diberi peran opsional melalui pilihan standar atau nilai custom.
 
 ### Changed
 
 - Form tambah dan edit Router sekarang menyediakan kontrol untuk menampilkan/menyembunyikan serta menyalin password router, tanpa menyimpan password ke Activity Log.
 - Daftar Router sekarang menyediakan aksi lihat detail sebelum edit dan hapus.
 - Modal Router diperlebar dan ditata dalam grid dua kolom pada desktop agar seluruh form dan aksi simpan lebih mudah dijangkau tanpa scroll panjang.
+
+### Deployment Notes
+
+- Jalankan `php artisan migrate` untuk menambahkan field peran router opsional.
 
 ## 2026-07-10
 

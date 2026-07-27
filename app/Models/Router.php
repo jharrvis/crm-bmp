@@ -10,6 +10,16 @@ class Router extends Model
 {
     use HasFactory, LogsModelActivity;
 
+    public const ROLE_OPTIONS = [
+        'core' => 'Core',
+        'pop' => 'POP',
+        'distribution' => 'Distribusi',
+        'access' => 'Akses',
+        'customer_gateway' => 'Customer Gateway',
+        'management' => 'Management',
+        'other' => 'Lainnya',
+    ];
+
     protected $fillable = [
         'branch_id',
         'name',
@@ -18,6 +28,8 @@ class Router extends Model
         'user',
         'password',
         'type',
+        'router_role',
+        'custom_role',
         'is_active',
         'description',
     ];

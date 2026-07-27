@@ -121,6 +121,24 @@
                                     ingin mengubah password.</p>
                             </div>
                         </div>
+                        <div class="grid grid-cols-1 gap-4 md:col-span-2 md:grid-cols-2">
+                            <div>
+                                <label for="router_role" class="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">Peran Router</label>
+                                <select id="router_role" name="router_role"
+                                    class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-800 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700/50 dark:text-white">
+                                    <option value="">Tidak ditentukan</option>
+                                    @foreach(\App\Models\Router::ROLE_OPTIONS as $value => $label)
+                                        <option value="{{ $value }}">{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div id="customRouterRoleField" class="hidden">
+                                <label for="custom_role" class="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">Peran Custom <span class="text-red-500">*</span></label>
+                                <input type="text" id="custom_role" name="custom_role" maxlength="100"
+                                    class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-800 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700/50 dark:text-white"
+                                    placeholder="Contoh: Backbone Regional">
+                            </div>
+                        </div>
                         <div class="md:col-span-2">
                             <label
                                 class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Deskripsi</label>
@@ -256,6 +274,7 @@
                         document.getElementById('password').required = true;
                         document.getElementById('password').type = 'password';
                         window.setRouterPasswordVisibility(false);
+                        window.syncRouterRoleField(true);
                         document.getElementById('passwordHint').classList.add('hidden');
                     }
                     lucide.createIcons();
@@ -306,6 +325,20 @@
                     }
                 };
 
+                window.syncRouterRoleField = function (clearValue = false) {
+                    const roleSelect = document.getElementById('router_role');
+                    const customField = document.getElementById('customRouterRoleField');
+                    const customInput = document.getElementById('custom_role');
+                    const isOther = roleSelect.value === 'other';
+
+                    customField.classList.toggle('hidden', !isOther);
+                    customInput.disabled = !isOther;
+
+                    if (!isOther && clearValue) {
+                        customInput.value = '';
+                    }
+                };
+
                 // Edit Data
                 window.editData = function (id) {
                     const item = tableData.find(d => d.id === id);
@@ -320,6 +353,9 @@
                         document.getElementById('user').value = item.user;
                         document.getElementById('description').value = item.description || '';
                         document.getElementById('branch_id').value = item.branch_id || '';
+                        document.getElementById('router_role').value = item.router_role || '';
+                        document.getElementById('custom_role').value = item.custom_role || '';
+                        window.syncRouterRoleField();
 
                         document.getElementById('is_active').checked = item.is_active;
 
@@ -440,6 +476,14 @@
                             showToast('Terjadi kesalahan!', 'error');
                         });
                 });
+
+                document.getElementById('router_role').addEventListener('change', () => window.syncRouterRoleField(true));
+
+                const routerToEdit = new URLSearchParams(window.location.search).get('edit');
+                if (routerToEdit) {
+                    window.editData(Number(routerToEdit));
+                    window.history.replaceState({}, '', window.location.pathname);
+                }
             })();
         </script>
     @endpush
