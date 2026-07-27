@@ -43,19 +43,19 @@
         <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity opacity-0"
             id="formModalBackdrop"></div>
         <div class="absolute inset-0 flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-lg transform scale-95 opacity-0 transition-all duration-300"
+            <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col rounded-2xl bg-white shadow-2xl transform scale-95 opacity-0 transition-all duration-300 dark:bg-slate-800"
                 id="formModalPanel">
-                <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                <div class="flex shrink-0 items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-700 sm:px-6">
                     <h3 class="text-lg font-bold text-slate-800 dark:text-white" id="modalTitle">Tambah Router Baru</h3>
                     <button onclick="window.closeModal()"
                         class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                         <i data-lucide="x" class="w-6 h-6"></i>
                     </button>
                 </div>
-                <form id="dataForm">
+                <form id="dataForm" class="flex min-h-0 flex-1 flex-col">
                     @csrf
                     <input type="hidden" id="dataId" name="id">
-                    <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                    <div class="custom-scrollbar grid min-h-0 grid-cols-1 gap-4 overflow-y-auto p-5 sm:p-6 md:grid-cols-2">
                         <div>
                             <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nama Router
                                 <span class="text-red-500">*</span></label>
@@ -74,7 +74,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-2 gap-4 md:col-span-2">
                             <div>
                                 <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Host / IP
                                     <span class="text-red-500">*</span></label>
@@ -89,7 +89,7 @@
                                     class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-2 gap-4 md:col-span-2">
                             <div>
                                 <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Username
                                     <span class="text-red-500">*</span></label>
@@ -121,13 +121,13 @@
                                     ingin mengubah password.</p>
                             </div>
                         </div>
-                        <div>
+                        <div class="md:col-span-2">
                             <label
                                 class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Deskripsi</label>
                             <textarea id="description" name="description" rows="2"
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"></textarea>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 md:col-span-2">
                             <input type="checkbox" id="is_active" name="is_active" value="1" checked
                                 class="w-5 h-5 rounded border-slate-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
                             <label for="is_active"
@@ -135,7 +135,7 @@
                                 ini</label>
                         </div>
                     </div>
-                    <div class="p-6 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3">
+                    <div class="flex shrink-0 justify-end gap-3 border-t border-slate-100 px-5 py-4 dark:border-slate-700 sm:px-6">
                         <button type="button" onclick="window.closeModal()"
                             class="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Batal</button>
                         <button type="submit" id="submitBtn"
@@ -206,6 +206,9 @@
                                 render: function (data, type, row) {
                                     return `
                                         <div class="flex items-center justify-center gap-2">
+                                            <a href="${baseUrl}/routers/${row.id}" class="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 rounded-lg transition-colors" title="Lihat Detail" aria-label="Lihat detail router">
+                                                <i data-lucide="eye" class="w-4 h-4"></i>
+                                            </a>
                                             <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
                                                 <i data-lucide="pencil" class="w-4 h-4"></i>
                                             </button>

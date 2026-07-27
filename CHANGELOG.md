@@ -11,6 +11,8 @@ Semua perubahan penting pada project ini dicatat di file ini.
 ### Changed
 
 - Form tambah dan edit Router sekarang menyediakan kontrol untuk menampilkan/menyembunyikan serta menyalin password router, tanpa menyimpan password ke Activity Log.
+- Daftar Router sekarang menyediakan aksi lihat detail sebelum edit dan hapus.
+- Modal Router diperlebar dan ditata dalam grid dua kolom pada desktop agar seluruh form dan aksi simpan lebih mudah dijangkau tanpa scroll panjang.
 
 ## 2026-07-10
 
