@@ -680,7 +680,7 @@
                             <div>
                                 <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Tipe Pelanggan</p>
                                 <p class="text-slate-800 dark:text-white font-medium">
-                                    {{ $subscription->client->type === 'individual' ? 'Perorangan' : 'Perusahaan' }}
+                                    {{ $subscription->client->type_label }}
                                 </p>
                             </div>
                             <div>

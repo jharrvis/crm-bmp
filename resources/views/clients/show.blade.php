@@ -111,15 +111,19 @@
                                         class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Tipe
                                         Pelanggan</label>
                                     <p id="view-type" class="text-base text-slate-700 dark:text-slate-300">
-                                        {{ $client->type === 'business' ? 'Bisnis (Perusahaan)' : 'Personal (Perorangan)' }}
+                                        {{ $client->type_label }}
                                     </p>
                                     <select id="edit-type" name="type" required
                                         class="hidden w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
-                                        <option value="personal" {{ $client->type === 'personal' ? 'selected' : '' }}>
-                                            Personal (Perorangan)</option>
-                                        <option value="business" {{ $client->type === 'business' ? 'selected' : '' }}>
-                                            Bisnis (Perusahaan)</option>
+                                        @foreach(\App\Models\Client::TYPE_OPTIONS as $value => $label)
+                                            <option value="{{ $value }}" {{ $client->type === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                        @endforeach
                                     </select>
+                                    <div id="customTypeEditField" class="mt-2 hidden">
+                                        <input type="text" id="edit-custom-type" name="custom_type" value="{{ $client->custom_type }}" maxlength="100"
+                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="Kategori pelanggan custom">
+                                    </div>
                                 </div>
                                 <div>
                                     <label
@@ -717,6 +721,21 @@
             const hasPortalAccount = @json((bool) $client->portalAccount);
             let portalOtpHideTimer = null;
 
+            function syncDetailCustomType(clearValue = false) {
+                const typeInput = document.getElementById('edit-type');
+                const customTypeField = document.getElementById('customTypeEditField');
+                const customTypeInput = document.getElementById('edit-custom-type');
+                const isOther = typeInput.value === 'other';
+
+                customTypeField.classList.toggle('hidden', !isOther);
+
+                if (!isOther && clearValue) {
+                    customTypeInput.value = '';
+                }
+            }
+
+            document.getElementById('edit-type').addEventListener('change', () => syncDetailCustomType(true));
+
             async function switchTab(tabName) {
                 // If in edit mode and switching tabs, cancel edit
                 if (isEditMode && tabName !== 'info' && tabName !== 'contacts') {
@@ -765,6 +784,7 @@
                 // Toggle all view/edit elements in Data Utama
                 document.querySelectorAll('[id^="view-"]').forEach(el => el.classList.add('hidden'));
                 document.querySelectorAll('[id^="edit-"]').forEach(el => el.classList.remove('hidden'));
+                syncDetailCustomType();
 
                 // Show Contact Actions
                 document.getElementById('addContactBtn').classList.remove('hidden');
@@ -795,6 +815,8 @@
                         if (input) input.value = originalData[key];
                     });
                 }
+
+                syncDetailCustomType();
 
                 lucide.createIcons();
             }

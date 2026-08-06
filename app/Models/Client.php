@@ -10,6 +10,18 @@ class Client extends Model
 {
     use HasFactory, LogsModelActivity;
 
+    public const TYPE_OPTIONS = [
+        'personal' => 'Personal (Perorangan)',
+        'business' => 'Bisnis / Perusahaan',
+        'government' => 'Pemerintah / Instansi Publik / BUMN',
+        'education' => 'Pendidikan',
+        'nonprofit' => 'Yayasan / LSM / Nirlaba',
+        'religious' => 'Keagamaan',
+        'community' => 'Komunitas / Organisasi / Asosiasi',
+        'property' => 'Properti Bersama',
+        'other' => 'Lainnya',
+    ];
+
     protected $fillable = [
         'branch_id',
         'user_id',
@@ -17,6 +29,7 @@ class Client extends Model
         'registered_at',
         'name',
         'type',
+        'custom_type',
         'identity_number',
         'address',
         'city',
@@ -32,6 +45,15 @@ class Client extends Model
     ];
 
     protected string $activitylogEntityName = 'pelanggan';
+
+    public function getTypeLabelAttribute(): string
+    {
+        if ($this->type === 'other' && filled($this->custom_type)) {
+            return $this->custom_type;
+        }
+
+        return self::TYPE_OPTIONS[$this->type] ?? 'Tidak ditentukan';
+    }
 
     public function branch()
     {

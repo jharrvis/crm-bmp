@@ -8,6 +8,7 @@ use App\Models\ClientContact;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Yajra\DataTables\Facades\DataTables;
 
 class ClientController extends Controller
@@ -43,6 +44,9 @@ class ClientController extends Controller
                 ->addColumn('primary_contact_phone', function ($row) {
                     return $row->primaryContact ? $row->primaryContact->phone : '-';
                 })
+                ->addColumn('type_label', function ($row) {
+                    return $row->type_label;
+                })
                 ->make(true);
         }
 
@@ -65,7 +69,8 @@ class ClientController extends Controller
             'branch_id' => 'required|exists:branches,id',
             'registered_at' => 'nullable|date',
             'name' => 'required|string|max:255',
-            'type' => 'required|string|in:personal,business',
+            'type' => ['required', 'string', Rule::in(array_keys(Client::TYPE_OPTIONS))],
+            'custom_type' => 'nullable|required_if:type,other|string|max:100',
             'identity_number' => 'nullable|string|max:50',
             'address' => 'nullable|string',
             'city' => 'nullable|string|max:100',
@@ -82,6 +87,8 @@ class ClientController extends Controller
             'contacts.*.position' => 'nullable|string|max:100',
             'contacts.*.whatsapp' => 'nullable|string|max:50',
         ]);
+
+        $this->normalizeClientType($validated);
 
         DB::beginTransaction();
         try {
@@ -131,6 +138,13 @@ class ClientController extends Controller
         }
     }
 
+    private function normalizeClientType(array &$validated): void
+    {
+        if (($validated['type'] ?? null) !== 'other') {
+            $validated['custom_type'] = null;
+        }
+    }
+
     /**
      * Display the specified resource.
      */
@@ -162,7 +176,8 @@ class ClientController extends Controller
             'branch_id' => 'required|exists:branches,id',
             'registered_at' => 'nullable|date',
             'name' => 'required|string|max:255',
-            'type' => 'required|string|in:personal,business',
+            'type' => ['required', 'string', Rule::in(array_keys(Client::TYPE_OPTIONS))],
+            'custom_type' => 'nullable|required_if:type,other|string|max:100',
             'identity_number' => 'nullable|string|max:50',
             'address' => 'nullable|string',
             'city' => 'nullable|string|max:100',
@@ -179,6 +194,8 @@ class ClientController extends Controller
             'contacts.*.position' => 'nullable|string|max:100',
             'contacts.*.whatsapp' => 'nullable|string|max:50',
         ]);
+
+        $this->normalizeClientType($validated);
 
         DB::beginTransaction();
         try {

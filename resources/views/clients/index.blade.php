@@ -128,9 +128,16 @@
                                         Pelanggan</label>
                                     <select id="type" name="type" required
                                         class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
-                                        <option value="personal">Personal (Perorangan)</option>
-                                        <option value="business">Bisnis (Perusahaan)</option>
+                                        @foreach(\App\Models\Client::TYPE_OPTIONS as $value => $label)
+                                            <option value="{{ $value }}">{{ $label }}</option>
+                                        @endforeach
                                     </select>
+                                </div>
+                                <div id="customTypeField" class="hidden">
+                                    <label for="custom_type" class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Kategori Custom <span class="text-red-500">*</span></label>
+                                    <input type="text" id="custom_type" name="custom_type" maxlength="100"
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-slate-400"
+                                        placeholder="Contoh: Koperasi Desa">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">No.
@@ -295,6 +302,8 @@
         <script>
             (function () {
                 const baseUrl = '{{ url('/') }}';
+                const clientTypeLabels = @json(\App\Models\Client::TYPE_OPTIONS);
+                const escapeHtml = (value) => $('<div>').text(value || '').html();
                 // Initialize DataTable
                 table = $('#dataTable').DataTable({
                     processing: true,
@@ -329,10 +338,10 @@
                             render: (data) => data !== '-' ? `<span class="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300">${data}</span>` : '-'
                         },
                         {
-                            data: 'type',
+                            data: 'type_label',
                             name: 'type',
                             className: 'p-4',
-                            render: (data) => data === 'business' ? 'Bisnis' : 'Personal'
+                            render: (data, type, row) => escapeHtml(data || clientTypeLabels[row.type] || 'Tidak ditentukan')
                         },
                         {
                             data: 'status',
@@ -491,6 +500,7 @@
                         form.reset();
                         document.getElementById('dataId').value = '';
                         document.getElementById('registered_at').value = new Date().toISOString().split('T')[0];
+                        window.syncClientCustomType(true);
 
                         // Reset Contacts: Add one empty row
                         document.getElementById('contacts-container').innerHTML = '';
@@ -511,6 +521,20 @@
                     panel.classList.remove('scale-100', 'opacity-100');
                     panel.classList.add('scale-95', 'opacity-0');
                     setTimeout(() => modal.classList.add('hidden'), 300);
+                };
+
+                window.syncClientCustomType = function (clearValue = false) {
+                    const typeInput = document.getElementById('type');
+                    const customTypeField = document.getElementById('customTypeField');
+                    const customTypeInput = document.getElementById('custom_type');
+                    const isOther = typeInput.value === 'other';
+
+                    customTypeField.classList.toggle('hidden', !isOther);
+                    customTypeInput.disabled = !isOther;
+
+                    if (!isOther && clearValue) {
+                        customTypeInput.value = '';
+                    }
                 };
 
                 // Form Submit
@@ -627,6 +651,8 @@
                     document.getElementById('branch_id').value = item.branch_id;
                     document.getElementById('name').value = item.name;
                     document.getElementById('type').value = item.type;
+                    document.getElementById('custom_type').value = item.custom_type || '';
+                    window.syncClientCustomType();
                     document.getElementById('identity_number').value = item.identity_number || '';
                     document.getElementById('address').value = item.address || '';
                     document.getElementById('city').value = item.city || '';
@@ -665,6 +691,7 @@
                         document.getElementById('modalTitle').innerText = 'Edit Pelanggan';
                         document.getElementById('submitText').innerText = 'Update Data';
                         window.openModal('edit');
+                        window.syncClientCustomType();
                     })
                     .catch(e => {
                         console.error(e);
@@ -708,6 +735,8 @@
                             });
                     });
                 };
+
+                document.getElementById('type').addEventListener('change', () => window.syncClientCustomType(true));
             })();
         </script>
     @endpush

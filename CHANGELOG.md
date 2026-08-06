@@ -2,6 +2,20 @@
 
 Semua perubahan penting pada project ini dicatat di file ini.
 
+## 2026-08-06
+
+### Added
+
+- Tipe pelanggan sekarang mendukung kategori Bisnis, Pemerintah, Pendidikan, Nirlaba, Keagamaan, Komunitas, Properti Bersama, dan Lainnya dengan kategori custom.
+
+### Changed
+
+- Form, daftar, detail pelanggan, dan panel informasi langganan sekarang menampilkan label tipe pelanggan yang konsisten.
+
+### Deployment Notes
+
+- Jalankan `php artisan migrate` untuk menambahkan field kategori pelanggan custom.
+
 ## 2026-07-27
 
 ### Added

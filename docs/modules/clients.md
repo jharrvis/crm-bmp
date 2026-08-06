@@ -25,7 +25,7 @@ Mengelola data pelanggan ISP per cabang. Setiap client memiliki kode unik yang d
 
 ### Field Client
 
-`branch_id`, `user_id`, `client_code`, `registered_at`, `name`, `type`, `identity_number`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `status`, `notes`
+`branch_id`, `user_id`, `client_code`, `registered_at`, `name`, `type`, `custom_type`, `identity_number`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `status`, `notes`
 
 ### Field ClientContact
 
@@ -86,7 +86,7 @@ Portal account management dibatasi via route-level `role:Owner|Admin` middleware
 
 ## Alur Bisnis
 
-1. **Registrasi client**: Staff mengisi form (nama, tipe, alamat, cabang, kontak PIC).
+1. **Registrasi client**: Staff mengisi form (nama, tipe, alamat, cabang, kontak PIC). Tipe standar mencakup Perorangan, Bisnis, Pemerintah, Pendidikan, Nirlaba, Keagamaan, Komunitas, dan Properti Bersama. Pilihan Lainnya mewajibkan kategori custom.
 2. **Generate client_code**: Otomatis format `{branch_id}{YY}{NNN}` (contoh: `126001`). Collision-safe dengan do-while loop.
 3. **Kontak PIC**: Kontak pertama otomatis jadi primary. Primary contact tidak bisa dihapus. Satu client bisa punya banyak kontak.
 4. **Detail client**: Menampilkan tab subscriptions, invoices, tickets, portal account.
