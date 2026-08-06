@@ -346,6 +346,24 @@
 
     <x-confirm-modal />
 
+    @php
+        $branchDefaults = [];
+
+        foreach ($branches as $branch) {
+            $branchDefaults[$branch->id] = [
+                'province_code' => $branch->default_province_code,
+                'regency_code' => $branch->default_regency_code,
+                'latitude' => $branch->default_latitude,
+                'longitude' => $branch->default_longitude,
+            ];
+        }
+
+        $mapConfig = [
+            'tileUrl' => config('maps.tile_url'),
+            'attribution' => config('maps.attribution'),
+        ];
+    @endphp
+
     @push('scripts')
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQe5EY0FQbqoDt63T9pMYyR+dqYzP0=" crossorigin="">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
@@ -358,16 +376,8 @@
             (function () {
                 const baseUrl = '{{ url('/') }}';
                 const administrativeAreasUrl = '{{ route('administrative-areas.index') }}';
-                const branchDefaults = @json($branches->mapWithKeys(fn ($branch) => [$branch->id => [
-                    'province_code' => $branch->default_province_code,
-                    'regency_code' => $branch->default_regency_code,
-                    'latitude' => $branch->default_latitude,
-                    'longitude' => $branch->default_longitude,
-                ]]));
-                const mapConfig = @json([
-                    'tileUrl' => config('maps.tile_url'),
-                    'attribution' => config('maps.attribution'),
-                ]);
+                const branchDefaults = @json($branchDefaults);
+                const mapConfig = @json($mapConfig);
                 const centralJava = { latitude: -7.15000000, longitude: 110.14000000 };
                 const clientTypeLabels = @json(\App\Models\Client::TYPE_OPTIONS);
                 const escapeHtml = (value) => $('<div>').text(value || '').html();
