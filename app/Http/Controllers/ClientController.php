@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Yajra\DataTables\Facades\DataTables;
 
 class ClientController extends Controller
@@ -73,7 +74,13 @@ class ClientController extends Controller
             'custom_type' => 'nullable|required_if:type,other|string|max:100',
             'identity_number' => 'nullable|string|max:50',
             'address' => 'nullable|string',
+            'rt' => 'nullable|string|max:5',
+            'rw' => 'nullable|string|max:5',
             'city' => 'nullable|string|max:100',
+            'province_code' => 'nullable|string|max:20',
+            'regency_code' => 'nullable|string|max:20',
+            'district_code' => 'nullable|string|max:20',
+            'village_code' => 'nullable|string|max:20',
             'postal_code' => 'nullable|string|max:20',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
@@ -89,6 +96,7 @@ class ClientController extends Controller
         ]);
 
         $this->normalizeClientType($validated);
+        $this->validateAdministrativeAddress($validated);
 
         DB::beginTransaction();
         try {
@@ -151,10 +159,10 @@ class ClientController extends Controller
     public function show(Request $request, Client $client)
     {
         if ($request->wantsJson() || $request->ajax()) {
-            return response()->json($client->load('branch', 'contacts'));
+            return response()->json($client->load('branch', 'contacts', 'province', 'regency', 'district', 'village'));
         }
 
-        $client->load(['branch', 'contacts', 'subscriptions.package.service', 'portalAccount.sessions']);
+        $client->load(['branch', 'contacts', 'province', 'regency', 'district', 'village', 'subscriptions.package.service', 'portalAccount.sessions']);
 
         $invoices = $client->invoices()->latest()->get();
         $packages = \App\Models\Package::where('is_active', true)->get(); // For "Add Service" modal if needed here
@@ -180,7 +188,13 @@ class ClientController extends Controller
             'custom_type' => 'nullable|required_if:type,other|string|max:100',
             'identity_number' => 'nullable|string|max:50',
             'address' => 'nullable|string',
+            'rt' => 'nullable|string|max:5',
+            'rw' => 'nullable|string|max:5',
             'city' => 'nullable|string|max:100',
+            'province_code' => 'nullable|string|max:20',
+            'regency_code' => 'nullable|string|max:20',
+            'district_code' => 'nullable|string|max:20',
+            'village_code' => 'nullable|string|max:20',
             'postal_code' => 'nullable|string|max:20',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
@@ -196,6 +210,7 @@ class ClientController extends Controller
         ]);
 
         $this->normalizeClientType($validated);
+        $this->validateAdministrativeAddress($validated);
 
         DB::beginTransaction();
         try {
@@ -298,5 +313,34 @@ class ClientController extends Controller
         } while (Client::query()->where('client_code', $clientCode)->exists());
 
         return $clientCode;
+    }
+
+    private function validateAdministrativeAddress(array $validated): void
+    {
+        $levels = [
+            'province_code' => ['province', null],
+            'regency_code' => ['regency', 'province_code'],
+            'district_code' => ['district', 'regency_code'],
+            'village_code' => ['village', 'district_code'],
+        ];
+
+        foreach ($levels as $field => [$level, $parentField]) {
+            if (blank($validated[$field] ?? null)) {
+                continue;
+            }
+
+            $parentCode = $parentField ? ($validated[$parentField] ?? null) : null;
+            $exists = \App\Models\AdministrativeArea::query()
+                ->where('code', $validated[$field])
+                ->where('level', $level)
+                ->when($parentField, fn ($query) => $query->where('parent_code', $parentCode))
+                ->exists();
+
+            if (! $exists) {
+                throw ValidationException::withMessages([
+                    $field => 'Data wilayah administratif tidak valid atau tidak sesuai dengan wilayah induknya.',
+                ]);
+            }
+        }
     }
 }

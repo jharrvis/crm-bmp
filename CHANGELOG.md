@@ -7,14 +7,17 @@ Semua perubahan penting pada project ini dicatat di file ini.
 ### Added
 
 - Tipe pelanggan sekarang mendukung kategori Bisnis, Pemerintah, Pendidikan, Nirlaba, Keagamaan, Komunitas, Properti Bersama, dan Lainnya dengan kategori custom.
+- Form pelanggan sekarang memiliki tab alamat dengan pilihan provinsi, kabupaten/kota, kecamatan, dan kelurahan/desa yang dapat dicari dan saling memfilter. RT/RW, kode pos, serta koordinat dapat diisi sebagai pelengkap.
 
 ### Changed
 
 - Form, daftar, detail pelanggan, dan panel informasi langganan sekarang menampilkan label tipe pelanggan yang konsisten.
+- Data alamat lama pelanggan tetap dipertahankan; struktur alamat administratif baru bersifat opsional dan dapat dilengkapi bertahap.
 
 ### Deployment Notes
 
 - Jalankan `php artisan migrate` untuk menambahkan field kategori pelanggan custom.
+- Jalankan `php artisan db:seed --class=AdministrativeAreaSeeder` satu kali setelah migration untuk mengimpor data wilayah lokal yang dipakai dropdown alamat.
 
 ## 2026-07-27
 

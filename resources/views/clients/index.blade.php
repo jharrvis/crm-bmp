@@ -92,6 +92,10 @@
                                 class="px-6 py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 transition-colors">
                                 Data Utama
                             </button>
+                            <button type="button" onclick="switchTab('address')" id="tab-address"
+                                class="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors">
+                                Alamat
+                            </button>
                             <button type="button" onclick="switchTab('contacts')" id="tab-contacts"
                                 class="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors">
                                 Kontak
@@ -148,45 +152,6 @@
                                 </div>
                             </div>
 
-                            <div>
-                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Alamat
-                                    Lengkap</label>
-                                <textarea id="address" name="address" rows="3"
-                                    class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-slate-400"></textarea>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label
-                                        class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Kota/Kabupaten</label>
-                                    <input type="text" id="city" name="city"
-                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-slate-400">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Kode
-                                        Pos</label>
-                                    <input type="text" id="postal_code" name="postal_code"
-                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-slate-400">
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label
-                                        class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Latitude</label>
-                                    <input type="text" id="latitude" name="latitude"
-                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-slate-400"
-                                        placeholder="-7.12345678">
-                                </div>
-                                <div>
-                                    <label
-                                        class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Longitude</label>
-                                    <input type="text" id="longitude" name="longitude"
-                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-slate-400"
-                                        placeholder="110.12345678">
-                                </div>
-                            </div>
-
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label
@@ -206,11 +171,69 @@
                                         <option value="suspended">Ditangguhkan (Suspend)</option>
                                     </select>
                                 </div>
-                                <div>
+                                <div class="md:col-span-2">
                                     <label
                                         class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Catatan</label>
-                                    <input type="text" id="notes" name="notes"
-                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-slate-400">
+                                    <textarea id="notes" name="notes" rows="3"
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-slate-400"
+                                        placeholder="Catatan internal pelanggan (opsional)"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab Content: Address -->
+                        <div id="content-address" class="hidden space-y-5">
+                            <p class="text-sm text-slate-500 dark:text-slate-400">Alamat lama tetap dipertahankan. Lengkapi wilayah administratif bila tersedia.</p>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Alamat Lengkap</label>
+                                <textarea id="address" name="address" rows="3"
+                                    class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-slate-400"
+                                    placeholder="Nama jalan, nomor bangunan, blok, atau patokan lokasi"></textarea>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Provinsi</label>
+                                    <select id="province_code" name="province_code" class="area-select w-full"><option value="">Pilih provinsi</option></select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Kabupaten/Kota</label>
+                                    <select id="regency_code" name="regency_code" class="area-select w-full" disabled><option value="">Pilih kabupaten/kota</option></select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Kecamatan</label>
+                                    <select id="district_code" name="district_code" class="area-select w-full" disabled><option value="">Pilih kecamatan</option></select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Kelurahan/Desa</label>
+                                    <select id="village_code" name="village_code" class="area-select w-full" disabled><option value="">Pilih kelurahan/desa</option></select>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">RT</label>
+                                    <input type="text" id="rt" name="rt" maxlength="5" class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="001">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">RW</label>
+                                    <input type="text" id="rw" name="rw" maxlength="5" class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="002">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Kota/Kabupaten Lama</label>
+                                    <input type="text" id="city" name="city" class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Kode Pos</label>
+                                    <input type="text" id="postal_code" name="postal_code" maxlength="20" class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Latitude</label>
+                                    <input type="text" id="latitude" name="latitude" class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="-7.12345678">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Longitude</label>
+                                    <input type="text" id="longitude" name="longitude" class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="110.12345678">
                                 </div>
                             </div>
                         </div>
@@ -296,14 +319,90 @@
     <x-confirm-modal />
 
     @push('scripts')
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
         <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
         <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
         <script>
             (function () {
                 const baseUrl = '{{ url('/') }}';
+                const administrativeAreasUrl = '{{ route('administrative-areas.index') }}';
                 const clientTypeLabels = @json(\App\Models\Client::TYPE_OPTIONS);
                 const escapeHtml = (value) => $('<div>').text(value || '').html();
+                const areaChoices = {};
+                const areaFields = {
+                    province: { id: 'province_code', placeholder: 'Cari provinsi' },
+                    regency: { id: 'regency_code', placeholder: 'Cari kabupaten/kota' },
+                    district: { id: 'district_code', placeholder: 'Cari kecamatan' },
+                    village: { id: 'village_code', placeholder: 'Cari kelurahan/desa' },
+                };
+
+                Object.values(areaFields).forEach(({ id, placeholder }) => {
+                    areaChoices[id] = new Choices(document.getElementById(id), {
+                        allowHTML: false,
+                        searchEnabled: true,
+                        shouldSort: false,
+                        itemSelectText: '',
+                        noResultsText: 'Data wilayah tidak ditemukan',
+                        searchPlaceholderValue: placeholder,
+                    });
+                });
+
+                function setAreaDisabled(id, disabled) {
+                    const select = document.getElementById(id);
+                    select.disabled = disabled;
+                    disabled ? areaChoices[id].disable() : areaChoices[id].enable();
+                }
+
+                function resetAreaSelect(level) {
+                    const { id, placeholder } = areaFields[level];
+                    areaChoices[id].clearStore();
+                    areaChoices[id].setChoices([{ value: '', label: placeholder, placeholder: true, selected: true }], 'value', 'label', true);
+                    setAreaDisabled(id, level !== 'province');
+                }
+
+                async function loadAreas(level, parentCode = null, selectedCode = '') {
+                    const { id, placeholder } = areaFields[level];
+                    const params = new URLSearchParams({ level });
+                    if (parentCode) params.set('parent_code', parentCode);
+
+                    const response = await fetch(`${administrativeAreasUrl}?${params.toString()}`, {
+                        headers: { 'Accept': 'application/json' },
+                    });
+                    const payload = await response.json();
+                    const choices = [{ value: '', label: placeholder, placeholder: true, selected: !selectedCode }]
+                        .concat(payload.data.map((area) => ({
+                            value: area.code,
+                            label: area.name,
+                            selected: area.code === selectedCode,
+                        })));
+
+                    areaChoices[id].clearStore();
+                    areaChoices[id].setChoices(choices, 'value', 'label', true);
+                    setAreaDisabled(id, false);
+                }
+
+                async function resetAddressAreas() {
+                    resetAreaSelect('province');
+                    resetAreaSelect('regency');
+                    resetAreaSelect('district');
+                    resetAreaSelect('village');
+                    await loadAreas('province');
+                }
+
+                async function fillAddressAreas(item) {
+                    resetAreaSelect('regency');
+                    resetAreaSelect('district');
+                    resetAreaSelect('village');
+                    await loadAreas('province', null, item.province_code || '');
+                    if (!item.province_code) return;
+                    await loadAreas('regency', item.province_code, item.regency_code || '');
+                    if (!item.regency_code) return;
+                    await loadAreas('district', item.regency_code, item.district_code || '');
+                    if (!item.district_code) return;
+                    await loadAreas('village', item.district_code, item.village_code || '');
+                }
                 // Initialize DataTable
                 table = $('#dataTable').DataTable({
                     processing: true,
@@ -410,12 +509,17 @@
                     document.getElementById('tab-main').classList.toggle('border-blue-600', tabName === 'main');
                     document.getElementById('tab-main').classList.toggle('text-slate-500', tabName !== 'main');
 
+                    document.getElementById('tab-address').classList.toggle('text-blue-600', tabName === 'address');
+                    document.getElementById('tab-address').classList.toggle('border-blue-600', tabName === 'address');
+                    document.getElementById('tab-address').classList.toggle('text-slate-500', tabName !== 'address');
+
                     document.getElementById('tab-contacts').classList.toggle('text-blue-600', tabName === 'contacts');
                     document.getElementById('tab-contacts').classList.toggle('border-blue-600', tabName === 'contacts');
                     document.getElementById('tab-contacts').classList.toggle('text-slate-500', tabName !== 'contacts');
 
                     // Update Content
                     document.getElementById('content-main').classList.toggle('hidden', tabName !== 'main');
+                    document.getElementById('content-address').classList.toggle('hidden', tabName !== 'address');
                     document.getElementById('content-contacts').classList.toggle('hidden', tabName !== 'contacts');
                 }
 
@@ -501,6 +605,7 @@
                         document.getElementById('dataId').value = '';
                         document.getElementById('registered_at').value = new Date().toISOString().split('T')[0];
                         window.syncClientCustomType(true);
+                        resetAddressAreas();
 
                         // Reset Contacts: Add one empty row
                         document.getElementById('contacts-container').innerHTML = '';
@@ -634,8 +739,8 @@
                         }
                     })
                     .then(r => r.json())
-                    .then(item => {
-                        fillFormWithData(item);
+                    .then(async item => {
+                        await fillFormWithData(item);
                         document.getElementById('modalTitle').innerText = 'Detail Pelanggan';
                         window.openModal('view');
                     })
@@ -646,7 +751,7 @@
                 };
 
                 // Helper to fill form
-                function fillFormWithData(item) {
+                async function fillFormWithData(item) {
                     document.getElementById('dataId').value = item.id;
                     document.getElementById('branch_id').value = item.branch_id;
                     document.getElementById('name').value = item.name;
@@ -655,6 +760,8 @@
                     window.syncClientCustomType();
                     document.getElementById('identity_number').value = item.identity_number || '';
                     document.getElementById('address').value = item.address || '';
+                    document.getElementById('rt').value = item.rt || '';
+                    document.getElementById('rw').value = item.rw || '';
                     document.getElementById('city').value = item.city || '';
                     document.getElementById('postal_code').value = item.postal_code || '';
                     document.getElementById('latitude').value = item.latitude || '';
@@ -662,6 +769,7 @@
                     document.getElementById('registered_at').value = item.registered_at || '';
                     document.getElementById('status').value = item.status;
                     document.getElementById('notes').value = item.notes || '';
+                    await fillAddressAreas(item);
 
                     // Fill Contacts
                     document.getElementById('contacts-container').innerHTML = '';
@@ -686,8 +794,8 @@
                         }
                     })
                     .then(r => r.json())
-                    .then(item => {
-                        fillFormWithData(item);
+                    .then(async item => {
+                        await fillFormWithData(item);
                         document.getElementById('modalTitle').innerText = 'Edit Pelanggan';
                         document.getElementById('submitText').innerText = 'Update Data';
                         window.openModal('edit');
@@ -737,6 +845,31 @@
                 };
 
                 document.getElementById('type').addEventListener('change', () => window.syncClientCustomType(true));
+                document.getElementById('province_code').addEventListener('change', async (event) => {
+                    resetAreaSelect('district');
+                    resetAreaSelect('village');
+                    if (event.target.value) {
+                        await loadAreas('regency', event.target.value);
+                    } else {
+                        resetAreaSelect('regency');
+                    }
+                });
+                document.getElementById('regency_code').addEventListener('change', async (event) => {
+                    resetAreaSelect('village');
+                    if (event.target.value) {
+                        await loadAreas('district', event.target.value);
+                    } else {
+                        resetAreaSelect('district');
+                    }
+                });
+                document.getElementById('district_code').addEventListener('change', async (event) => {
+                    if (event.target.value) {
+                        await loadAreas('village', event.target.value);
+                    } else {
+                        resetAreaSelect('village');
+                    }
+                });
+                resetAddressAreas();
             })();
         </script>
     @endpush

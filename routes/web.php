@@ -40,6 +40,8 @@ Route::middleware('auth')->group(function () {
 
         // Core Business: Client Management
         // Core Business: Client Management
+        Route::get('administrative-areas', [\App\Http\Controllers\AdministrativeAreaController::class, 'index'])
+            ->name('administrative-areas.index');
         Route::resource('clients', \App\Http\Controllers\ClientController::class);
         Route::resource('clients.contacts', \App\Http\Controllers\ClientContactController::class)->only(['store', 'update', 'destroy']);
         Route::resource('subscriptions', \App\Http\Controllers\SubscriptionController::class);

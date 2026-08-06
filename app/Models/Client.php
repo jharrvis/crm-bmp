@@ -32,7 +32,13 @@ class Client extends Model
         'custom_type',
         'identity_number',
         'address',
+        'rt',
+        'rw',
         'city',
+        'province_code',
+        'regency_code',
+        'district_code',
+        'village_code',
         'postal_code',
         'latitude',
         'longitude',
@@ -94,5 +100,25 @@ class Client extends Model
     public function portalAccount()
     {
         return $this->hasOne(ClientPortalAccount::class);
+    }
+
+    public function province()
+    {
+        return $this->belongsTo(AdministrativeArea::class, 'province_code', 'code');
+    }
+
+    public function regency()
+    {
+        return $this->belongsTo(AdministrativeArea::class, 'regency_code', 'code');
+    }
+
+    public function district()
+    {
+        return $this->belongsTo(AdministrativeArea::class, 'district_code', 'code');
+    }
+
+    public function village()
+    {
+        return $this->belongsTo(AdministrativeArea::class, 'village_code', 'code');
     }
 }

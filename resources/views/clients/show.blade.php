@@ -167,6 +167,28 @@
                                 </div>
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
+                                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Provinsi</label>
+                                        <p class="text-base text-slate-700 dark:text-slate-300">{{ $client->province?->name ?? '-' }}</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Kabupaten/Kota</label>
+                                        <p class="text-base text-slate-700 dark:text-slate-300">{{ $client->regency?->name ?? $client->city ?? '-' }}</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Kecamatan</label>
+                                        <p class="text-base text-slate-700 dark:text-slate-300">{{ $client->district?->name ?? '-' }}</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Kelurahan/Desa</label>
+                                        <p class="text-base text-slate-700 dark:text-slate-300">{{ $client->village?->name ?? '-' }}</p>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">RT/RW</label>
+                                    <p class="text-base text-slate-700 dark:text-slate-300">{{ $client->rt || $client->rw ? sprintf('%s / %s', $client->rt ?: '-', $client->rw ?: '-') : '-' }}</p>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
                                         <label
                                             class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Kota</label>
                                         <p id="view-city" class="text-base text-slate-700 dark:text-slate-300">
