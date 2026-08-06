@@ -35,5 +35,6 @@ php artisan optimize:clear
 - Jika ada permission baru, jalankan `PermissionSeeder` lalu `php artisan permission:cache-reset`.
 - Jika ada rewrite history Git, server production tidak boleh memakai `git pull` biasa. Gunakan sinkronisasi branch yang sesuai.
 - Jika ada migration invoice manual baru, jalankan `php artisan migrate`.
+- Jika update mencakup default wilayah cabang atau modal peta pelanggan, jalankan `php artisan migrate`. Tidak diperlukan API key Google Maps.
 - Jika form atau halaman invoice menambah class Tailwind baru di Blade, jalankan `npm run build`.
 - Jika fitur signature invoice dipakai di server baru, pastikan `php artisan storage:link` sudah tersedia agar file di disk `public` dapat diakses.

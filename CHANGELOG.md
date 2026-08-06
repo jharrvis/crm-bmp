@@ -8,16 +8,19 @@ Semua perubahan penting pada project ini dicatat di file ini.
 
 - Tipe pelanggan sekarang mendukung kategori Bisnis, Pemerintah, Pendidikan, Nirlaba, Keagamaan, Komunitas, Properti Bersama, dan Lainnya dengan kategori custom.
 - Form pelanggan sekarang memiliki tab alamat dengan pilihan provinsi, kabupaten/kota, kecamatan, dan kelurahan/desa yang dapat dicari dan saling memfilter. RT/RW, kode pos, serta koordinat dapat diisi sebagai pelengkap.
+- Form pelanggan sekarang menyediakan modal peta OpenStreetMap untuk memilih titik dan mengisi latitude/longitude tanpa Google Maps API key atau billing account.
 
 ### Changed
 
 - Form, daftar, detail pelanggan, dan panel informasi langganan sekarang menampilkan label tipe pelanggan yang konsisten.
 - Data alamat lama pelanggan tetap dipertahankan; struktur alamat administratif baru bersifat opsional dan dapat dilengkapi bertahap.
+- Default wilayah Jawa Tengah per cabang sekarang diterapkan otomatis saat pelanggan belum memiliki kode provinsi dan kabupaten/kota; default tersebut juga menjadi pusat awal peta.
 
 ### Deployment Notes
 
 - Jalankan `php artisan migrate` untuk menambahkan field kategori pelanggan custom.
 - Jalankan `php artisan db:seed --class=AdministrativeAreaSeeder` satu kali setelah migration untuk mengimpor data wilayah lokal yang dipakai dropdown alamat.
+- Jalankan `php artisan migrate` untuk menambahkan default wilayah dan titik pusat peta pada cabang.
 
 ## 2026-07-27
 

@@ -14,6 +14,15 @@ class Branch extends Model
         'code',
         'address',
         'phone',
+        'default_province_code',
+        'default_regency_code',
+        'default_latitude',
+        'default_longitude',
+    ];
+
+    protected $casts = [
+        'default_latitude' => 'decimal:8',
+        'default_longitude' => 'decimal:8',
     ];
 
     protected string $activitylogEntityName = 'branch';

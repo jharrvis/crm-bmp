@@ -228,7 +228,12 @@
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Latitude</label>
+                                    <div class="flex items-center justify-between mb-2">
+                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Latitude</label>
+                                        <button type="button" onclick="openLocationMap()" class="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 inline-flex items-center gap-1">
+                                            <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> Pilih di Peta
+                                        </button>
+                                    </div>
                                     <input type="text" id="latitude" name="latitude" class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="-7.12345678">
                                 </div>
                                 <div>
@@ -267,6 +272,29 @@
                         </svg>
                         <span id="submitText">Simpan Data</span>
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="locationMapModal" class="fixed inset-0 z-[70] hidden">
+        <div id="locationMapBackdrop" class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm opacity-0 transition-opacity"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4">
+            <div id="locationMapPanel" class="w-full max-w-3xl bg-white dark:bg-slate-800 rounded-2xl shadow-2xl scale-95 opacity-0 transition-all duration-300 overflow-hidden">
+                <div class="p-5 border-b border-slate-100 dark:border-slate-700 flex items-start justify-between gap-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800 dark:text-white">Pilih Lokasi Pelanggan</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Klik peta atau geser marker untuk mengisi latitude dan longitude.</p>
+                    </div>
+                    <button type="button" onclick="closeLocationMap()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div id="clientLocationMap" class="h-[420px] bg-slate-100 dark:bg-slate-700"></div>
+                <div class="p-5 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between gap-4">
+                    <p id="locationMapCoordinates" class="text-sm text-slate-500 dark:text-slate-400">Belum ada titik dipilih.</p>
+                    <div class="flex gap-3">
+                        <button type="button" onclick="closeLocationMap()" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700">Batal</button>
+                        <button type="button" onclick="useMapLocation()" class="px-4 py-2 rounded-xl text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white">Gunakan Lokasi</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -319,15 +347,28 @@
     <x-confirm-modal />
 
     @push('scripts')
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQe5EY0FQbqoDt63T9pMYyR+dqYzP0=" crossorigin="">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
         <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
         <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
         <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
         <script>
             (function () {
                 const baseUrl = '{{ url('/') }}';
                 const administrativeAreasUrl = '{{ route('administrative-areas.index') }}';
+                const branchDefaults = @json($branches->mapWithKeys(fn ($branch) => [$branch->id => [
+                    'province_code' => $branch->default_province_code,
+                    'regency_code' => $branch->default_regency_code,
+                    'latitude' => $branch->default_latitude,
+                    'longitude' => $branch->default_longitude,
+                ]]));
+                const mapConfig = @json([
+                    'tileUrl' => config('maps.tile_url'),
+                    'attribution' => config('maps.attribution'),
+                ]);
+                const centralJava = { latitude: -7.15000000, longitude: 110.14000000 };
                 const clientTypeLabels = @json(\App\Models\Client::TYPE_OPTIONS);
                 const escapeHtml = (value) => $('<div>').text(value || '').html();
                 const areaChoices = {};
@@ -396,6 +437,10 @@
                     resetAreaSelect('district');
                     resetAreaSelect('village');
                     await loadAreas('province', null, item.province_code || '');
+                    if (!item.province_code && !item.regency_code) {
+                        await applyBranchAreaDefaults();
+                        return;
+                    }
                     if (!item.province_code) return;
                     await loadAreas('regency', item.province_code, item.regency_code || '');
                     if (!item.regency_code) return;
@@ -403,6 +448,96 @@
                     if (!item.district_code) return;
                     await loadAreas('village', item.district_code, item.village_code || '');
                 }
+
+                async function applyBranchAreaDefaults() {
+                    const branchId = document.getElementById('branch_id').value;
+                    const defaults = branchDefaults[branchId];
+                    const provinceSelect = document.getElementById('province_code');
+                    const regencySelect = document.getElementById('regency_code');
+
+                    if (!defaults || provinceSelect.value || regencySelect.value) return;
+
+                    await loadAreas('province', null, defaults.province_code || '');
+                    if (defaults.province_code && defaults.regency_code) {
+                        await loadAreas('regency', defaults.province_code, defaults.regency_code);
+                    }
+                }
+
+                let clientLocationMap;
+                let clientLocationMarker;
+                let selectedMapLocation;
+
+                function updateMapCoordinates(position) {
+                    selectedMapLocation = { latitude: position.lat, longitude: position.lng };
+                    document.getElementById('locationMapCoordinates').textContent = `Lat ${position.lat.toFixed(8)}, Long ${position.lng.toFixed(8)}`;
+                }
+
+                function placeLocationMarker(position) {
+                    if (!clientLocationMarker) {
+                        clientLocationMarker = L.marker(position, { draggable: true }).addTo(clientLocationMap);
+                        clientLocationMarker.on('dragend', (event) => updateMapCoordinates(event.target.getLatLng()));
+                    } else {
+                        clientLocationMarker.setLatLng(position);
+                    }
+
+                    updateMapCoordinates(position);
+                }
+
+                window.openLocationMap = function () {
+                    if (!window.L) {
+                        showToast('Peta belum dapat dimuat. Periksa koneksi internet lalu coba kembali.', 'error');
+                        return;
+                    }
+
+                    const modal = document.getElementById('locationMapModal');
+                    const backdrop = document.getElementById('locationMapBackdrop');
+                    const panel = document.getElementById('locationMapPanel');
+                    const branchDefault = branchDefaults[document.getElementById('branch_id').value] || centralJava;
+                    const storedLatitudeValue = document.getElementById('latitude').value.trim();
+                    const storedLongitudeValue = document.getElementById('longitude').value.trim();
+                    const storedLatitude = storedLatitudeValue === '' ? Number.NaN : Number(storedLatitudeValue);
+                    const storedLongitude = storedLongitudeValue === '' ? Number.NaN : Number(storedLongitudeValue);
+                    const latitude = Number.isFinite(storedLatitude) ? storedLatitude : Number(branchDefault.latitude || centralJava.latitude);
+                    const longitude = Number.isFinite(storedLongitude) ? storedLongitude : Number(branchDefault.longitude || centralJava.longitude);
+                    const initialPosition = { lat: latitude, lng: longitude };
+
+                    modal.classList.remove('hidden');
+                    setTimeout(() => {
+                        backdrop.classList.remove('opacity-0');
+                        panel.classList.remove('scale-95', 'opacity-0');
+                        panel.classList.add('scale-100', 'opacity-100');
+
+                        if (!clientLocationMap) {
+                            clientLocationMap = L.map('clientLocationMap').setView(initialPosition, 13);
+                            L.tileLayer(mapConfig.tileUrl, { maxZoom: 19, attribution: mapConfig.attribution }).addTo(clientLocationMap);
+                            clientLocationMap.on('click', (event) => placeLocationMarker(event.latlng));
+                        } else {
+                            clientLocationMap.setView(initialPosition, 13);
+                            clientLocationMap.invalidateSize();
+                        }
+
+                        placeLocationMarker(initialPosition);
+                    }, 10);
+                    lucide.createIcons();
+                };
+
+                window.closeLocationMap = function () {
+                    const modal = document.getElementById('locationMapModal');
+                    const backdrop = document.getElementById('locationMapBackdrop');
+                    const panel = document.getElementById('locationMapPanel');
+                    backdrop.classList.add('opacity-0');
+                    panel.classList.remove('scale-100', 'opacity-100');
+                    panel.classList.add('scale-95', 'opacity-0');
+                    setTimeout(() => modal.classList.add('hidden'), 300);
+                };
+
+                window.useMapLocation = function () {
+                    if (!selectedMapLocation) return;
+                    document.getElementById('latitude').value = selectedMapLocation.latitude.toFixed(8);
+                    document.getElementById('longitude').value = selectedMapLocation.longitude.toFixed(8);
+                    window.closeLocationMap();
+                };
+
                 // Initialize DataTable
                 table = $('#dataTable').DataTable({
                     processing: true,
@@ -845,6 +980,7 @@
                 };
 
                 document.getElementById('type').addEventListener('change', () => window.syncClientCustomType(true));
+                document.getElementById('branch_id').addEventListener('change', applyBranchAreaDefaults);
                 document.getElementById('province_code').addEventListener('change', async (event) => {
                     resetAreaSelect('district');
                     resetAreaSelect('village');

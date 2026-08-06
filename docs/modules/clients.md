@@ -87,12 +87,13 @@ Portal account management dibatasi via route-level `role:Owner|Admin` middleware
 ## Alur Bisnis
 
 1. **Registrasi client**: Staff mengisi form (nama, tipe, alamat, cabang, kontak PIC). Tipe standar mencakup Perorangan, Bisnis, Pemerintah, Pendidikan, Nirlaba, Keagamaan, Komunitas, dan Properti Bersama. Pilihan Lainnya mewajibkan kategori custom.
-2. **Alamat administratif**: Field alamat lama tetap dipertahankan. Provinsi, kabupaten/kota, kecamatan, dan kelurahan/desa dapat dilengkapi melalui dropdown berantai yang menggunakan data wilayah lokal; RT/RW dan kode pos tetap diisi manual.
-3. **Generate client_code**: Otomatis format `{branch_id}{YY}{NNN}` (contoh: `126001`). Collision-safe dengan do-while loop.
-4. **Kontak PIC**: Kontak pertama otomatis jadi primary. Primary contact tidak bisa dihapus. Satu client bisa punya banyak kontak.
-5. **Detail client**: Menampilkan tab subscriptions, invoices, tickets, portal account.
-6. **Portal account**: Owner/Admin bisa membuat akun portal untuk client, generate OTP manual, revoke semua sesi aktif.
-7. **Hapus client**: Cascade delete via migration (semua data terkait ikut terhapus).
+2. **Alamat administratif**: Field alamat lama tetap dipertahankan. Provinsi, kabupaten/kota, kecamatan, dan kelurahan/desa dapat dilengkapi melalui dropdown berantai yang menggunakan data wilayah lokal; RT/RW dan kode pos tetap diisi manual. Jika kode provinsi dan kabupaten/kota masih kosong, form memakai default wilayah dari cabang pelanggan.
+3. **Titik peta**: Staff dapat membuka modal peta, klik atau menggeser marker, lalu menyimpan latitude/longitude. Implementasi awal memakai Leaflet dan OpenStreetMap tanpa API key atau geocoding alamat.
+4. **Generate client_code**: Otomatis format `{branch_id}{YY}{NNN}` (contoh: `126001`). Collision-safe dengan do-while loop.
+5. **Kontak PIC**: Kontak pertama otomatis jadi primary. Primary contact tidak bisa dihapus. Satu client bisa punya banyak kontak.
+6. **Detail client**: Menampilkan tab subscriptions, invoices, tickets, portal account.
+7. **Portal account**: Owner/Admin bisa membuat akun portal untuk client, generate OTP manual, revoke semua sesi aktif.
+8. **Hapus client**: Cascade delete via migration (semua data terkait ikut terhapus).
 
 ### UI
 
@@ -127,3 +128,4 @@ Portal account management dibatasi via route-level `role:Owner|Admin` middleware
 - Tidak ada soft delete pada client. Penghapusan bersifat permanen (cascade).
 - Activity log aktif pada model `Client` (entity name: `pelanggan`) dan `ClientContact` (entity name: `kontak pelanggan`).
 - Data referensi wilayah tidak dimuat oleh `DatabaseSeeder`. Jalankan `php artisan db:seed --class=AdministrativeAreaSeeder` sekali setelah migration untuk mengaktifkan dropdown alamat.
+- Tile peta OpenStreetMap hanya dimuat ketika user membuka modal peta. Jangan menambahkan prefetch/offline map atau autocomplete berbasis Nominatim public API.

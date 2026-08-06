@@ -14,6 +14,7 @@ Dokumentasi ini menjadi sumber referensi utama untuk:
   - dokumentasi endpoint, terutama untuk integrasi Client Portal
 - `modules/`
   - dokumentasi modul internal CRM
+  - `branches.md` - Cabang dan default wilayah layanan
   - `activity-log.md` — Activity Log dan TODO operasionalnya
   - `clients.md` — Manajemen pelanggan, kontak PIC, dan portal account
   - `invoices.md` — Alur manual invoice, pengiriman, dan signature
