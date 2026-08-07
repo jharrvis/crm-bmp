@@ -457,7 +457,7 @@ function setButtonLoading(btn, spinner, text, isLoading, originalText) {
 }
 
 // Generic Modal Open/Close
-function openModal(modalId) {
+function openAppModal(modalId) {
     const modal = document.getElementById(modalId);
     if (!modal) return;
 
@@ -475,7 +475,7 @@ function openModal(modalId) {
     }, 10);
 }
 
-function closeModal(modalId) {
+function closeAppModal(modalId) {
     const modal = document.getElementById(modalId);
     if (!modal) return;
 
@@ -491,6 +491,16 @@ function closeModal(modalId) {
     setTimeout(() => {
         modal.classList.add('hidden');
     }, 300);
+}
+
+// Legacy aliases for existing module dialogs. Quick View uses the app-specific
+// functions above so module pages cannot override its modal behavior.
+function openModal(modalId) {
+    openAppModal(modalId);
+}
+
+function closeModal(modalId) {
+    closeAppModal(modalId);
 }
 
 function escapeHtml(value) {
@@ -794,7 +804,7 @@ async function openGlobalSearchQuickView(item) {
         </div>
     `;
 
-    openModal('searchQuickViewModal');
+    openAppModal('searchQuickViewModal');
 
     try {
         const response = await fetch(item.detail_url, {
@@ -854,7 +864,7 @@ document.addEventListener('click', function (event) {
     }
 
     if (quickViewBackdrop && event.target === quickViewBackdrop) {
-        closeModal('searchQuickViewModal');
+        closeAppModal('searchQuickViewModal');
     }
 });
 
@@ -864,7 +874,7 @@ document.addEventListener('keydown', function (event) {
     }
 
     if (event.key === 'Escape' && !document.getElementById('searchQuickViewModal')?.classList.contains('hidden')) {
-        closeModal('searchQuickViewModal');
+        closeAppModal('searchQuickViewModal');
     }
 });
 

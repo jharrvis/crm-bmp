@@ -54,7 +54,7 @@ class MetroEthernetController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'vendor_id' => 'required|exists:vendors,id',
             'cid' => 'nullable|string|max:100',
@@ -62,7 +62,7 @@ class MetroEthernetController extends Controller
             'bandwidth' => 'required|integer|min:0',
         ]);
 
-        MetroEthernet::create($request->all());
+        MetroEthernet::create($validated);
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true, 'message' => 'Data Metro Ethernet berhasil ditambahkan.']);
@@ -70,17 +70,20 @@ class MetroEthernetController extends Controller
         return redirect()->route('metro-ethernets.index')->with('success', 'Data Metro Ethernet berhasil ditambahkan.');
     }
 
-    public function show(MetroEthernet $metroEthernet)
+    public function show(Request $request, MetroEthernet $metroEthernet)
     {
-        if (request()->wantsJson()) {
-            return response()->json($metroEthernet->load('vendor'));
+        $metroEthernet->load('vendor');
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json($metroEthernet);
         }
-        return response()->json($metroEthernet->load('vendor'));
+
+        return view('metro_ethernets.show', compact('metroEthernet'));
     }
 
     public function update(Request $request, MetroEthernet $metroEthernet)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'vendor_id' => 'required|exists:vendors,id',
             'cid' => 'nullable|string|max:100',
@@ -88,7 +91,7 @@ class MetroEthernetController extends Controller
             'bandwidth' => 'required|integer|min:0',
         ]);
 
-        $metroEthernet->update($request->all());
+        $metroEthernet->update($validated);
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true, 'message' => 'Data Metro Ethernet berhasil diperbarui.']);

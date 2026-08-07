@@ -8,6 +8,7 @@ Semua perubahan penting pada project ini dicatat di file ini.
 
 - Form pelanggan sekarang menyediakan pencarian lokasi berdasarkan nama jalan, area, kecamatan, atau kota untuk memusatkan peta dan mengisi koordinat dengan lebih cepat.
 - Modul Infrastruktur baru `IP Transit` untuk mengelola vendor, CID, IP Address, IP Gateway, AS Number, dan bandwidth. Modul ini tersedia di menu Infrastruktur dan Global Search.
+- Halaman detail untuk Metro Ethernet dan IP Transit, termasuk tombol lihat dari daftar data.
 
 ### Changed
 
@@ -18,6 +19,7 @@ Semua perubahan penting pada project ini dicatat di file ini.
 
 - `PermissionSeeder` tidak lagi mencoba menetapkan permission untuk role legacy `Client`, sehingga aman dijalankan pada production yang memakai akun portal client terpisah.
 - Tanggal registrasi pelanggan sekarang kembali tampil dan dapat diperbarui pada form edit.
+- Quick View Global Search tidak lagi membuka modal edit Metro Ethernet ketika dipakai dari halaman Metro Ethernet.
 
 ### Deployment Notes
 

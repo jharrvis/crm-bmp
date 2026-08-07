@@ -393,7 +393,7 @@ class GlobalSearchController extends Controller
                     ],
                     $transit->as_number ?: 'ip transit',
                     route('ip-transits.show', $transit),
-                    route('ip-transits.index')
+                    route('ip-transits.show', $transit)
                 ),
             ];
         }

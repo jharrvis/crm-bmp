@@ -45,9 +45,15 @@ class IpTransitController extends Controller
         return response()->json(['success' => true, 'message' => 'IP Transit berhasil ditambahkan.']);
     }
 
-    public function show(IpTransit $ipTransit)
+    public function show(Request $request, IpTransit $ipTransit)
     {
-        return response()->json($ipTransit->load('vendor'));
+        $ipTransit->load('vendor');
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json($ipTransit);
+        }
+
+        return view('ip_transits.show', compact('ipTransit'));
     }
 
     public function update(Request $request, IpTransit $ipTransit)

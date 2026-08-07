@@ -217,6 +217,9 @@
                                 render: function (data, type, row) {
                                     return `
                                             <div class="flex items-center justify-center gap-2">
+                                                <a href="${baseUrl}/metro-ethernets/${row.id}" class="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 rounded-lg transition-colors" title="Lihat Detail">
+                                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                                </a>
                                                 <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
                                                     <i data-lucide="pencil" class="w-4 h-4"></i>
                                                 </button>
