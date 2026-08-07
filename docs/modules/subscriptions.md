@@ -104,6 +104,7 @@ PPN dan PPh23 rate saat ini hardcoded. Lihat plan audit tagihan untuk rencana mi
 3. Form menampilkan field teknis sesuai tipe:
    - **Connectivity**: router, IP, PPPoE, ONT S/N, Zabbix monitoring, Metro Ethernet
    - **Hosting**: server, domain, username, password (terenkripsi), disk quota
+   - **Domain**: nama domain, registrar, tanggal registrasi/berakhir, auth code (terenkripsi), dan catatan domain
 4. Sistem generate `subscription_code` format: `{client_code}-{SERVICE_CODE}{NN}` (contoh: `126001-INT01`).
 5. `billing_cycle_day` diambil dari tanggal instalasi.
 6. `next_billing_date` = tanggal instalasi + 1 bulan.
@@ -120,6 +121,11 @@ PPN dan PPh23 rate saat ini hardcoded. Lihat plan audit tagihan untuk rencana mi
 - Integrasi dengan HestiaCP API (`HestiaCPService`):
   - `store`: auto-create user dan web domain di server hosting.
   - `update`: auto-suspend/unsuspend/change password sesuai status.
+
+### Domain-specific
+
+- Detail domain disimpan pada `SubscriptionDomain`; field domain tidak lagi menggunakan field panel hosting.
+- Auth code bersifat opsional dan disimpan terenkripsi. Saat edit, auth code lama tidak ditampilkan dan hanya berubah bila nilai baru diisi.
 
 ### Status Langganan
 

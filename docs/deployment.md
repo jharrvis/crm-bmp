@@ -33,6 +33,7 @@ php artisan optimize:clear
 
 - Jika ada perubahan `config/app.php` atau `.env`, wajib jalankan `php artisan config:clear`.
 - Jika ada permission baru, jalankan `PermissionSeeder` lalu `php artisan permission:cache-reset`.
+- Untuk koreksi prefix kode pelanggan, backup database terlebih dahulu lalu jalankan `php artisan clients:reconcile-codes --branch={id} --dry-run`. Command tidak mengubah data pada mode default; gunakan `--apply --confirm` hanya setelah laporan audit diverifikasi.
 - Jika ada rewrite history Git, server production tidak boleh memakai `git pull` biasa. Gunakan sinkronisasi branch yang sesuai.
 - Jika ada migration invoice manual baru, jalankan `php artisan migrate`.
 - Jika update mencakup default wilayah cabang atau modal peta pelanggan, jalankan `php artisan migrate`. Tidak diperlukan API key Google Maps.

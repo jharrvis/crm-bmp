@@ -1387,6 +1387,7 @@
                                 </div>
                             </div>
 
+                                <div id="metro-ethernet-section" class="hidden">
                                 <!-- Metro Ethernet Details -->
                                 <div class="relative py-4">
                                     <div class="absolute inset-0 flex items-center" aria-hidden="true">
@@ -1464,6 +1465,7 @@
                                         </div>
                                     </div>
                                 </div>
+                                </div>
                             </div>
 
                             <div id="fields-hosting" class="hidden space-y-4">
@@ -1501,6 +1503,43 @@
                                         <input type="password" name="password" id="password"
                                             class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
                                     </div>
+                                </div>
+                            </div>
+
+                            <div id="fields-domain" class="hidden space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nama Domain <span class="text-red-500">*</span></label>
+                                        <input type="text" name="domain_name" id="domain_name" placeholder="example.com"
+                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Registrar <span class="text-xs text-slate-400 font-normal">(opsional)</span></label>
+                                        <input type="text" name="registrar" id="registrar" placeholder="Contoh: Rumahweb"
+                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Tanggal Registrasi</label>
+                                        <input type="date" name="registered_at" id="registered_at"
+                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Tanggal Berakhir</label>
+                                        <input type="date" name="expires_at" id="expires_at"
+                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Auth Code <span class="text-xs text-slate-400 font-normal">(opsional)</span></label>
+                                    <input type="password" name="auth_code" id="auth_code" autocomplete="new-password"
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Catatan Domain</label>
+                                    <textarea name="domain_notes" id="domain_notes" rows="3"
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"></textarea>
                                 </div>
                             </div>
 
@@ -1899,29 +1938,44 @@
                     const detailsSection = document.getElementById('technical-details');
                     const fieldsConn = document.getElementById('fields-connectivity');
                     const fieldsHost = document.getElementById('fields-hosting');
+                    const fieldsDomain = document.getElementById('fields-domain');
+                    const metroSection = document.getElementById('metro-ethernet-section');
                     const technicalEmptyState = document.getElementById('technical-empty-state');
+                    const isConnectivity = serviceType === 'connectivity';
 
-                    if (fieldsConn) fieldsConn.classList.add('hidden');
-                    if (fieldsHost) fieldsHost.classList.add('hidden');
+                    [fieldsConn, fieldsHost, fieldsDomain].forEach((section) => {
+                        if (!section) return;
+                        section.classList.add('hidden');
+                        section.querySelectorAll('input, select, textarea').forEach((field) => {
+                            field.disabled = true;
+                        });
+                    });
+                    if (metroSection) {
+                        metroSection.classList.toggle('hidden', !isConnectivity);
+                        metroSection.querySelectorAll('input, select, textarea').forEach((field) => {
+                            field.disabled = !isConnectivity;
+                        });
+                    }
                     if (detailsSection) detailsSection.classList.add('hidden');
                     if (technicalEmptyState) technicalEmptyState.classList.remove('hidden');
 
                     if (serviceType) {
                         if (detailsSection) detailsSection.classList.remove('hidden');
                         if (technicalEmptyState) technicalEmptyState.classList.add('hidden');
-                        if (serviceType === 'connectivity') {
-                            if (fieldsConn) fieldsConn.classList.remove('hidden');
-                            toggleMetroForm();
-                        } else if (serviceType === 'hosting' || serviceType === 'domain') {
-                            if (fieldsHost) fieldsHost.classList.remove('hidden');
-                            const divServer = document.getElementById('div-hosting-server');
-                            if (divServer) {
-                                if (serviceType === 'domain') {
-                                    divServer.classList.add('hidden');
-                                } else {
-                                    divServer.classList.remove('hidden');
-                                }
+                        if (isConnectivity) {
+                            if (fieldsConn) {
+                                fieldsConn.classList.remove('hidden');
+                                fieldsConn.querySelectorAll('input, select, textarea').forEach((field) => field.disabled = false);
                             }
+                            toggleMetroForm();
+                        } else if (serviceType === 'hosting') {
+                            if (fieldsHost) {
+                                fieldsHost.classList.remove('hidden');
+                                fieldsHost.querySelectorAll('input, select, textarea').forEach((field) => field.disabled = false);
+                            }
+                        } else if (serviceType === 'domain' && fieldsDomain) {
+                            fieldsDomain.classList.remove('hidden');
+                            fieldsDomain.querySelectorAll('input, select, textarea').forEach((field) => field.disabled = false);
                         }
                     }
 
@@ -1932,6 +1986,9 @@
                     const metroOption = document.getElementById('metro_option');
                     const newForm = document.getElementById('metro-new-form');
                     const hiddenIdInput = document.getElementById('metro_ethernet_id_input');
+                    if (!metroOption || metroOption.disabled || !newForm || !hiddenIdInput) {
+                        return;
+                    }
                     const selectedOption = metroOption.options[metroOption.selectedIndex];
 
                     if (metroOption.value === 'new') {
@@ -2048,11 +2105,19 @@
                 };
 
                 window.submitForm = function () {
-                    document.getElementById('dataForm').dispatchEvent(new Event('submit'));
+                    document.getElementById('dataForm').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
                 }
 
                 document.getElementById('dataForm').addEventListener('submit', function (e) {
                     e.preventDefault();
+                    const installedAt = document.getElementById('installed_at');
+                    if (!installedAt || !installedAt.value) {
+                        window.switchSubscriptionFormTab('general');
+                        alert('Tanggal pemasangan wajib diisi.');
+                        installedAt?.focus();
+                        return;
+                    }
+
                     const id = document.getElementById('dataId').value;
                     const url = `${baseUrl}/subscriptions/${id}`;
                     const btn = document.getElementById('submitBtn');
@@ -2066,6 +2131,7 @@
                     text.innerText = 'Menyimpan...';
 
                     const formData = new FormData(this);
+                    formData.set('installed_at', installedAt.value);
                     formData.append('_method', 'PUT');
 
                     fetch(url, {
@@ -2176,7 +2242,12 @@
                                 document.getElementById('password').value = '';
                             }
                             if (data.domain) {
-                                document.getElementById('domain').value = data.domain.domain_name || '';
+                                document.getElementById('domain_name').value = data.domain.domain_name || '';
+                                document.getElementById('registrar').value = data.domain.registrar || '';
+                                document.getElementById('registered_at').value = data.domain.registered_at ? data.domain.registered_at.split('T')[0] : '';
+                                document.getElementById('expires_at').value = data.domain.expires_at ? data.domain.expires_at.split('T')[0] : '';
+                                document.getElementById('auth_code').value = '';
+                                document.getElementById('domain_notes').value = data.domain.notes || '';
                             }
 
                             resetSubscriptionFormTabs();

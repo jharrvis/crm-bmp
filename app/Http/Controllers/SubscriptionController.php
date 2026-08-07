@@ -9,6 +9,7 @@ use App\Models\Package;
 use App\Models\Router;
 use App\Models\Subscription;
 use App\Models\SubscriptionConnectivity;
+use App\Models\SubscriptionDomain;
 use App\Models\SubscriptionHosting;
 use App\Models\Vendor;
 use App\Services\ProrataCalculationService;
@@ -98,6 +99,15 @@ class SubscriptionController extends Controller
                 'hosting_server_id' => 'nullable|exists:hosting_servers,id',
                 'domain' => 'nullable|string|max:255',
                 'username' => 'nullable|string|max:100',
+            ]);
+        } elseif ($serviceType === 'domain') {
+            $request->validate([
+                'domain_name' => 'required|string|max:255',
+                'registrar' => 'nullable|string|max:255',
+                'registered_at' => 'nullable|date',
+                'expires_at' => 'nullable|date|after_or_equal:registered_at',
+                'auth_code' => 'nullable|string|max:255',
+                'domain_notes' => 'nullable|string',
             ]);
         }
 
@@ -222,6 +232,16 @@ class SubscriptionController extends Controller
                     'email_accounts' => $request->email_accounts ?? 0,
                     'databases' => $request->databases ?? 0,
                     'ssl_expiry' => $request->ssl_expiry,
+                ]);
+            } elseif ($serviceType === 'domain') {
+                SubscriptionDomain::create([
+                    'subscription_id' => $subscription->id,
+                    'domain_name' => $request->domain_name,
+                    'registrar' => $request->registrar,
+                    'auth_code_encrypted' => $request->auth_code ? encrypt($request->auth_code) : null,
+                    'registered_at' => $request->registered_at,
+                    'expires_at' => $request->expires_at,
+                    'notes' => $request->domain_notes,
                 ]);
             }
 
@@ -437,6 +457,29 @@ class SubscriptionController extends Controller
                         'email_accounts' => $request->email_accounts ?? 0,
                         'databases' => $request->databases ?? 0,
                         'ssl_expiry' => $request->ssl_expiry,
+                    ]
+                );
+            } elseif ($serviceType === 'domain') {
+                $request->validate([
+                    'domain_name' => 'required|string|max:255',
+                    'registrar' => 'nullable|string|max:255',
+                    'registered_at' => 'nullable|date',
+                    'expires_at' => 'nullable|date|after_or_equal:registered_at',
+                    'auth_code' => 'nullable|string|max:255',
+                    'domain_notes' => 'nullable|string',
+                ]);
+
+                $subscription->domain()->updateOrCreate(
+                    ['subscription_id' => $subscription->id],
+                    [
+                        'domain_name' => $request->domain_name,
+                        'registrar' => $request->registrar,
+                        'auth_code_encrypted' => $request->filled('auth_code')
+                            ? encrypt($request->auth_code)
+                            : $subscription->domain?->auth_code_encrypted,
+                        'registered_at' => $request->registered_at,
+                        'expires_at' => $request->expires_at,
+                        'notes' => $request->domain_notes,
                     ]
                 );
             }

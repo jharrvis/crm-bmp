@@ -4,11 +4,16 @@ Semua perubahan penting pada project ini dicatat di file ini.
 
 ## 2026-08-07
 
+### Fixed
+- Form tambah dan edit layanan sekarang selalu mengirim tanggal pemasangan yang dipilih serta menampilkan validasi langsung jika belum diisi.
+- Section Metro Ethernet sekarang hanya tampil dan ikut diproses untuk layanan konektivitas; layanan hosting dan domain hanya menampilkan field yang relevan. Detail domain kini disimpan pada data langganan domain.
+
 ### Added
 
 - Form pelanggan sekarang menyediakan pencarian lokasi berdasarkan nama jalan, area, kecamatan, atau kota untuk memusatkan peta dan mengisi koordinat dengan lebih cepat.
 - Modul Infrastruktur baru `IP Transit` untuk mengelola vendor, CID, IP Address, IP Gateway, AS Number, dan bandwidth. Modul ini tersedia di menu Infrastruktur dan Global Search.
 - Halaman detail untuk Metro Ethernet dan IP Transit, termasuk tombol lihat dari daftar data.
+- Command `clients:reconcile-codes` untuk simulasi dan koreksi aman prefix `client_code` sesuai `branch_id`, dengan laporan audit, deteksi konflik, transaction, dan kode sementara untuk menjaga unique constraint.
 
 ### Changed
 
