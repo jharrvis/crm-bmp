@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Client;
 use App\Models\HostingServer;
+use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\MetroEthernet;
 use App\Models\Package;
 use App\Models\Router;
@@ -63,7 +65,7 @@ class SubscriptionController extends Controller
             'client_id' => 'required|exists:clients,id',
             'package_id' => 'required|exists:packages,id',
             'installed_at' => 'required|date',
-            'status' => 'required|string|in:pending,active',
+            'status' => 'required|string|in:pending,active,suspended,terminated',
             'uses_ppn' => 'nullable|boolean',
             'uses_pph23' => 'nullable|boolean',
         ]);
@@ -96,9 +98,10 @@ class SubscriptionController extends Controller
             ]);
         } elseif ($serviceType === 'hosting') {
             $request->validate([
-                'hosting_server_id' => 'nullable|exists:hosting_servers,id',
+                'hosting_server_id' => 'required|exists:hosting_servers,id',
                 'domain' => 'nullable|string|max:255',
-                'username' => 'nullable|string|max:100',
+                'username' => 'required|string|max:100',
+                'password' => 'required|string|max:255',
             ]);
         } elseif ($serviceType === 'domain') {
             $request->validate([
@@ -390,7 +393,7 @@ class SubscriptionController extends Controller
                         'ip_address' => $request->ip_address,
                         'ip_type' => $request->ip_type ?? 'dynamic',
                         'pppoe_user' => $request->pppoe_user,
-                        'pppoe_secret' => $request->pppoe_secret ? encrypt($request->pppoe_secret) : $subscription->connectivity->pppoe_secret,
+                        'pppoe_secret' => $request->pppoe_secret ? encrypt($request->pppoe_secret) : $subscription->connectivity?->pppoe_secret,
                         'ont_sn' => $request->ont_sn,
                         'router_model' => $request->router_model,
                         'vlan_id' => $request->vlan_id,
@@ -423,12 +426,19 @@ class SubscriptionController extends Controller
                     }
                 }
             } elseif ($serviceType === 'hosting') {
+                $request->validate([
+                    'hosting_server_id' => 'required|exists:hosting_servers,id',
+                    'domain' => 'nullable|string|max:255',
+                    'username' => 'required|string|max:100',
+                    'password' => 'nullable|string|max:255',
+                ]);
+
                 $hosting = $subscription->hosting;
-                $server = HostingServer::findOrFail($request->hosting_server_id); // Assuming server might change? Probably not often.
+                $server = HostingServer::findOrFail($request->hosting_server_id);
                 $hestia = new \App\Services\HestiaCPService($server);
 
                 // Check for Status Change
-                if ($subscription->wasChanged('status')) {
+                if ($hosting && $subscription->wasChanged('status')) {
                     $newStatus = $request->status;
                     if ($newStatus === 'suspended') {
                         $hestia->suspendUser($hosting->username);
@@ -442,7 +452,7 @@ class SubscriptionController extends Controller
                 }
 
                 // Check if password changed
-                if ($request->password) {
+                if ($hosting && $request->password) {
                     $hestia->changePassword($hosting->username, $request->password);
                 }
 
@@ -452,7 +462,7 @@ class SubscriptionController extends Controller
                         'hosting_server_id' => $request->hosting_server_id,
                         'domain' => $request->domain,
                         'username' => $request->username,
-                        'password_encrypted' => $request->password ? encrypt($request->password) : $subscription->hosting->password_encrypted,
+                        'password_encrypted' => $request->password ? encrypt($request->password) : $hosting?->password_encrypted,
                         'disk_quota_gb' => $request->disk_quota_gb ?? 0,
                         'email_accounts' => $request->email_accounts ?? 0,
                         'databases' => $request->databases ?? 0,

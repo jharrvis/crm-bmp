@@ -24,7 +24,7 @@ class ClientCodeReconciliationServiceTest extends TestCase
         $this->assertSame([], $plan['conflicts']);
     }
 
-    public function test_it_skips_non_legacy_codes_and_detects_existing_target_conflicts(): void
+    public function test_it_allocates_the_next_sequence_when_the_requested_target_is_used(): void
     {
         $plan = (new ClientCodeReconciliationService)->plan(new Collection([
             (object) ['id' => 10, 'branch_id' => 3, 'client_code' => '126001'],
@@ -33,7 +33,26 @@ class ClientCodeReconciliationServiceTest extends TestCase
         ]));
 
         $this->assertCount(1, $plan['skipped']);
-        $this->assertCount(1, $plan['conflicts']);
-        $this->assertSame('326001', $plan['conflicts'][0]['new_code']);
+        $this->assertSame([], $plan['conflicts']);
+        $this->assertSame('326002', $plan['changes'][0]['new_code']);
+        $this->assertSame('326001', $plan['resolutions'][0]['requested_code']);
+    }
+
+    public function test_it_considers_codes_from_other_branches_when_allocating_a_new_sequence(): void
+    {
+        $plan = (new ClientCodeReconciliationService)->plan(
+            new Collection([
+                (object) ['id' => 10, 'branch_id' => 3, 'client_code' => '126022'],
+            ]),
+            '26',
+            new Collection([
+                (object) ['id' => 10, 'branch_id' => 3, 'client_code' => '126022'],
+                (object) ['id' => 99, 'branch_id' => 1, 'client_code' => '326022'],
+                (object) ['id' => 100, 'branch_id' => 1, 'client_code' => '326023'],
+            ])
+        );
+
+        $this->assertSame('326024', $plan['changes'][0]['new_code']);
+        $this->assertCount(1, $plan['resolutions']);
     }
 }

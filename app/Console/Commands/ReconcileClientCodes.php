@@ -67,7 +67,8 @@ class ReconcileClientCodes extends Command
         }
 
         $clients = $this->clientQuery($branchId)->get(['id', 'branch_id', 'client_code']);
-        $plan = $reconciliation->plan($clients, $year);
+        $allClients = Client::query()->get(['id', 'branch_id', 'client_code']);
+        $plan = $reconciliation->plan($clients, $year, $allClients);
         $reportPath = $this->writeReport($plan, $year, $branchId, $apply ? 'pending' : 'dry-run');
 
         $this->renderPlan($plan, $reportPath);
@@ -92,8 +93,10 @@ class ReconcileClientCodes extends Command
 
         try {
             $appliedPlan = DB::transaction(function () use ($branchId, $year, $reconciliation) {
+                // Lock every client code because client_code is globally unique across branches.
+                $allLockedClients = Client::query()->lockForUpdate()->get(['id', 'branch_id', 'client_code']);
                 $lockedClients = $this->clientQuery($branchId)->lockForUpdate()->get(['id', 'branch_id', 'client_code']);
-                $lockedPlan = $reconciliation->plan($lockedClients, $year);
+                $lockedPlan = $reconciliation->plan($lockedClients, $year, $allLockedClients);
 
                 if ($lockedPlan['conflicts'] !== []) {
                     throw new RuntimeException('Data berubah saat proses berjalan dan menghasilkan konflik baru.');
@@ -151,6 +154,18 @@ class ReconcileClientCodes extends Command
         }
 
         $this->line('Perubahan direncanakan: '.$this->count($plan['changes']));
+        $this->line('Nomor baru dialokasikan: '.$this->count($plan['resolutions']));
+        if ($plan['resolutions'] !== []) {
+            $this->table(
+                ['Client ID', 'Kode Target Awal', 'Kode Dialokasikan', 'Alasan'],
+                collect($plan['resolutions'])->map(fn (array $resolution) => [
+                    $resolution['id'],
+                    $resolution['requested_code'],
+                    $resolution['new_code'],
+                    $resolution['reason'],
+                ])->all()
+            );
+        }
         $this->line('Kode dilewati: '.$this->count($plan['skipped']));
         $this->line('Konflik: '.$this->count($plan['conflicts']));
         $this->line("Laporan audit: storage/app/{$reportPath}");

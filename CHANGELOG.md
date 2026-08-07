@@ -7,6 +7,8 @@ Semua perubahan penting pada project ini dicatat di file ini.
 ### Fixed
 - Form tambah dan edit layanan sekarang selalu mengirim tanggal pemasangan yang dipilih serta menampilkan validasi langsung jika belum diisi.
 - Section Metro Ethernet sekarang hanya tampil dan ikut diproses untuk layanan konektivitas; layanan hosting dan domain hanya menampilkan field yang relevan. Detail domain kini disimpan pada data langganan domain.
+- Pembuatan langganan yang menghasilkan invoice prorata tidak lagi gagal karena model `Invoice` dan `InvoiceItem` belum di-import pada controller.
+- Rekonsiliasi kode pelanggan sekarang mengalokasikan nomor urut kosong berikutnya saat kode target sudah dipakai, tanpa menimpa kode pelanggan lain.
 
 ### Added
 

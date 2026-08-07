@@ -127,10 +127,10 @@ Portal account management dibatasi via route-level `role:Owner|Admin` middleware
 Gunakan command `clients:reconcile-codes` untuk memperbaiki prefix `client_code` yang tidak sesuai `branch_id`. Command ini tidak pernah mengubah `clients.id`, `branch_id`, maupun relasi pelanggan.
 
 1. Jalankan simulasi per cabang, misalnya `php artisan clients:reconcile-codes --branch=3 --dry-run`.
-2. Periksa laporan JSON di `storage/app/client-code-reconciliation/` dan pastikan tidak ada konflik atau kode yang dilewati.
+2. Periksa laporan JSON di `storage/app/client-code-reconciliation/`. Jika prefix target sudah terpakai, bagian `resolutions` mencatat nomor urut baru yang dialokasikan; kode yang dilewati tetap perlu diverifikasi.
 3. Terapkan hanya setelah verifikasi: `php artisan clients:reconcile-codes --branch=3 --apply --confirm`.
 
-Format yang dikenali untuk data legacy adalah `{prefix}26{urutan-tiga-digit}`. Contoh pelanggan cabang `3` dengan kode `126001` direncanakan menjadi `326001`. Kode non-numerik atau format lain tidak disentuh. Jika tetap ingin menerapkan perubahan valid ketika ada kode yang dilewati, tambahkan `--allow-skipped` setelah laporan diverifikasi.
+Format yang dikenali untuk data legacy adalah `{prefix}26{urutan-tiga-digit}`. Contoh pelanggan cabang `3` dengan kode `126001` direncanakan menjadi `326001`. Jika `326001` sudah dipakai, sistem mempertahankan pemilik kode tersebut lalu memberikan nomor urut kosong setelah urutan tertinggi, misalnya `326028`. Kode non-numerik atau format lain tidak disentuh. Jika tetap ingin menerapkan perubahan valid ketika ada kode yang dilewati, tambahkan `--allow-skipped` setelah laporan diverifikasi.
 
 ## Known Issues / Catatan
 
