@@ -11,6 +11,7 @@ use App\Models\Subscription;
 use App\Models\SubscriptionConnectivity;
 use App\Models\SubscriptionHosting;
 use App\Models\Vendor;
+use App\Services\ProrataCalculationService;
 use App\Services\ZabbixService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;

@@ -21,6 +21,7 @@ Semua perubahan penting pada project ini dicatat di file ini.
 - Tanggal registrasi pelanggan sekarang kembali tampil dan dapat diperbarui pada form edit.
 - Quick View Global Search tidak lagi membuka modal edit Metro Ethernet ketika dipakai dari halaman Metro Ethernet.
 - Tombol tutup, klik backdrop, dan tombol Escape pada Quick View Global Search kembali berfungsi setelah fungsi modal aplikasi diekspos untuk handler halaman.
+- Penyimpanan perubahan langganan tidak lagi gagal karena `ProrataCalculationService` menggunakan namespace yang salah.
 
 ### Deployment Notes
 
