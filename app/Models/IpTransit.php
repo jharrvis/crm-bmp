@@ -12,6 +12,7 @@ class IpTransit extends Model
 
     protected $fillable = [
         'vendor_id',
+        'name',
         'cid',
         'ip_address',
         'ip_gateway',

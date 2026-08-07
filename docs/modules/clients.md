@@ -86,7 +86,7 @@ Portal account management dibatasi via route-level `role:Owner|Admin` middleware
 
 ## Alur Bisnis
 
-1. **Registrasi client**: Staff mengisi form (nama, tipe, alamat, cabang, kontak PIC). Tipe standar mencakup Perorangan, Bisnis, Pemerintah, Pendidikan, Nirlaba, Keagamaan, Komunitas, dan Properti Bersama. Pilihan Lainnya mewajibkan kategori custom.
+1. **Registrasi client**: Staff mengisi form (nama, tanggal registrasi, tipe, alamat, cabang, kontak PIC). Tanggal registrasi tersimpan dalam format tanggal dan dipakai saat pembentukan kode pelanggan baru. Tipe standar mencakup Perorangan, Bisnis, Pemerintah, Pendidikan, Nirlaba, Keagamaan, Komunitas, dan Properti Bersama. Pilihan Lainnya mewajibkan kategori custom.
 2. **Alamat administratif**: Field alamat lama tetap dipertahankan. Provinsi, kabupaten/kota, kecamatan, dan kelurahan/desa dapat dilengkapi melalui dropdown berantai yang menggunakan data wilayah lokal; RT/RW dan kode pos tetap diisi manual. Jika kode provinsi dan kabupaten/kota masih kosong, form memakai default wilayah dari cabang pelanggan.
 3. **Titik peta**: Staff dapat mencari jalan, gedung, kelurahan, kecamatan, atau kota melalui tombol Cari, lalu memilih hasil untuk memusatkan peta. Staff juga dapat klik atau menggeser marker dan menyimpan latitude/longitude. Implementasi memakai Leaflet, OpenStreetMap, dan pencarian Nominatim dari server tanpa API key.
 4. **Generate client_code**: Otomatis format `{branch_id}{YY}{NNN}` (contoh: `126001`). Collision-safe dengan do-while loop.

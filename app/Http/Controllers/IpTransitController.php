@@ -68,6 +68,7 @@ class IpTransitController extends Controller
     {
         return $request->validate([
             'vendor_id' => 'required|exists:vendors,id',
+            'name' => 'required|string|max:150',
             'cid' => 'nullable|string|max:100',
             'ip_address' => 'nullable|string|max:45',
             'ip_gateway' => 'nullable|ip',

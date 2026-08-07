@@ -44,7 +44,8 @@
                     <thead>
                         <tr
                             class="text-slate-400 text-xs font-bold uppercase tracking-wider border-b border-slate-100 dark:border-slate-700">
-                            <th class="p-4 pl-6">Vendor</th>
+                            <th class="p-4 pl-6">Nama Koneksi</th>
+                            <th class="p-4">Vendor</th>
                             <th class="p-4">CID (Circuit ID)</th>
                             <th class="p-4">IP Address</th>
                             <th class="p-4">IP Gateway</th>
@@ -58,7 +59,7 @@
                     </tbody>
                     <tfoot>
                         <tr class="bg-slate-50 dark:bg-slate-700/50 font-bold text-slate-800 dark:text-slate-200">
-                            <td colspan="6" class="p-4 text-right">Total Bandwidth:</td>
+                            <td colspan="7" class="p-4 text-right">Total Bandwidth:</td>
                             <td class="p-4" id="total-bandwidth-display">0 Mbps</td>
                         </tr>
                     </tfoot>
@@ -72,7 +73,7 @@
         <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity opacity-0"
             id="formModalBackdrop"></div>
         <div class="absolute inset-0 flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-lg transform scale-95 opacity-0 transition-all duration-300 flex flex-col"
+            <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-4xl max-h-[calc(100vh-2rem)] transform scale-95 opacity-0 transition-all duration-300 flex flex-col"
                 id="formModalPanel">
 
                 <!-- Modal Header -->
@@ -87,9 +88,16 @@
 
                 <!-- Modal Body -->
                 <div class="p-6 overflow-y-auto">
-                    <form id="dataForm" class="space-y-4">
+                    <form id="dataForm" class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         @csrf
                         <input type="hidden" id="dataId" name="id">
+
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nama Koneksi <span class="text-red-500">*</span></label>
+                            <input type="text" id="name" name="name" required
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-slate-400"
+                                placeholder="Contoh: IP Transit Utama Semarang">
+                        </div>
 
                         <div>
                             <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Vendor <span
@@ -189,9 +197,15 @@
                         },
                         columns: [
                             {
+                                data: 'name',
+                                name: 'name',
+                                className: 'p-4 pl-6',
+                                render: (data) => `<div class="font-semibold text-slate-800 dark:text-slate-200">${escapeHtml(data || '-')}</div>`
+                            },
+                            {
                                 data: 'vendor_name',
                                 name: 'vendor.name',
-                                className: 'p-4 pl-6',
+                                className: 'p-4',
                                 render: (data) => `<div class="font-bold text-slate-800 dark:text-slate-300">${escapeHtml(data || '-')}</div>`
                             },
                             {
@@ -372,6 +386,7 @@
                         .then(item => {
                             document.getElementById('dataId').value = item.id;
                             document.getElementById('vendor_id').value = item.vendor_id;
+                            document.getElementById('name').value = item.name || '';
                             document.getElementById('cid').value = item.cid || '';
                             document.getElementById('ip_address').value = item.ip_address || '';
                             document.getElementById('ip_gateway').value = item.ip_gateway || '';

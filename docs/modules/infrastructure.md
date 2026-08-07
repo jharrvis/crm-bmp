@@ -45,6 +45,7 @@ Mencatat koneksi IP Transit yang disediakan vendor untuk kebutuhan operasional j
 ### Data yang Dicatat
 
 - Vendor
+- Nama koneksi
 - CID (Circuit ID)
 - IP Address
 - IP Gateway

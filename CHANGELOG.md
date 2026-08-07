@@ -12,10 +12,12 @@ Semua perubahan penting pada project ini dicatat di file ini.
 ### Changed
 
 - Pencarian lokasi pelanggan diproses dari server, dibatasi kecepatannya, dan menggunakan cache agar tidak mengirim pencarian otomatis saat pengguna mengetik.
+- IP Transit sekarang memiliki nama koneksi dan form lebar dua kolom agar parameter jaringan dapat diisi tanpa scroll panjang.
 
 ### Fixed
 
 - `PermissionSeeder` tidak lagi mencoba menetapkan permission untuk role legacy `Client`, sehingga aman dijalankan pada production yang memakai akun portal client terpisah.
+- Tanggal registrasi pelanggan sekarang kembali tampil dan dapat diperbarui pada form edit.
 
 ### Deployment Notes
 

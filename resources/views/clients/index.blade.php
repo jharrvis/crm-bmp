@@ -992,7 +992,7 @@
                     document.getElementById('postal_code').value = item.postal_code || '';
                     document.getElementById('latitude').value = item.latitude || '';
                     document.getElementById('longitude').value = item.longitude || '';
-                    document.getElementById('registered_at').value = item.registered_at || '';
+                    document.getElementById('registered_at').value = item.registered_at ? item.registered_at.slice(0, 10) : '';
                     document.getElementById('status').value = item.status;
                     document.getElementById('notes').value = item.notes || '';
                     await fillAddressAreas(item);

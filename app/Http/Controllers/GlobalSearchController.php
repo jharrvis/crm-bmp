@@ -366,10 +366,11 @@ class GlobalSearchController extends Controller
                 'key' => 'ip_transits',
                 'group' => 'IP Transit',
                 'icon' => 'waypoints',
-                'columns' => ['id', 'vendor_id', 'cid', 'ip_address', 'ip_gateway', 'as_number', 'bandwidth'],
+                'columns' => ['id', 'vendor_id', 'name', 'cid', 'ip_address', 'ip_gateway', 'as_number', 'bandwidth'],
                 'query' => fn (string $query) => IpTransit::query()
                     ->where(function ($builder) use ($query) {
-                        $builder->where('cid', 'like', "%{$query}%")
+                        $builder->where('name', 'like', "%{$query}%")
+                            ->orWhere('cid', 'like', "%{$query}%")
                             ->orWhere('ip_address', 'like', "%{$query}%")
                             ->orWhere('ip_gateway', 'like', "%{$query}%")
                             ->orWhere('as_number', 'like', "%{$query}%")
@@ -382,9 +383,10 @@ class GlobalSearchController extends Controller
                 'map' => fn (IpTransit $transit) => $this->quickViewResult(
                     'ip_transit',
                     $transit->id,
-                    $transit->cid ?: ($transit->ip_address ?: 'IP Transit'),
+                    $transit->name,
                     [
                         $transit->vendor?->name,
+                        $transit->cid,
                         $transit->ip_address,
                         $transit->ip_gateway ? 'Gateway: '.$transit->ip_gateway : null,
                         $transit->bandwidth ? $transit->bandwidth.' Mbps' : null,
