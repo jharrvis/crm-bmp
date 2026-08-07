@@ -31,6 +31,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('metro-ethernets', \App\Http\Controllers\MetroEthernetController::class);
     Route::get('zabbix-monitors', [\App\Http\Controllers\ZabbixMonitorController::class, 'index'])->name('zabbix-monitors.index');
     Route::get('zabbix-monitors/chart-data', [\App\Http\Controllers\ZabbixMonitorController::class, 'chartData'])->name('zabbix-monitors.chart-data');
+    Route::resource('ip-transits', \App\Http\Controllers\IpTransitController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
 
     // Master Data: Products & Services (Owner, Admin, & Employee)
     Route::middleware(['role:Owner|Admin|Employee|Billing|NOC|CS|Sales|Finance'])->group(function () {
@@ -42,6 +43,8 @@ Route::middleware('auth')->group(function () {
         // Core Business: Client Management
         Route::get('administrative-areas', [\App\Http\Controllers\AdministrativeAreaController::class, 'index'])
             ->name('administrative-areas.index');
+        Route::get('map-locations/search', [\App\Http\Controllers\MapLocationController::class, 'search'])
+            ->name('map-locations.search');
         Route::resource('clients', \App\Http\Controllers\ClientController::class);
         Route::resource('clients.contacts', \App\Http\Controllers\ClientContactController::class)->only(['store', 'update', 'destroy']);
         Route::resource('subscriptions', \App\Http\Controllers\SubscriptionController::class);

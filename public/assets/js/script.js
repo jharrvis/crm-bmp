@@ -657,6 +657,19 @@ function buildSearchQuickViewContent(item, data) {
                 </div>
             `,
         },
+        ip_transit: {
+            subtitle: [vendorName, data.ip_address, data.bandwidth ? `${data.bandwidth} Mbps` : null].filter(Boolean).join(' | '),
+            body: `
+                <div class="grid gap-3 md:grid-cols-3">
+                    ${renderQuickViewField('Vendor', vendorName)}
+                    ${renderQuickViewField('CID', data.cid, true)}
+                    ${renderQuickViewField('Bandwidth', data.bandwidth ? `${data.bandwidth} Mbps` : null)}
+                    ${renderQuickViewField('IP Address', data.ip_address, true)}
+                    ${renderQuickViewField('IP Gateway', data.ip_gateway, true)}
+                    ${renderQuickViewField('AS Number', data.as_number, true)}
+                </div>
+            `,
+        },
         branch: {
             subtitle: [data.code, data.phone].filter(Boolean).join(' | '),
             body: `

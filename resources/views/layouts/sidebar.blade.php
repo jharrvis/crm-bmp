@@ -229,6 +229,7 @@
         || auth()->user()->can('servers.view')
         || auth()->user()->can('vendors.view')
         || auth()->user()->can('metro_ethernets.view')
+        || auth()->user()->can('ip_transits.view')
         || auth()->user()->can('zabbix_monitors.view')
     )
     @php
@@ -236,6 +237,7 @@
             || request()->routeIs('servers.*')
             || request()->routeIs('vendors.*')
             || request()->routeIs('metro-ethernets.*')
+            || request()->routeIs('ip-transits.*')
             || request()->routeIs('zabbix-monitors.*');
     @endphp
     <div class="submenu-container {{ $isInfraActive ? 'submenu-active' : '' }}" id="menu-infrastruktur"
@@ -273,6 +275,12 @@
             <a href="{{ route('metro-ethernets.index') }}"
                 class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('metro-ethernets.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
                 Metro Ethernet
+            </a>
+            @endcan
+            @can('ip_transits.view')
+            <a href="{{ route('ip-transits.index') }}"
+                class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('ip-transits.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
+                IP Transit
             </a>
             @endcan
             @can('zabbix_monitors.view')

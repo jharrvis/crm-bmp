@@ -68,6 +68,20 @@ Dokumen ini merangkum hubungan antara menu, permission, dan role default.
 
 - Permission utama: `tickets.view`
 
+## Infrastruktur
+
+### IP Transit
+
+- Permission:
+  - `ip_transits.view`
+  - `ip_transits.create`
+  - `ip_transits.update`
+  - `ip_transits.delete`
+- Role default:
+  - Owner
+  - Admin
+  - NOC
+
 ## Catatan
 
 - Sidebar harus mengikuti permission, bukan nama role hardcoded.

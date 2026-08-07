@@ -36,6 +36,37 @@ Daftar langganan yang terkait ditentukan dari relasi `subscription_connectivitie
 - Subscription Connectivity memilih Router sebagai gateway/langganan terkait.
 - Cabang menjadi penanda lokasi atau kepemilikan operasional router.
 
+## IP Transit
+
+### Tujuan
+
+Mencatat koneksi IP Transit yang disediakan vendor untuk kebutuhan operasional jaringan. Data ini dipisahkan dari Metro Ethernet karena memiliki identitas jaringan dan parameter routing tersendiri.
+
+### Data yang Dicatat
+
+- Vendor
+- CID (Circuit ID)
+- IP Address
+- IP Gateway
+- AS Number
+- Bandwidth dalam Mbps
+
+### Route dan Permission
+
+- Halaman: `/ip-transits`
+- Permission: `ip_transits.view`, `ip_transits.create`, `ip_transits.update`, dan `ip_transits.delete`
+- Role default: Owner, Admin, dan NOC
+
+### Integrasi
+
+- Terhubung ke master Vendor.
+- Muncul pada Global Search untuk pencarian CID, IP, gateway, AS Number, bandwidth, atau vendor.
+- Perubahan data dicatat oleh Activity Log melalui trait `LogsModelActivity`.
+
+### Migration Terkait
+
+- `2026_08_07_090000_create_ip_transits_table.php`
+
 ## Catatan Keamanan
 
 - Jangan mencatat password, API key, atau credential perangkat ke Activity Log.

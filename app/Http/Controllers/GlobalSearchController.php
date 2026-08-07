@@ -7,6 +7,7 @@ use App\Models\Client;
 use App\Models\Division;
 use App\Models\HostingServer;
 use App\Models\Invoice;
+use App\Models\IpTransit;
 use App\Models\MetroEthernet;
 use App\Models\Package;
 use App\Models\Router;
@@ -360,6 +361,41 @@ class GlobalSearchController extends Controller
             ];
         }
 
+        if ($user?->can('ip_transits.view')) {
+            $definitions[] = [
+                'key' => 'ip_transits',
+                'group' => 'IP Transit',
+                'icon' => 'waypoints',
+                'columns' => ['id', 'vendor_id', 'cid', 'ip_address', 'ip_gateway', 'as_number', 'bandwidth'],
+                'query' => fn (string $query) => IpTransit::query()
+                    ->where(function ($builder) use ($query) {
+                        $builder->where('cid', 'like', "%{$query}%")
+                            ->orWhere('ip_address', 'like', "%{$query}%")
+                            ->orWhere('ip_gateway', 'like', "%{$query}%")
+                            ->orWhere('as_number', 'like', "%{$query}%")
+                            ->orWhere('bandwidth', 'like', "%{$query}%")
+                            ->orWhereHas('vendor', function ($vendorBuilder) use ($query) {
+                                $vendorBuilder->where('name', 'like', "%{$query}%");
+                            });
+                    })
+                    ->with('vendor:id,name'),
+                'map' => fn (IpTransit $transit) => $this->quickViewResult(
+                    'ip_transit',
+                    $transit->id,
+                    $transit->cid ?: ($transit->ip_address ?: 'IP Transit'),
+                    [
+                        $transit->vendor?->name,
+                        $transit->ip_address,
+                        $transit->ip_gateway ? 'Gateway: '.$transit->ip_gateway : null,
+                        $transit->bandwidth ? $transit->bandwidth.' Mbps' : null,
+                    ],
+                    $transit->as_number ?: 'ip transit',
+                    route('ip-transits.show', $transit),
+                    route('ip-transits.index')
+                ),
+            ];
+        }
+
         if ($user?->can('services.view')) {
             $definitions[] = [
                 'key' => 'services',
@@ -432,7 +468,7 @@ class GlobalSearchController extends Controller
         ];
     }
 
-    protected function quickViewResult(string $detailType, int $id, string $title, array $subtitleParts, ?string $badge, string $url): array
+    protected function quickViewResult(string $detailType, int $id, string $title, array $subtitleParts, ?string $badge, string $url, ?string $pageUrl = null): array
     {
         return [
             'id' => $id,
@@ -441,7 +477,7 @@ class GlobalSearchController extends Controller
             'badge' => $badge,
             'action' => 'quick_view',
             'url' => $url,
-            'page_url' => $url,
+            'page_url' => $pageUrl ?? $url,
             'detail_url' => $url,
             'detail_type' => $detailType,
         ];

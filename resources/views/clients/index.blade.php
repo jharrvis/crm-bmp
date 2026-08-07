@@ -288,6 +288,20 @@
                     </div>
                     <button type="button" onclick="closeLocationMap()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i data-lucide="x" class="w-5 h-5"></i></button>
                 </div>
+                <div class="p-4 border-b border-slate-100 dark:border-slate-700 space-y-3">
+                    <form id="locationSearchForm" class="flex gap-2">
+                        <label for="locationSearchQuery" class="sr-only">Cari lokasi</label>
+                        <input id="locationSearchQuery" type="search" minlength="3" maxlength="120"
+                            class="flex-1 rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                            placeholder="Cari jalan, gedung, kelurahan, atau kecamatan">
+                        <button id="locationSearchButton" type="submit" class="px-4 py-2.5 rounded-xl text-sm font-bold bg-slate-800 hover:bg-slate-700 dark:bg-slate-600 dark:hover:bg-slate-500 text-white inline-flex items-center gap-2">
+                            <i data-lucide="search" class="w-4 h-4"></i> Cari
+                        </button>
+                    </form>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Pencarian dikirim saat tombol Cari ditekan dan dibatasi untuk Indonesia. Jangan gunakan untuk data alamat rahasia.</p>
+                    <div id="locationSearchMessage" class="hidden text-sm"></div>
+                    <div id="locationSearchResults" class="hidden max-h-36 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-600 divide-y divide-slate-100 dark:divide-slate-700"></div>
+                </div>
                 <div id="clientLocationMap" class="h-[420px] bg-slate-100 dark:bg-slate-700"></div>
                 <div class="p-5 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between gap-4">
                     <p id="locationMapCoordinates" class="text-sm text-slate-500 dark:text-slate-400">Belum ada titik dipilih.</p>
@@ -376,6 +390,7 @@
             (function () {
                 const baseUrl = '{{ url('/') }}';
                 const administrativeAreasUrl = '{{ route('administrative-areas.index') }}';
+                const mapLocationSearchUrl = '{{ route('map-locations.search') }}';
                 const branchDefaults = @json($branchDefaults);
                 const mapConfig = @json($mapConfig);
                 const centralJava = { latitude: -7.15000000, longitude: 110.14000000 };
@@ -547,6 +562,72 @@
                     document.getElementById('longitude').value = selectedMapLocation.longitude.toFixed(8);
                     window.closeLocationMap();
                 };
+
+                function showLocationSearchMessage(message, type = 'error') {
+                    const element = document.getElementById('locationSearchMessage');
+                    element.textContent = message;
+                    element.className = `text-sm ${type === 'error' ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'}`;
+                    element.classList.remove('hidden');
+                }
+
+                window.selectLocationSearchResult = function (latitude, longitude, label) {
+                    const position = { lat: latitude, lng: longitude };
+                    clientLocationMap.setView(position, 16);
+                    placeLocationMarker(position);
+                    document.getElementById('locationSearchQuery').value = label;
+                    document.getElementById('locationSearchResults').classList.add('hidden');
+                    document.getElementById('locationSearchMessage').classList.add('hidden');
+                };
+
+                document.getElementById('locationSearchForm').addEventListener('submit', async (event) => {
+                    event.preventDefault();
+
+                    const query = document.getElementById('locationSearchQuery').value.trim();
+                    const button = document.getElementById('locationSearchButton');
+                    const results = document.getElementById('locationSearchResults');
+                    if (query.length < 3) {
+                        showLocationSearchMessage('Masukkan minimal 3 karakter untuk mencari lokasi.');
+                        return;
+                    }
+
+                    button.disabled = true;
+                    button.innerHTML = '<i data-lucide="loader-circle" class="w-4 h-4 animate-spin"></i> Mencari';
+                    results.classList.add('hidden');
+                    document.getElementById('locationSearchMessage').classList.add('hidden');
+                    lucide.createIcons();
+
+                    try {
+                        const response = await fetch(`${mapLocationSearchUrl}?q=${encodeURIComponent(query)}`, {
+                            headers: { 'Accept': 'application/json' },
+                        });
+                        const payload = await response.json();
+                        if (!response.ok) {
+                            throw new Error(payload.message || 'Pencarian lokasi gagal.');
+                        }
+
+                        if (!payload.data.length) {
+                            showLocationSearchMessage('Lokasi tidak ditemukan. Coba kata kunci yang lebih spesifik.', 'info');
+                            return;
+                        }
+
+                        results.replaceChildren();
+                        payload.data.forEach((item) => {
+                            const resultButton = document.createElement('button');
+                            resultButton.type = 'button';
+                            resultButton.className = 'w-full px-4 py-2.5 text-left text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60';
+                            resultButton.textContent = item.label;
+                            resultButton.addEventListener('click', () => window.selectLocationSearchResult(item.latitude, item.longitude, item.label));
+                            results.appendChild(resultButton);
+                        });
+                        results.classList.remove('hidden');
+                    } catch (error) {
+                        showLocationSearchMessage(error.message || 'Pencarian lokasi gagal. Tentukan titik secara manual di peta.');
+                    } finally {
+                        button.disabled = false;
+                        button.innerHTML = '<i data-lucide="search" class="w-4 h-4"></i> Cari';
+                        lucide.createIcons();
+                    }
+                });
 
                 // Initialize DataTable
                 table = $('#dataTable').DataTable({

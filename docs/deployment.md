@@ -36,5 +36,7 @@ php artisan optimize:clear
 - Jika ada rewrite history Git, server production tidak boleh memakai `git pull` biasa. Gunakan sinkronisasi branch yang sesuai.
 - Jika ada migration invoice manual baru, jalankan `php artisan migrate`.
 - Jika update mencakup default wilayah cabang atau modal peta pelanggan, jalankan `php artisan migrate`. Tidak diperlukan API key Google Maps.
+- Jika update mencakup pencarian lokasi pelanggan atau modul IP Transit, jalankan `php artisan migrate`, `php artisan db:seed --class=PermissionSeeder`, lalu `php artisan permission:cache-reset`.
+- Untuk pencarian lokasi, set `MAP_NOMINATIM_USER_AGENT` di `.env` dengan nama aplikasi dan kontak operasional. Pencarian menggunakan Nominatim/OpenStreetMap dari server, tidak memerlukan API key atau billing account.
 - Jika form atau halaman invoice menambah class Tailwind baru di Blade, jalankan `npm run build`.
 - Jika fitur signature invoice dipakai di server baru, pastikan `php artisan storage:link` sudah tersedia agar file di disk `public` dapat diakses.

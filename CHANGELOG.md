@@ -2,6 +2,23 @@
 
 Semua perubahan penting pada project ini dicatat di file ini.
 
+## 2026-08-07
+
+### Added
+
+- Form pelanggan sekarang menyediakan pencarian lokasi berdasarkan nama jalan, area, kecamatan, atau kota untuk memusatkan peta dan mengisi koordinat dengan lebih cepat.
+- Modul Infrastruktur baru `IP Transit` untuk mengelola vendor, CID, IP Address, IP Gateway, AS Number, dan bandwidth. Modul ini tersedia di menu Infrastruktur dan Global Search.
+
+### Changed
+
+- Pencarian lokasi pelanggan diproses dari server, dibatasi kecepatannya, dan menggunakan cache agar tidak mengirim pencarian otomatis saat pengguna mengetik.
+
+### Deployment Notes
+
+- Jalankan `php artisan migrate` untuk membuat tabel `ip_transits`.
+- Jalankan `php artisan db:seed --class=PermissionSeeder` lalu `php artisan permission:cache-reset` untuk permission IP Transit.
+- Tambahkan `MAP_NOMINATIM_USER_AGENT` di `.env`, lalu jalankan `php artisan config:clear`.
+
 ## 2026-08-06
 
 ### Added
