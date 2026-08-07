@@ -503,6 +503,9 @@ function closeModal(modalId) {
     closeAppModal(modalId);
 }
 
+window.openAppModal = openAppModal;
+window.closeAppModal = closeAppModal;
+
 function escapeHtml(value) {
     return String(value ?? '')
         .replace(/&/g, '&amp;')

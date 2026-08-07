@@ -20,6 +20,7 @@ Semua perubahan penting pada project ini dicatat di file ini.
 - `PermissionSeeder` tidak lagi mencoba menetapkan permission untuk role legacy `Client`, sehingga aman dijalankan pada production yang memakai akun portal client terpisah.
 - Tanggal registrasi pelanggan sekarang kembali tampil dan dapat diperbarui pada form edit.
 - Quick View Global Search tidak lagi membuka modal edit Metro Ethernet ketika dipakai dari halaman Metro Ethernet.
+- Tombol tutup, klik backdrop, dan tombol Escape pada Quick View Global Search kembali berfungsi setelah fungsi modal aplikasi diekspos untuk handler halaman.
 
 ### Deployment Notes
 
