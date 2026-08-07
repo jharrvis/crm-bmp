@@ -233,14 +233,6 @@ class PermissionSeeder extends Seeder
             'documentation.view',
         ]);
 
-        // Client role - minimal permissions (portal only)
-        $clientRole = Role::findByName('Client');
-        $clientPermissions = [
-            'subscriptions.view',
-            'invoices.view',
-            'tickets.view',
-            'tickets.create',
-        ];
-        $clientRole->givePermissionTo($clientPermissions);
+        // Client Portal memakai tabel dan token terpisah, bukan role staff Spatie.
     }
 }

@@ -13,6 +13,10 @@ Semua perubahan penting pada project ini dicatat di file ini.
 
 - Pencarian lokasi pelanggan diproses dari server, dibatasi kecepatannya, dan menggunakan cache agar tidak mengirim pencarian otomatis saat pengguna mengetik.
 
+### Fixed
+
+- `PermissionSeeder` tidak lagi mencoba menetapkan permission untuk role legacy `Client`, sehingga aman dijalankan pada production yang memakai akun portal client terpisah.
+
 ### Deployment Notes
 
 - Jalankan `php artisan migrate` untuk membuat tabel `ip_transits`.
