@@ -2,6 +2,13 @@
 
 Semua perubahan penting pada project ini dicatat di file ini.
 
+## 2026-08-08
+
+### Fixed
+- Form edit layanan sekarang menyimpan perubahan paket, harga paket terkunci, periode billing, pajak, tanggal billing, dan detail teknis ke database.
+- Perhitungan prorata perubahan paket kini memakai harga serta periode paket lama yang benar.
+- Perubahan paket antar jenis layanan diblokir dengan validasi yang jelas untuk mencegah data konektivitas, hosting, atau domain tidak konsisten.
+
 ## 2026-08-07
 
 ### Fixed

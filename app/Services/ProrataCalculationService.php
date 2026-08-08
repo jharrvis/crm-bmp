@@ -68,7 +68,7 @@ class ProrataCalculationService
     /**
      * Calculate prorated invoice items for a subscription that is upgraded or downgraded.
      */
-    public function calculateUpgradeDowngrade(Subscription $sub, float $oldBasePrice, Carbon $changeDate): ?array
+    public function calculateUpgradeDowngrade(Subscription $sub, float $oldBasePrice, Carbon $changeDate, int $oldBillingPeriodMonths = 1): ?array
     {
         if (! \App\Models\SystemSetting::get('billing.proration_enabled', true)) {
             return null;
@@ -87,7 +87,7 @@ class ProrataCalculationService
         $remainingDays = $startDate->diffInDays($endDate) + 1;
         $daysInMonth = $startDate->daysInMonth;
 
-        $monthlyOldPrice = $oldBasePrice / max(1, $sub->billing_period_months);
+        $monthlyOldPrice = $oldBasePrice / max(1, $oldBillingPeriodMonths);
         $monthlyNewPrice = $sub->base_price / max(1, $sub->billing_period_months);
 
         $oldDailyRate = $monthlyOldPrice / $daysInMonth;

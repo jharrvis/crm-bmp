@@ -110,6 +110,13 @@ PPN dan PPh23 rate saat ini hardcoded. Lihat plan audit tagihan untuk rencana mi
 6. `next_billing_date` = tanggal instalasi + 1 bulan.
 7. PPN/PPh23 dihitung otomatis jika toggle aktif.
 
+### Perubahan Paket
+
+- Paket dapat diubah dari form edit selama masih berada pada jenis layanan yang sama, misalnya paket internet ke paket internet lain.
+- Saat paket berubah, sistem memperbarui harga paket yang terkunci, periode billing, pajak, `billing_cycle_day`, dan `next_billing_date` dari tanggal pemasangan.
+- Prorata upgrade/downgrade memakai harga dan periode paket lama sebelum perubahan.
+- Perpindahan antar jenis layanan (connectivity, hosting, domain) tidak diizinkan dari form edit karena perlu migrasi data teknis dan, untuk hosting, koordinasi akun HestiaCP.
+
 ### Connectivity-specific
 
 - Integrasi dengan Zabbix untuk monitoring: host, group, interfaces/graphs.
@@ -166,7 +173,7 @@ PPN dan PPh23 rate saat ini hardcoded. Lihat plan audit tagihan untuk rencana mi
 ## Known Issues / Catatan
 
 - `billing_cycle_day` di-set saat create tapi **tidak digunakan** oleh proses generate invoice bulanan. Invoice generate saat ini menggunakan tanggal manual.
-- `next_billing_date` di-set saat create tapi **tidak pernah di-update** setelah invoice di-generate. Lihat plan audit tagihan untuk perbaikan.
+- `next_billing_date` diperbarui saat tanggal pemasangan diubah, tetapi belum di-update otomatis setelah invoice bulanan dibuat. Lihat plan audit tagihan untuk perbaikan.
 - PPN (11%) dan PPh23 (2%) rate hardcoded di `Subscription::calculatePpnAmount()` dan `calculatePph23Amount()`.
 - `suspend` dan `activate` permission ada di seeder tapi controller menggunakan `update` permission untuk semua perubahan status.
 - Password hosting dan PPPoE secret tersimpan terenkripsi via Laravel `encrypt()`.

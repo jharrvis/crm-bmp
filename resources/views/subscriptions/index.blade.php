@@ -111,6 +111,7 @@
                                             </option>
                                         @endforeach
                                     </select>
+                                    <p id="package-edit-hint" class="hidden mt-2 text-xs text-slate-500 dark:text-slate-400">Saat edit, paket hanya dapat diganti ke jenis layanan yang sama agar data teknis tetap konsisten.</p>
                                 </div>
                             </div>
 
@@ -1010,6 +1011,27 @@
                     window.switchSubscriptionFormTab('general');
                 }
 
+                function setPackageEditScope(serviceType = null) {
+                    const packageSelect = document.getElementById('package_id');
+                    const hint = document.getElementById('package-edit-hint');
+
+                    Array.from(packageSelect.options).forEach((option) => {
+                        option.disabled = Boolean(serviceType && option.value && option.getAttribute('data-type') !== serviceType);
+                    });
+
+                    hint?.classList.toggle('hidden', !serviceType);
+                }
+
+                function setClientEditable(isEditable) {
+                    if (!clientChoice) return;
+
+                    if (isEditable) {
+                        clientChoice.enable();
+                    } else {
+                        clientChoice.disable();
+                    }
+                }
+
                 function initializeZabbixSelectors() {
                     const groupSelect = document.getElementById('zabbix_group_id');
                     const hostSelect = document.getElementById('zabbix_host_id');
@@ -1259,8 +1281,10 @@
 
                         // Reset Choices.js
                         if (clientChoice) {
+                            setClientEditable(true);
                             clientChoice.setChoiceByValue('');
                         }
+                        setPackageEditScope();
 
                         resetZabbixFields();
 
@@ -1369,6 +1393,9 @@
                             // Fill Form Values
                             clientChoice.setChoiceByValue(data.client_id.toString());
                             document.getElementById('package_id').value = data.package_id;
+                            const currentServiceType = document.getElementById('package_id').selectedOptions[0]?.getAttribute('data-type');
+                            setClientEditable(false);
+                            setPackageEditScope(currentServiceType);
                             document.getElementById('installed_at').value = data.installed_at ? data.installed_at.split('T')[0] : '';
                             document.getElementById('status').value = data.status;
                             document.getElementById('notes').value = data.notes || '';

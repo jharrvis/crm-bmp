@@ -18,6 +18,7 @@ use App\Services\ProrataCalculationService;
 use App\Services\ZabbixService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class SubscriptionController extends Controller
 {
@@ -80,6 +81,7 @@ class SubscriptionController extends Controller
                 'ip_address' => 'nullable|ipv4',
                 'pppoe_user' => 'nullable|string|max:100',
                 'ont_sn' => 'nullable|string|max:100',
+                'vlan_id' => 'nullable|integer|min:1|max:4094',
                 'zabbix_group_id' => 'nullable|string|max:255',
                 'zabbix_group_name' => 'nullable|string|max:255',
                 'zabbix_host_id' => 'nullable|string|max:255',
@@ -164,6 +166,7 @@ class SubscriptionController extends Controller
                     'pppoe_user' => $request->pppoe_user,
                     'pppoe_secret' => $request->pppoe_secret ? encrypt($request->pppoe_secret) : null,
                     'ont_sn' => $request->ont_sn,
+                    'vlan_id' => $request->vlan_id,
                     'signal_rx' => $request->signal_rx,
                     'zabbix_group_id' => $request->zabbix_group_id,
                     'zabbix_group_name' => $request->zabbix_group_name,
@@ -326,32 +329,48 @@ class SubscriptionController extends Controller
     public function update(Request $request, Subscription $subscription)
     {
         $request->validate([
+            'package_id' => 'required|exists:packages,id',
             'status' => 'required|string|in:pending,active,suspended,terminated',
             'installed_at' => 'required|date',
+            'custom_price' => 'nullable|numeric|min:0',
+            'billing_period_months' => 'nullable|integer|min:1|max:120',
             'uses_ppn' => 'nullable|boolean',
             'uses_pph23' => 'nullable|boolean',
         ]);
 
-        $package = $subscription->package; // Assume package doesn't change for update (usually upgrade is different process)
-        // If package changes, usage type might change -> complicated. For MVP assume NO package change in Edit.
+        $currentPackage = $subscription->package()->with('service')->firstOrFail();
+        $package = Package::with('service')->findOrFail($request->package_id);
+
+        if ($currentPackage->service?->type !== $package->service?->type) {
+            throw ValidationException::withMessages([
+                'package_id' => 'Paket hanya dapat diganti ke paket dengan jenis layanan yang sama. Perubahan internet, hosting, atau domain harus melalui proses migrasi layanan agar data teknis tetap aman.',
+            ]);
+        }
 
         $serviceType = $package->service->type;
 
         DB::beginTransaction();
         try {
+            $oldBillingPeriodMonths = max(1, (int) $subscription->billing_period_months);
+            $oldPackagePrice = (float) ($subscription->price_at_subscription ?? $currentPackage->price ?? 0);
+            $oldBasePrice = (float) ($subscription->custom_price ?? ($oldPackagePrice * $oldBillingPeriodMonths));
             $billingPeriodMonths = (int) ($request->billing_period_months ?? 1);
             $basePrice = (float) ($request->filled('custom_price')
                 ? $request->custom_price
-                : (($subscription->package->price ?? 0) * $billingPeriodMonths));
+                : ($package->price * $billingPeriodMonths));
             $usesPpn = $request->boolean('uses_ppn');
             $ppnAmount = $usesPpn ? Subscription::calculatePpnAmount($basePrice) : null;
             $usesPph23 = $request->boolean('uses_pph23');
             $pph23Amount = $usesPph23 ? Subscription::calculatePph23Amount($basePrice) : null;
+            $installedAt = \Carbon\Carbon::parse($request->installed_at);
 
             $subscription->update([
+                'package_id' => $package->id,
                 'status' => $request->status,
-                'installed_at' => $request->installed_at,
-                // Recalculate billing dates if needed?
+                'installed_at' => $installedAt,
+                'billing_cycle_day' => $installedAt->day,
+                'next_billing_date' => $installedAt->copy()->addMonth(),
+                'price_at_subscription' => $package->price,
                 'custom_price' => $request->custom_price,
                 'billing_period_months' => $billingPeriodMonths,
                 'uses_ppn' => $usesPpn,
@@ -362,6 +381,7 @@ class SubscriptionController extends Controller
                 'discount_notes' => null,
                 'notes' => $request->notes,
             ]);
+            $subscription->setRelation('package', $package);
 
             // Update Details
             if ($serviceType === 'connectivity') {
@@ -370,6 +390,7 @@ class SubscriptionController extends Controller
                     'ip_address' => 'nullable|ipv4',
                     'pppoe_user' => 'nullable|string|max:100',
                     'ont_sn' => 'nullable|string|max:100',
+                    'vlan_id' => 'nullable|integer|min:1|max:4094',
                     'zabbix_group_id' => 'nullable|string|max:255',
                     'zabbix_group_name' => 'nullable|string|max:255',
                     'zabbix_host_id' => 'nullable|string|max:255',
@@ -410,9 +431,8 @@ class SubscriptionController extends Controller
                 );
 
                 // Handle Metro update/change
-                if ($request->filled('metro_option')) {
-                    $connectivity = $subscription->connectivity;
-                    if ($request->metro_option === 'new') {
+                $connectivity = $subscription->connectivity;
+                if ($request->input('metro_option') === 'new') {
                         $metro = MetroEthernet::create([
                             'name' => $request->metro_name,
                             'vendor_id' => $request->metro_vendor_id,
@@ -421,9 +441,10 @@ class SubscriptionController extends Controller
                             'bandwidth' => $request->metro_bandwidth,
                         ]);
                         $connectivity->update(['metro_ethernet_id' => $metro->id]);
-                    } elseif ($request->metro_option === 'existing') {
-                        $connectivity->update(['metro_ethernet_id' => $request->metro_ethernet_id]);
-                    }
+                } elseif ($request->input('metro_option') === 'existing') {
+                    $connectivity->update(['metro_ethernet_id' => $request->metro_ethernet_id]);
+                } else {
+                    $connectivity->update(['metro_ethernet_id' => null]);
                 }
             } elseif ($serviceType === 'hosting') {
                 $request->validate([
@@ -495,11 +516,10 @@ class SubscriptionController extends Controller
             }
 
             $prorataService = new ProrataCalculationService;
-            $oldBasePrice = $subscription->getOriginal('base_price') ?? $subscription->base_price;
             $prorataItems = null;
 
             if ($subscription->wasChanged(['package_id', 'custom_price', 'billing_period_months'])) {
-                $prorataItems = $prorataService->calculateUpgradeDowngrade($subscription, $oldBasePrice, now());
+                $prorataItems = $prorataService->calculateUpgradeDowngrade($subscription, $oldBasePrice, now(), $oldBillingPeriodMonths);
             } elseif ($subscription->wasChanged('status') && in_array($request->status, ['suspended', 'terminated'])) {
                 $prorataItems = $prorataService->calculateSuspendTerminate($subscription, now());
             }

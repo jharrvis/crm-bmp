@@ -102,7 +102,9 @@ class Subscription extends Model
 
     public function getBasePriceAttribute(): float
     {
-        return (float) ($this->custom_price ?? ($this->package?->price * $this->billing_period_months) ?? 0);
+        $packagePrice = $this->price_at_subscription ?? $this->package?->price ?? 0;
+
+        return (float) ($this->custom_price ?? ($packagePrice * $this->billing_period_months));
     }
 
     public static function calculatePpnAmount(float $basePrice): float
