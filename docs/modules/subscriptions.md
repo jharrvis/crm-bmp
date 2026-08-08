@@ -109,7 +109,7 @@ PPN dan PPh23 rate saat ini hardcoded. Lihat plan audit tagihan untuk rencana mi
    - **Connectivity**: router, IP, PPPoE, ONT S/N, Zabbix monitoring, Metro Ethernet
    - **Hosting**: server, domain, username, password (terenkripsi), disk quota
    - **Domain**: nama domain, registrar, tanggal registrasi/berakhir, auth code (terenkripsi), dan catatan domain
-   - **Mail**: mail server Zimbra, domain, admin email, admin password
+   - **Mail**: mail server Zimbra, domain, dan kontak admin opsional
 4. Sistem generate `subscription_code` format: `{client_code}-{SERVICE_CODE}{NN}` (contoh: `126001-INT01`).
 5. `billing_cycle_day` diambil dari tanggal instalasi.
 6. `next_billing_date` = tanggal instalasi + 1 bulan.
@@ -142,9 +142,9 @@ PPN dan PPh23 rate saat ini hardcoded. Lihat plan audit tagihan untuk rencana mi
 ### Mail-specific
 
 - Tipe layanan `mail` memakai `SubscriptionMailHosting` + `Mailbox`.
-- `ensureDomain(domain)` pada `ZimbraService` dipanggil saat store/update agar domain tersedia di server Zimbra.
+- Domain mail diprovisikan melalui queue setelah subscription tersimpan.
 - Mail server dipilih dari daftar `HostingServer` tipe `zimbra`.
-- Pembuatan/suspend/activate/delete mailbox langsung diproksikan ke Zimbra SOAP lewat `MailboxController`.
+- Pembuatan/suspend/activate/delete mailbox diantrekan ke Zimbra SOAP lewat `MailboxController`.
 
 ### Status Langganan
 

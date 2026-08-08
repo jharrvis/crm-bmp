@@ -11,6 +11,9 @@
         } elseif (isset($type) && $type === 'domain') {
             $pageTitle = 'Paket Domain';
             $pageDesc = 'Daftar harga registrasi domain.';
+        } elseif (isset($type) && $type === 'mail') {
+            $pageTitle = 'Paket Email Hosting';
+            $pageDesc = 'Daftar paket mailbox, quota, dan batas alias email.';
         } elseif (isset($type) && $type === 'custom') {
             $pageTitle = 'Layanan Custom';
             $pageDesc = 'Daftar produk dan layanan custom (Satuan/Proyek).';
@@ -51,6 +54,13 @@
                     </button>
                 </div>
             </div>
+
+            @if(isset($type) && $type === 'mail' && $services->isEmpty())
+                <div class="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-900/20 dark:text-amber-200">
+                    <i data-lucide="info" class="mt-0.5 h-4 w-4 shrink-0"></i>
+                    <p>Buat terlebih dahulu layanan dengan tipe <strong>Mail Hosting</strong> melalui <a href="{{ route('services.index') }}" class="font-bold underline">Master Layanan</a>, lalu tambahkan paket email di halaman ini.</p>
+                </div>
+            @endif
 
             <!-- Table -->
             <div class="overflow-x-auto no-scrollbar">

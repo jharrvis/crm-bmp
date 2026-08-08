@@ -1,4 +1,10 @@
 <x-app-layout>
+    @php
+        $pageTitle = $category === 'mail' ? 'Manajemen Server Mail Hosting' : ($category === 'web' ? 'Manajemen Server Web Hosting' : 'Manajemen Server');
+        $pageDescription = $category === 'mail'
+            ? 'Kelola server Zimbra dan kredensial SOAP Admin API.'
+            : ($category === 'web' ? 'Kelola server HestiaCP, cPanel, dan CyberPanel.' : 'Kelola data server web dan mail hosting.');
+    @endphp
     <div class="space-y-6">
         <div
             class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6 md:p-8">
@@ -6,9 +12,8 @@
             <!-- Toolbar -->
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <div>
-                    <h3 class="text-xl font-bold text-slate-800 dark:text-white">Manajemen Server</h3>
-                    <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Kelola data server hosting
-                        (HestiaCP/cPanel).</p>
+                    <h3 class="text-xl font-bold text-slate-800 dark:text-white">{{ $pageTitle }}</h3>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">{{ $pageDescription }}</p>
                 </div>
                 <button onclick="window.openModal()"
                     class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-blue-200 dark:shadow-none transition-all">
@@ -266,9 +271,23 @@
                         document.getElementById('submitText').innerText = 'Simpan Data';
                         document.getElementById('dataForm').reset();
                         document.getElementById('dataId').value = '';
+                        applyCategoryDefaults();
                     }
                     lucide.createIcons();
                 };
+
+                function applyCategoryDefaults() {
+                    const category = @json($category);
+
+                    if (category === 'mail') {
+                        document.getElementById('type').value = 'zimbra';
+                        document.getElementById('port').value = 7071;
+                        document.getElementById('api_endpoint').value = '/service/admin/soap';
+                    } else if (category === 'web') {
+                        document.getElementById('type').value = 'hestiacp';
+                        document.getElementById('port').value = 8083;
+                    }
+                }
 
                 window.closeModal = function () {
                     const modal = document.getElementById('formModal');

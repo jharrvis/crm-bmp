@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\HostingServer;
 use App\Services\ZimbraService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class HostingServerController extends Controller
 {
@@ -19,10 +20,18 @@ class HostingServerController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $servers = HostingServer::latest()->get();
-        return view('servers.index', compact('servers'));
+        $category = $request->string('category')->toString();
+        abort_unless(in_array($category, ['', 'web', 'mail'], true), 404);
+
+        $servers = HostingServer::query()
+            ->when($category === 'web', fn ($query) => $query->whereIn('type', ['hestiacp', 'cpanel', 'cyberpanel']))
+            ->when($category === 'mail', fn ($query) => $query->where('type', 'zimbra'))
+            ->latest()
+            ->get();
+
+        return view('servers.index', compact('servers', 'category'));
     }
 
     public function create()
@@ -40,7 +49,7 @@ class HostingServerController extends Controller
             'host' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9.-]+$/'],
             'port' => 'required|integer|between:1,65535',
             'api_endpoint' => ['nullable', 'string', 'max:255', 'regex:#^/[A-Za-z0-9/_-]*$#'],
-            'type' => 'required|string',
+            'type' => ['required', Rule::in(['hestiacp', 'cpanel', 'cyberpanel', 'zimbra', 'other'])],
             'location' => 'nullable|string',
             'max_accounts' => 'required|integer',
             'username' => 'nullable|string|max:255',
@@ -88,7 +97,7 @@ class HostingServerController extends Controller
             'host' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9.-]+$/'],
             'port' => 'required|integer|between:1,65535',
             'api_endpoint' => ['nullable', 'string', 'max:255', 'regex:#^/[A-Za-z0-9/_-]*$#'],
-            'type' => 'required|string',
+            'type' => ['required', Rule::in(['hestiacp', 'cpanel', 'cyberpanel', 'zimbra', 'other'])],
             'location' => 'nullable|string',
             'max_accounts' => 'required|integer',
             'username' => 'nullable|string|max:255',

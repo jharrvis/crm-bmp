@@ -6,7 +6,7 @@ Semua perubahan penting pada project ini dicatat di file ini.
 
 ### Added
 - Modul baru **Mail Hosting** dengan integrasi server Zimbra (SOAP Admin API). Admin dapat menambahkan layanan mail pada paket berjenis `mail`, memilih server Zimbra, dan mengantrekan provisioning domain secara aman.
-- Manajemen **mailbox** per langganan: buat account, quota, aktif/nonaktif (suspend/activate), dan hapus melalui queue. Akses via tab mail pada detail layanan atau menu Mail Hosting sidebar.
+- Manajemen **mailbox** per langganan: buat account, quota, aktif/nonaktif (suspend/activate), dan hapus melalui queue. Akses melalui detail layanan pelanggan bertipe mail.
 - Field paket untuk kotak surat (max_mailboxes, mailbox_quota_mb, alias_max) dan field `api_endpoint` pada Hosting Server tipe `zimbra`.
 - Permission baru `mailboxes.*` (view, create, update, delete, suspend) untuk membatasi akses mailbox.
 
@@ -20,7 +20,9 @@ Semua perubahan penting pada project ini dicatat di file ini.
 - Perubahan paket antar jenis layanan diblokir dengan validasi yang jelas untuk mencegah data konektivitas, hosting, atau domain tidak konsisten.
 
 ### Changed
-- Sidebar menambahkan menu **Mail Hosting** yang menampilkan langganan paket tipe `mail`.
+- Mail Hosting tidak lagi menjadi menu sidebar terpisah; layanan ini tampil melalui group **Layanan Pelanggan** berdasarkan master layanan yang dipilih.
+- Katalog Layanan sekarang menyediakan navigasi **Paket Email Hosting**. Admin dapat membuat layanan bertipe `mail` di Master Layanan, lalu membuat paket mailbox, quota, dan batas alias.
+- Infrastruktur memisahkan tampilan **Server Web Hosting** dan **Server Mail Hosting** menggunakan filter tipe pada entitas server yang sama.
 
 ### Deployment Notes
 - Jalankan `php artisan migrate` untuk membuat tabel `subscription_mail_hostings` dan `mailboxes`, menambahkan kolom `api_endpoint` dan field paket mail, serta constraint/provisioning status (migration 2026_08_08_000001 s.d. 000005).

@@ -110,15 +110,6 @@
     </a>
     @endcan
 
-    <!-- Mail Hosting -->
-    @can('mailboxes.view')
-    <a href="{{ route('subscriptions.index', ['type' => 'mail']) }}"
-        class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all group whitespace-nowrap {{ request()->routeIs('subscriptions.*') && request()->query('type') === 'mail' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
-        <i data-lucide="mail" class="w-5 h-5 shrink-0 transition-colors"></i>
-        <span class="font-medium text-sm menu-text transition-opacity duration-200">Mail Hosting</span>
-    </a>
-    @endcan
-
     @can('tickets.view')
     <a href="{{ route('tickets.index') }}"
         class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-all group whitespace-nowrap {{ request()->routeIs('tickets.*') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}">
@@ -174,6 +165,10 @@
             <a href="{{ route('packages.index', ['type' => 'domain']) }}"
                 class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->query('type') == 'domain' ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
                 Domain Registration
+            </a>
+            <a href="{{ route('packages.index', ['type' => 'mail']) }}"
+                class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->query('type') == 'mail' ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
+                Email Hosting
             </a>
             <a href="{{ route('packages.index', ['type' => 'custom']) }}"
                 class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->query('type') == 'custom' ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
@@ -269,9 +264,13 @@
             </a>
             @endcan
             @can('servers.view')
-            <a href="{{ route('servers.index') }}"
-                class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('servers.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
-                Server Hosting
+            <a href="{{ route('servers.index', ['category' => 'web']) }}"
+                class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('servers.*') && request()->query('category') === 'web' ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
+                Server Web Hosting
+            </a>
+            <a href="{{ route('servers.index', ['category' => 'mail']) }}"
+                class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('servers.*') && request()->query('category') === 'mail' ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
+                Server Mail Hosting
             </a>
             @endcan
             @can('vendors.view')

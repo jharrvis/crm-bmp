@@ -119,7 +119,9 @@ Mengelola layanan *mail hosting* untuk langganan pelanggan ISP. Modul ini terint
 
 `ZimbraService` (SOAP) adalah implementasi pertama. Engine `postfix` dapat ditambahkan dengan mengimplementasi interface yang sama.
 
-`HostingServer` perlu diisi:
+Server mail tetap memakai entitas `HostingServer` yang sama dengan web hosting agar credential, permission, audit log, dan koneksi infrastruktur tidak terduplikasi. Tampilan Infrastruktur memisahkan daftar **Server Web Hosting** dan **Server Mail Hosting** berdasarkan tipe.
+
+`HostingServer` untuk mail perlu diisi:
 
 - `type=zimbra`
 - `host` dan `port` (default 7071)
