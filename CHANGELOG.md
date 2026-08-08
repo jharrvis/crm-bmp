@@ -4,6 +4,43 @@ Semua perubahan penting pada project ini dicatat di file ini.
 
 ## 2026-08-08
 
+### Security
+- Provisioning HestiaCP sekarang menolak username remote yang belum terbukti dibuat oleh CRM, memverifikasi email kontak utama, package target, dan kapasitas server sebelum membuat akun.
+- Aksi lifecycle hanya tersedia untuk akun CRM yang sudah berhasil diprovisikan; akun linked/legacy tetap read-only.
+- Penghapusan akun HestiaCP dibatasi untuk Owner, memerlukan pengetikan ulang username, dan aman terhadap retry setelah penghapusan remote berhasil.
+- Response error HestiaCP tidak lagi ditulis mentah ke log aplikasi.
+
+### Changed
+- Perubahan status langganan tidak lagi otomatis suspend atau aktifkan akun HestiaCP. Automasi billing-to-hosting ditunda sampai aturan grace period dan pembayaran tersedia.
+- Snapshot HestiaCP menggunakan lock agar refresh bersamaan tidak menghasilkan beberapa snapshot aktif.
+
+### Added
+- Modul **Manage Server Web Hosting (HestiaCP)**: konsol operasional berupa ringkasan snapshot server, daftar user live dengan cache singkat, test koneksi manual, refresh data, dan tautan user Hestia existing ke subscription hosting.
+- **Provisioning berbasis queue** untuk langganan hosting. Pembuatan user dan web domain diantrekan (`ProvisionHostingAccountJob`) dan ditandai idempoten; status `pending/provisioning/ready/failed/deleting/delete_failed` tercatat di `subscription_hostings`.
+- Snapshot server `hosting_server_snapshots` dengan satu snapshot aktif per server (ringkasan JSON, status, waktu sinkron, pesan error).
+- Lifecycle akun Hestia melalui queue: suspend/activate (`SetHostingAccountStatusJob`), reset password (`ResetHostingAccountPasswordJob`), dan hapus (`DeleteHostingAccountJob`) — hanya untuk akun yang benar-benar dikelola CRM (`managed_by_crm=true`).
+- Adapter web hosting berbasis interface `WebHostingServerAdapter` + resolver `WebHostResolver`; `HestiaCPService` kini memakai `Http::timeout(30)` tanpa menonaktifkan verifikasi TLS secara global (diatur via `HESTIACP_VERIFY_SSL`).
+- Permission baru `servers.manage`, `servers.provision`, `servers.suspend`, `servers.reset_password`, `servers.delete_user`. NOC hanya mendapat `servers.connect`, `servers.manage`, `servers.suspend` (tanpa delete).
+- Field `hestia_package` pada paket dan migration unik/index baru pada `subscription_hostings` (preflight pendeteksi duplikat legacy sebelum migrasi).
+
+### Fixed
+- `SubscriptionController` tidak lagi menyimpan `SubscriptionHosting` saat panggilan `v-add-user` gagal; akun dibuat dengan status `pending` lalu diprovisikan via queue setelah commit.
+- Pemanggilan Hestia langsung dari request browser digantikan job queue agar tidak memblokir respons pada operasi lambat.
+- `SubscriptionHosting` kini memakai `LogsModelActivity`, encrypted cast, dan `$hidden` untuk `password_encrypted`; credential tidak ikut terserialisasi.
+- Nonaktif/terminate langganan dan reset password pada layanan hosting kini diantrekan, bukan dipanggil sinkron.
+
+### Changed
+- Username baru hosting divalidasi `^[a-z][a-z0-9_]{0,31}$`; operasi aksi memakai `username` pada request body, bukan parameter route, agar aman terhadap aturan username Hestia/Linux.
+- Halaman Manage Server tersedia dari daftar server web (`servers.index`) untuk server tipe HestiaCP aktif.
+
+### Deployment Notes
+- Jalankan `php artisan migrate` (migration 2026_08_08_000006 s.d. 000008).
+- Jalankan `php artisan db:seed --class=PermissionSeeder` lalu `php artisan permission:cache-reset`.
+- Pastikan queue worker active (`php artisan queue:work`) agar provisioning dan lifecycle hosting berjalan.
+- Sebelum mengaktifkan provisioning: buat Hestia access/secret key minimum, whitelist IP server CRM, uji test connection lalu create/link/suspend pada akun non-production.
+
+---
+
 ### Added
 - Modul baru **Mail Hosting** dengan integrasi server Zimbra (SOAP Admin API). Admin dapat menambahkan layanan mail pada paket berjenis `mail`, memilih server Zimbra, dan mengantrekan provisioning domain secara aman.
 - Manajemen **mailbox** per langganan: buat account, quota, aktif/nonaktif (suspend/activate), dan hapus melalui queue. Akses melalui detail layanan pelanggan bertipe mail.

@@ -27,6 +27,17 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('routers', \App\Http\Controllers\RouterController::class);
     Route::resource('servers', \App\Http\Controllers\HostingServerController::class);
+    Route::prefix('servers/{server}')->group(function () {
+        Route::get('manage', [\App\Http\Controllers\ServerManageController::class, 'show'])->name('servers.manage');
+        Route::post('test-connection', [\App\Http\Controllers\ServerManageController::class, 'testConnection'])->name('servers.test-connection');
+        Route::get('users', [\App\Http\Controllers\ServerManageController::class, 'users'])->name('servers.users');
+        Route::post('users/link', [\App\Http\Controllers\ServerManageController::class, 'link'])->name('servers.users.link');
+        Route::post('users/suspend', [\App\Http\Controllers\ServerManageController::class, 'suspend'])->name('servers.users.suspend');
+        Route::post('users/activate', [\App\Http\Controllers\ServerManageController::class, 'activate'])->name('servers.users.activate');
+        Route::post('users/password', [\App\Http\Controllers\ServerManageController::class, 'resetPassword'])->name('servers.users.password');
+        Route::delete('users', [\App\Http\Controllers\ServerManageController::class, 'destroy'])->name('servers.users.destroy');
+        Route::post('refresh', [\App\Http\Controllers\ServerManageController::class, 'refresh'])->name('servers.refresh');
+    });
     Route::resource('vendors', \App\Http\Controllers\VendorController::class);
     Route::resource('metro-ethernets', \App\Http\Controllers\MetroEthernetController::class);
     Route::get('zabbix-monitors', [\App\Http\Controllers\ZabbixMonitorController::class, 'index'])->name('zabbix-monitors.index');

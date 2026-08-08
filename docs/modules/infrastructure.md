@@ -87,6 +87,20 @@ Mencatat koneksi IP Transit yang disediakan vendor untuk kebutuhan operasional j
 - `2026_08_07_090000_create_ip_transits_table.php`
 - `2026_08_07_100000_add_name_to_ip_transits_table.php`
 
+## Server Web Hosting (HestiaCP)
+
+Detail lengkap ada di `docs/modules/web-hosting.md`. Ringkasan:
+
+- Halaman `GET /servers/{server}/manage` (akses: `servers.manage`) menampilkan snapshot
+  ringkasan dan tombol Test Koneksi / Refresh Data.
+- Daftar user live di `/servers/{server}/users` memakai cache 120 detik.
+- Permission baru: `servers.manage`, `servers.provision`, `servers.suspend`,
+  `servers.reset_password`, `servers.delete_user` (selain `servers.connect`).
+- Operasi remote berjalan melalui queue (`ProvisionHostingAccountJob`,
+  `SetHostingAccountStatusJob`, `ResetHostingAccountPasswordJob`,
+  `DeleteHostingAccountJob`, `RefreshHestiaServerSnapshotJob`).
+- Hanya server `type=hestiacp` dan `is_active=true` yang dapat dikelola.
+
 ## Catatan Keamanan
 
 - Jangan mencatat password, API key, atau credential perangkat ke Activity Log.

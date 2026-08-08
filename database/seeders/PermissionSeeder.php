@@ -25,7 +25,7 @@ class PermissionSeeder extends Seeder
 
             // Infrastruktur
             'routers' => ['view', 'create', 'update', 'delete', 'connect'],
-            'servers' => ['view', 'create', 'update', 'delete', 'connect'],
+            'servers' => ['view', 'create', 'update', 'delete', 'connect', 'manage', 'provision', 'suspend', 'reset_password', 'delete_user'],
             'vendors' => ['view', 'create', 'update', 'delete'],
             'metro_ethernets' => ['view', 'create', 'update', 'delete'],
             'ip_transits' => ['view', 'create', 'update', 'delete'],
@@ -98,6 +98,7 @@ class PermissionSeeder extends Seeder
         $adminPermissions = Permission::where('name', 'not like', 'roles.%')
             ->where('name', 'not like', 'settings.%')
             ->where('name', 'not like', 'logs.%')
+            ->where('name', '!=', 'servers.delete_user')
             ->get();
         $adminRole->givePermissionTo($adminPermissions);
 
@@ -163,7 +164,10 @@ class PermissionSeeder extends Seeder
             'subscriptions.activate',
             'routers.view',
             'routers.connect',
-            'servers.view',
+'servers.view',
+            'servers.connect',
+            'servers.manage',
+            'servers.suspend',
             'vendors.view',
             'metro_ethernets.view',
             'ip_transits.view',

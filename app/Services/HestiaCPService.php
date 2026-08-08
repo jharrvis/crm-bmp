@@ -6,7 +6,7 @@ use App\Models\HostingServer;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class HestiaCPService
+class HestiaCPService implements WebHostingServerAdapter
 {
     protected $server;
     protected $baseUrl;
@@ -17,65 +17,209 @@ class HestiaCPService
         $this->server = $server;
         $this->baseUrl = "https://{$server->host}:{$server->port}/api/";
 
-        // Construct hash for API authentication (AccessKey:SecretKey)
-        // Ensure keys are decrypted (model cast handles this)
-        $this->authHash = $server->api_key . ':' . $server->secret_key;
+        // AccessKey:SecretKey format. Values are decrypted by the model cast.
+        $this->authHash = ($server->api_key ?? '').':'.($server->secret_key ?? '');
     }
 
     /**
-     * Send Request to HestiaCP API
+     * Send request to the HestiaCP API with a consistent return envelope.
      */
-    protected function request($cmd, $args = [])
+    protected function request(string $cmd, array $args = []): array
     {
-        // Prepare payload
-        $payload = [
-            'hash' => $this->authHash,
-            'cmd' => $cmd,
-        ] + $args; // Merge arguments (arg1, arg2...)
+        $payload = ['hash' => $this->authHash, 'cmd' => $cmd];
 
-        // Log request (without sensitive info)
-        Log::info("HestiaCP Request: {$cmd} to {$this->server->host}", ['user' => $args['arg1'] ?? '']);
+        // Hestia expects arg1, arg2, etc. Accept positional arguments internally
+        // while ensuring they are never sent as numeric form keys.
+        foreach ($args as $key => $value) {
+            $payload[is_int($key) ? 'arg'.($key + 1) : $key] = $value;
+        }
+
+        Log::info('HestiaCP Request', [
+            'server_id' => $this->server->id,
+            'cmd' => $cmd,
+            'user' => $args['arg1'] ?? null,
+        ]);
 
         try {
-            // HestiaCP API typically expects form-data or x-www-form-urlencoded
-            // Since it uses self-signed certs often, we might need to verify=false (configurable?)
-            // For production, verification is recommended.
-            $response = Http::withoutVerifying()
-                ->asForm()
-                ->post($this->baseUrl, $payload);
+            $http = Http::timeout(30)
+                ->asForm();
+
+            if (config('hestiacp.verify_ssl', true) === false) {
+                $http = $http->withoutVerifying();
+            }
+
+            $response = $http->post($this->baseUrl, $payload);
 
             if ($response->failed()) {
-                Log::error("HestiaCP Connection Failed: " . $response->body());
-                return ['success' => false, 'message' => 'Connection failed: ' . $response->status()];
+                Log::error('HestiaCP Connection Failed', [
+                    'server_id' => $this->server->id,
+                    'cmd' => $cmd,
+                    'status' => $response->status(),
+                ]);
+
+                return $this->error("Connection failed with HTTP {$response->status()}");
             }
 
-            $body = $response->body();
+            $body = trim($response->body());
 
-            // HestiaCP returns "Error: message" or "OK" (sometimes just empty or specific return code)
-            // v-add-user returns nothing on success (return code 0)
+            if ($body === '') {
+                return ['success' => true, 'data' => null, 'code' => null, 'message' => 'OK'];
+            }
 
-            // Analyze return code (Hestia usually just returns text body)
             if (str_starts_with($body, 'Error:')) {
-                Log::error("HestiaCP Error: {$body}");
-                return ['success' => false, 'message' => $body];
+                Log::error('HestiaCP Error', [
+                    'server_id' => $this->server->id,
+                    'cmd' => $cmd,
+                ]);
+
+                return $this->error('Server HestiaCP menolak permintaan.');
             }
 
-            return ['success' => true, 'data' => $body];
+            $decoded = json_decode($body, true);
+
+            return [
+                'success' => true,
+                'data' => $decoded === null && $this->looksLikePlainText($body) ? $body : $decoded,
+                'code' => null,
+                'message' => 'OK',
+            ];
 
         } catch (\Exception $e) {
-            Log::error("HestiaCP Exception: " . $e->getMessage());
-            return ['success' => false, 'message' => $e->getMessage()];
+            Log::error('HestiaCP Exception', [
+                'server_id' => $this->server->id,
+                'cmd' => $cmd,
+                'exception' => $e->getMessage(),
+            ]);
+
+            return $this->error('Terjadi kesalahan koneksi ke server HestiaCP.');
         }
     }
 
+    protected function error(string $message): array
+    {
+        return ['success' => false, 'data' => null, 'code' => null, 'message' => $message];
+    }
+
+    protected function looksLikePlainText(string $body): bool
+    {
+        return ! str_contains($body, '{') && ! str_contains($body, '[');
+    }
+
     /**
-     * Create User Account
-     * v-add-user user password email package name
+     * {@inheritDoc}
      */
-    public function createUser($user, $password, $email, $name, $package = 'default')
+    public function testConnection(): array
+    {
+        return $this->request('v-list-sys-info', ['arg1' => 'json']);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function listUsers(): array
+    {
+        $result = $this->request('v-list-users', ['arg1' => 'json']);
+
+        if (! $result['success']) {
+            return $result;
+        }
+
+        $users = [];
+        foreach ((array) $result['data'] as $username => $row) {
+            $users[$username] = $this->normaliseUser($username, (array) $row);
+        }
+
+        return ['success' => true, 'data' => $users, 'code' => null, 'message' => 'OK'];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function findUser(string $username): array
+    {
+        $result = $this->request('v-list-user', [$username, 'json']);
+
+        if (! $result['success']) {
+            return $result;
+        }
+
+        $data = (array) $result['data'];
+
+        if ($data === []) {
+            return ['success' => true, 'data' => null, 'code' => null, 'message' => 'OK'];
+        }
+
+        // v-list-user may return the row directly or keyed by username.
+        $row = isset($data[$username]) && is_array($data[$username])
+            ? $data[$username]
+            : $data;
+
+        return [
+            'success' => true,
+            'data' => $this->normaliseUser($username, $row),
+            'code' => null,
+            'message' => 'OK',
+        ];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function listWebDomains(string $username): array
+    {
+        $result = $this->request('v-list-web-domains', [$username, 'json']);
+
+        if (! $result['success']) {
+            return $result;
+        }
+
+        $domains = array_keys((array) $result['data']);
+
+        return ['success' => true, 'data' => $domains, 'code' => null, 'message' => 'OK'];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function listUserPackages(): array
+    {
+        $result = $this->request('v-list-user-packages', ['json']);
+
+        if (! $result['success']) {
+            return $result;
+        }
+
+        $packages = array_keys((array) $result['data']);
+
+        return ['success' => true, 'data' => $packages, 'code' => null, 'message' => 'OK'];
+    }
+
+    /**
+     * Normalise a Hestia user row into a safe, stable shape.
+     */
+    protected function normaliseUser(string $username, array $row): array
+    {
+        return [
+            'username' => $row['USER'] ?? $username,
+            'email' => $row['EMAIL'] ?? null,
+            'name' => $row['NAME'] ?? null,
+            'package' => $row['PACKAGE'] ?? null,
+            'disk' => $row['DISK'] ?? $row['U_DISK'] ?? null,
+            'quota' => $row['USED_QUOTA'] ?? $row['QUOTA'] ?? null,
+            'suspended' => array_key_exists('SUSPENDED', $row)
+                ? in_array($row['SUSPENDED'], ['yes', '1', 1, true], true)
+                : (array_key_exists('SUSPENDED_USER', $row) && $row['SUSPENDED_USER'] !== 'no'),
+            'created_at' => $row['CREATED'] ?? null,
+        ];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function createUser(string $username, string $password, string $email, string $name, string $package): array
     {
         return $this->request('v-add-user', [
-            'arg1' => $user,
+            'arg1' => $username,
             'arg2' => $password,
             'arg3' => $email,
             'arg4' => $package,
@@ -84,70 +228,48 @@ class HestiaCPService
     }
 
     /**
-     * Create Web Domain
-     * v-add-web-domain user domain
+     * {@inheritDoc}
      */
-    public function createWebDomain($user, $domain)
+    public function createWebDomain(string $username, string $domain): array
     {
         return $this->request('v-add-web-domain', [
-            'arg1' => $user,
+            'arg1' => $username,
             'arg2' => $domain,
         ]);
     }
 
     /**
-     * Suspend User
-     * v-suspend-user user
+     * {@inheritDoc}
      */
-    public function suspendUser($user)
+    public function suspendUser(string $username): bool
     {
-        return $this->request('v-suspend-user', [
-            'arg1' => $user,
-        ]);
+        return $this->request('v-suspend-user', ['arg1' => $username])['success'];
     }
 
     /**
-     * Unsuspend User
-     * v-unsuspend-user user
+     * {@inheritDoc}
      */
-    public function unsuspendUser($user)
+    public function unsuspendUser(string $username): bool
     {
-        return $this->request('v-unsuspend-user', [
-            'arg1' => $user,
-        ]);
+        return $this->request('v-unsuspend-user', ['arg1' => $username])['success'];
     }
 
     /**
-     * Delete User
-     * v-delete-user user
+     * {@inheritDoc}
      */
-    public function deleteUser($user)
-    {
-        return $this->request('v-delete-user', [
-            'arg1' => $user,
-        ]);
-    }
-
-    /**
-     * Change User Password
-     * v-change-user-password user password
-     */
-    public function changePassword($user, $password)
+    public function changePassword(string $username, string $password): bool
     {
         return $this->request('v-change-user-password', [
-            'arg1' => $user,
+            'arg1' => $username,
             'arg2' => $password,
-        ]);
+        ])['success'];
     }
 
     /**
-     * List Packages
-     * v-list-packages json
+     * {@inheritDoc}
      */
-    public function listPackages()
+    public function deleteUser(string $username): bool
     {
-        return $this->request('v-list-packages', [
-            'arg1' => 'json'
-        ]);
+        return $this->request('v-delete-user', ['arg1' => $username])['success'];
     }
 }

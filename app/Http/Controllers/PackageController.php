@@ -4,11 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Package;
 use App\Models\Service;
+use App\Services\WebHostResolver;
 use Illuminate\Http\Request;
 
 class PackageController extends Controller
 {
-    public function __construct()
+    public function __construct(protected WebHostResolver $webHostResolver)
     {
         $this->middleware('permission:packages.view')->only(['index', 'show']);
         $this->middleware('permission:packages.create')->only(['create', 'store', 'syncPackages']);
@@ -51,6 +52,7 @@ class PackageController extends Controller
     {
         $validated = $request->validate([
             'service_id' => 'required|exists:services,id',
+            'hestia_package' => 'nullable|string|max:255',
             'name' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
             'unit' => 'nullable|string|max:50', // Added unit validation
@@ -99,6 +101,7 @@ class PackageController extends Controller
     {
         $validated = $request->validate([
             'service_id' => 'required|exists:services,id',
+            'hestia_package' => 'nullable|string|max:255',
             'name' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
             'bandwidth_down' => 'nullable|string',
@@ -156,6 +159,13 @@ class PackageController extends Controller
             return response()->json(['success' => false, 'message' => 'Tidak ada server hosting (HestiaCP) aktif. Pastikan Tipe server adalah "hestiacp".'], 404);
         }
 
+        if ($servers->count() > 1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sinkronisasi otomatis dinonaktifkan bila ada lebih dari satu server HestiaCP. Isi mapping paket Hestia secara manual agar tidak tertukar antar server.',
+            ], 422);
+        }
+
         $syncedCount = 0;
         $errors = [];
 
@@ -166,43 +176,29 @@ class PackageController extends Controller
         );
 
         foreach ($servers as $server) {
-            $hestia = new \App\Services\HestiaCPService($server);
-            $result = $hestia->listPackages();
+            $result = $this->webHostResolver->resolve($server)->listUserPackages();
 
             if (!$result['success']) {
                 $errors[] = "Server {$server->name}: " . ($result['message'] ?? 'Unknown error');
                 continue;
             }
 
-            // Hestia returns JSON string in 'data' key? Or direct array if parsed?
-            // HestiaCPService returns 'data' as the body string.
-            $data = json_decode($result['data'], true);
-
-            if (!is_array($data)) {
-                $errors[] = "Server {$server->name}: Invalid JSON format";
-                continue;
-            }
-
-            foreach ($data as $pkgName => $pkgDetails) {
-                // Update or Create Package
-                // Mapping:
-                // name -> pkgName
-                // bandwidth -> bandwidth_up/down (Hestia uses 'bandwidth' total)
-                // quota -> quota (disk quota)
-
-                Package::updateOrCreate(
+            foreach ((array) $result['data'] as $pkgName) {
+                $package = Package::firstOrCreate(
                     [
                         'name' => $pkgName,
                         'service_id' => $service->id
                     ],
                     [
-                        'quota' => $pkgDetails['DISK_QUOTA'] ?? '0',
-                        'bandwidth_down' => $pkgDetails['BANDWIDTH'] ?? '0', // Using generic bandwidth for both?
-                        'description' => "Synced from {$server->name}. Web Domains: {$pkgDetails['WEB_DOMAINS']}, E-mails: {$pkgDetails['MAIL_ACCOUNTS']}",
-                        'price' => 0, // Hestia doesn't store price, keeping/defaulting to 0 for manual update
+                        'hestia_package' => $pkgName,
+                        'description' => "Paket HestiaCP {$pkgName} dari {$server->name}. Harga dan kuota CRM harus diatur manual.",
+                        'price' => 0,
                         'is_active' => true
                     ]
                 );
+
+                // Never overwrite commercial pricing or quota maintained in CRM.
+                $package->update(['hestia_package' => $pkgName]);
                 $syncedCount++;
             }
         }

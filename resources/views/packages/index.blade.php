@@ -121,6 +121,13 @@
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                                 placeholder="Contoh: Paket 20 Mbps Home">
                         </div>
+                        <div id="fields-hestia-package" class="hidden">
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Mapping Paket HestiaCP <span class="text-red-500">*</span></label>
+                            <input type="text" id="hestia_package" name="hestia_package"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                placeholder="Contoh: default">
+                            <p class="mt-1 text-xs text-slate-500">Harus sama dengan nama package pada server HestiaCP tujuan.</p>
+                        </div>
                         <div>
                             <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Harga Bulanan
                                 (Rp) <span class="text-red-500">*</span></label>
@@ -270,18 +277,26 @@
                     const fieldsQuota = document.getElementById('fields-quota');
                     const fieldsCustom = document.getElementById('fields-custom');
                     const fieldsMail = document.getElementById('fields-mail');
+                    const fieldsHestiaPackage = document.getElementById('fields-hestia-package');
+                    const hestiaPackage = document.getElementById('hestia_package');
 
                     // Reset
                     fieldsConn.classList.add('hidden');
                     fieldsQuota.classList.add('hidden');
                     fieldsCustom.classList.add('hidden');
                     fieldsMail.classList.add('hidden');
+                    fieldsHestiaPackage.classList.add('hidden');
+                    hestiaPackage.required = false;
 
                     if (type === 'connectivity') {
                         fieldsConn.classList.remove('hidden');
                         fieldsQuota.classList.remove('hidden'); // FUP
                     } else if (type === 'hosting' || type === 'vps') {
                         fieldsQuota.classList.remove('hidden'); // Storage
+                        if (type === 'hosting') {
+                            fieldsHestiaPackage.classList.remove('hidden');
+                            hestiaPackage.required = true;
+                        }
                     } else if (type === 'custom') {
                         fieldsCustom.classList.remove('hidden');
                     } else if (type === 'mail') {
@@ -429,6 +444,7 @@
                         serviceSelect.value = item.service_id;
 
                         document.getElementById('name').value = item.name;
+                        document.getElementById('hestia_package').value = item.hestia_package || '';
                         document.getElementById('price').value = parseInt(item.price);
                         document.getElementById('bandwidth_down').value = item.bandwidth_down || '';
                         document.getElementById('bandwidth_up').value = item.bandwidth_up || '';

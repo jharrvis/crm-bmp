@@ -16,6 +16,8 @@ use App\Models\SubscriptionHosting;
 use App\Models\SubscriptionMailHosting;
 use App\Models\Vendor;
 use App\Jobs\EnsureMailDomainJob;
+use App\Jobs\ProvisionHostingAccountJob;
+use App\Jobs\ResetHostingAccountPasswordJob;
 use App\Jobs\SetMailboxStatusJob;
 use App\Services\ProrataCalculationService;
 use App\Services\ZabbixService;
@@ -110,11 +112,17 @@ class SubscriptionController extends Controller
                 'metro_bandwidth' => 'nullable|required_if:metro_option,new|integer|min:0',
             ]);
         } elseif ($serviceType === 'hosting') {
+            if (blank($package->hestia_package)) {
+                throw ValidationException::withMessages([
+                    'package_id' => 'Paket hosting belum memiliki mapping paket HestiaCP.',
+                ]);
+            }
+
             $request->validate([
-                'hosting_server_id' => 'required|exists:hosting_servers,id',
-                'domain' => 'nullable|string|max:255',
-                'username' => 'required|string|max:100',
-                'password' => 'required|string|max:255',
+                'hosting_server_id' => ['required', Rule::exists('hosting_servers', 'id')->where(fn ($query) => $query->where('type', 'hestiacp')->where('is_active', true))],
+                'domain' => ['required', 'string', 'max:253', 'regex:/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i'],
+                'username' => ['required', 'string', 'max:32', 'regex:/^[a-z][a-z0-9_]{0,31}$/'],
+                'password' => 'required|string|min:8|max:255',
             ]);
         } elseif ($serviceType === 'domain') {
             $request->validate([
@@ -142,6 +150,7 @@ class SubscriptionController extends Controller
         }
 
         $mailDomainProvisioningId = null;
+        $hostingProvisioningId = null;
         DB::beginTransaction();
         try {
             $client = Client::findOrFail($request->client_id);
@@ -222,49 +231,40 @@ class SubscriptionController extends Controller
 
                 SubscriptionConnectivity::create($connData);
             } elseif ($serviceType === 'hosting') {
-                // Call HestiaCP API
-                $server = HostingServer::findOrFail($request->hosting_server_id);
-                $hestia = new \App\Services\HestiaCPService($server);
-
-                // Create User
-                // Use default package 'default' or mapping from our package?
-                // For now use 'default' or maybe custom logic.
-                // Assuming package name in Hestia matches our CRM package name could be a strategy,
-                // or just use 'default'. Let's use 'default' for stability first.
-                $userPass = $request->password;
-                $createRes = $hestia->createUser(
-                    $request->username,
-                    $userPass,
-                    $client->email ?? 'admin@example.com',
-                    $client->name,
-                    'default'
-                );
-
-                if ($createRes['success']) {
-                    // Create Domain
-                    if ($request->domain) {
-                        $hestia->createWebDomain($request->username, $request->domain);
-                    }
-                } else {
-                    // Log error but continue saving local? Or throw?
-                    // Better to throw so transaction determines fate.
-                    // But maybe user already exists?
-                    // Let's log warning and continue, marking status as pending/error?
-                    \Illuminate\Support\Facades\Log::warning('Hestia User Creation Failed: '.$createRes['message']);
-                    // Optional: $subscription->update(['notes' => $subscription->notes . " [Hestia Error: " . $createRes['message'] . "]"]);
+                if (blank($package->hestia_package)) {
+                    throw ValidationException::withMessages([
+                        'package_id' => 'Paket hosting belum memiliki mapping paket HestiaCP.',
+                    ]);
                 }
 
-                SubscriptionHosting::create([
+                $server = HostingServer::findOrFail($request->hosting_server_id);
+
+                abort_unless($server->is_active && $server->type === 'hestiacp', 422, 'Server hosting tidak aktif atau bukan HestiaCP.');
+
+                $hostingUsername = strtolower(trim((string) $request->username));
+
+                if (SubscriptionHosting::where('hosting_server_id', $server->id)->where('username', $hostingUsername)->exists()) {
+                    throw ValidationException::withMessages([
+                        'username' => 'Username tersebut sudah terhubung pada server hosting ini.',
+                    ]);
+                }
+
+                $hosting = SubscriptionHosting::create([
                     'subscription_id' => $subscription->id,
                     'hosting_server_id' => $request->hosting_server_id,
-                    'domain' => $request->domain,
-                    'username' => $request->username,
+                    'domain' => strtolower(trim((string) $request->domain)),
+                    'username' => $hostingUsername,
                     'password_encrypted' => $request->password ? encrypt($request->password) : null,
                     'disk_quota_gb' => $request->disk_quota_gb ?? 0,
                     'email_accounts' => $request->email_accounts ?? 0,
                     'databases' => $request->databases ?? 0,
                     'ssl_expiry' => $request->ssl_expiry,
+                    'provisioning_status' => 'pending',
+                    'managed_by_crm' => true,
+                    'hestia_package' => $package->hestia_package,
                 ]);
+
+                $hostingProvisioningId = $hosting->id;
             } elseif ($serviceType === 'domain') {
                 SubscriptionDomain::create([
                     'subscription_id' => $subscription->id,
@@ -328,6 +328,10 @@ class SubscriptionController extends Controller
 
             if ($mailDomainProvisioningId) {
                 EnsureMailDomainJob::dispatch($mailDomainProvisioningId)->afterCommit();
+            }
+
+            if ($hostingProvisioningId) {
+                ProvisionHostingAccountJob::dispatch($hostingProvisioningId)->afterCommit();
             }
 
             if ($request->wantsJson() || $request->ajax()) {
@@ -399,6 +403,7 @@ class SubscriptionController extends Controller
         $serviceType = $package->service->type;
 
         $mailDomainProvisioningId = null;
+        $hostingProvisioningId = null;
         $mailboxStatusJobs = [];
         DB::beginTransaction();
         try {
@@ -499,48 +504,66 @@ class SubscriptionController extends Controller
                 }
             } elseif ($serviceType === 'hosting') {
                 $request->validate([
-                    'hosting_server_id' => 'required|exists:hosting_servers,id',
-                    'domain' => 'nullable|string|max:255',
-                    'username' => 'required|string|max:100',
-                    'password' => 'nullable|string|max:255',
+                    'hosting_server_id' => ['required', Rule::exists('hosting_servers', 'id')->where(fn ($query) => $query->where('type', 'hestiacp')->where('is_active', true))],
+                    'domain' => ['nullable', 'string', 'max:253', 'regex:/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i'],
+                    'username' => ['required', 'string', 'max:32', 'regex:/^[a-z][a-z0-9_]{0,31}$/'],
+                    'password' => 'nullable|string|min:8|max:255',
                 ]);
 
                 $hosting = $subscription->hosting;
                 $server = HostingServer::findOrFail($request->hosting_server_id);
-                $hestia = new \App\Services\HestiaCPService($server);
+                $newUsername = strtolower(trim((string) $request->username));
+                $newDomain = strtolower(trim((string) $request->domain));
 
-                // Check for Status Change
-                if ($hosting && $subscription->wasChanged('status')) {
-                    $newStatus = $request->status;
-                    if ($newStatus === 'suspended') {
-                        $hestia->suspendUser($hosting->username);
-                    } elseif ($newStatus === 'active') { // And previous was suspended?
-                        $hestia->unsuspendUser($hosting->username);
-                    } elseif ($newStatus === 'terminated') {
-                        // Optional: $hestia->deleteUser($hosting->username);
-                        // Usually we keep terminated for a while, or maybe suspend first.
-                        $hestia->suspendUser($hosting->username);
+                if ($hosting && $hosting->provisioning_status === 'ready' && $hosting->username !== $newUsername) {
+                    throw ValidationException::withMessages([
+                        'username' => 'Username tidak dapat diubah setelah akun diprovisikan. Gunakan proses migrasi hosting.',
+                    ]);
+                }
+
+                if ($hosting && $hosting->remote_user_created_at
+                    && ($hosting->hosting_server_id !== (int) $request->hosting_server_id
+                        || $hosting->username !== $newUsername
+                        || $hosting->domain !== $newDomain)) {
+                    throw ValidationException::withMessages([
+                        'hosting_server_id' => 'Server, username, dan domain tidak dapat diubah setelah akun diprovisikan. Gunakan proses migrasi hosting.',
+                    ]);
+                }
+
+                // A linked or incomplete account cannot receive remote password changes.
+                if ($hosting && $request->filled('password')) {
+                    if (! $hosting->managed_by_crm || ! $hosting->remote_user_created_at || $hosting->provisioning_status !== 'ready') {
+                        throw ValidationException::withMessages([
+                            'password' => 'Password hanya dapat diubah untuk akun yang telah berhasil dibuat oleh CRM.',
+                        ]);
                     }
+
+                    $hosting->update(['password_encrypted' => encrypt($request->password)]);
+                    ResetHostingAccountPasswordJob::dispatch($hosting->id)->afterCommit();
                 }
 
-                // Check if password changed
-                if ($hosting && $request->password) {
-                    $hestia->changePassword($hosting->username, $request->password);
-                }
-
-                $subscription->hosting()->updateOrCreate(
+                $hosting = $subscription->hosting()->updateOrCreate(
                     ['subscription_id' => $subscription->id],
                     [
                         'hosting_server_id' => $request->hosting_server_id,
-                        'domain' => $request->domain,
-                        'username' => $request->username,
+                        'domain' => $hosting && $hosting->provisioning_status === 'ready'
+                            ? $hosting->domain
+                            : ($newDomain ?: null),
+                        'username' => $hosting?->username ?? $newUsername,
                         'password_encrypted' => $request->password ? encrypt($request->password) : $hosting?->password_encrypted,
                         'disk_quota_gb' => $request->disk_quota_gb ?? 0,
                         'email_accounts' => $request->email_accounts ?? 0,
                         'databases' => $request->databases ?? 0,
                         'ssl_expiry' => $request->ssl_expiry,
+                        'provisioning_status' => $hosting?->provisioning_status ?? 'pending',
+                        'managed_by_crm' => $hosting?->managed_by_crm ?? true,
+                        'hestia_package' => $hosting?->hestia_package ?? $package->hestia_package,
                     ]
                 );
+
+                if (! $hosting->remote_user_created_at && $hosting->provisioning_status === 'pending') {
+                    $hostingProvisioningId = $hosting->id;
+                }
             } elseif ($serviceType === 'domain') {
                 $request->validate([
                     'domain_name' => 'required|string|max:255',
@@ -666,6 +689,10 @@ class SubscriptionController extends Controller
 
             if ($mailDomainProvisioningId) {
                 EnsureMailDomainJob::dispatch($mailDomainProvisioningId)->afterCommit();
+            }
+
+            if ($hostingProvisioningId) {
+                ProvisionHostingAccountJob::dispatch($hostingProvisioningId)->afterCommit();
             }
 
             foreach ($mailboxStatusJobs as $mailboxId) {

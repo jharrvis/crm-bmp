@@ -6,6 +6,8 @@ CRM internal berbasis Laravel untuk operasional BMP.NET, mencakup pengelolaan pe
 
 - Manajemen pelanggan per cabang dengan format `client_code` baru berbasis `branch_id + tahun + nomor urut`
 - Manajemen langganan internet, hosting, domain, dan detail teknis koneksi
+- **Manage Server Web Hosting (HestiaCP)**: konsol operasional (snapshot, daftar user live, test koneksi) serta provisioning/lifecycle akun (buat, link, suspend/activate, reset password, hapus) melalui queue.
+- **Mail Hosting** terintegrasi Zimbra dengan manajemen mailbox dan provisioning berbasis queue.
 - Billing langganan dengan opsi `PPN 11%` dan `PPh23 2%`
 - Generate invoice otomatis dari langganan aktif
 - Template invoice dengan alamat branch, breakdown pajak, dan terbilang bahasa Indonesia

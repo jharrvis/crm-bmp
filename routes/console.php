@@ -2,6 +2,7 @@
 
 use App\Jobs\GenerateMonthlyInvoices;
 use App\Jobs\MarkOverdueInvoices;
+use App\Jobs\RefreshHestiaServerSnapshotJob;
 use App\Jobs\SendInvoiceReminders;
 
 Artisan::command('inspire', function () {
@@ -15,3 +16,8 @@ Schedule::job(new GenerateMonthlyInvoices)->dailyAt('00:05')->when(function () {
     return \App\Models\SystemSetting::get('billing.auto_generate_enabled', false)
         && now()->day === (int) \App\Models\SystemSetting::get('billing.auto_generate_day', 1);
 });
+
+Schedule::call(function () {
+    \App\Models\HostingServer::where('is_active', true)->where('type', 'hestiacp')
+        ->each(fn ($server) => RefreshHestiaServerSnapshotJob::dispatch($server->id));
+})->dailyAt('04:00');

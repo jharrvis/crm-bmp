@@ -70,6 +70,21 @@ Dokumen ini merangkum hubungan antara menu, permission, dan role default.
 
 ## Infrastruktur
 
+### Server Web Hosting (HestiaCP)
+
+- Permission:
+  - `servers.view` - melihat daftar server
+  - `servers.connect` - test koneksi dan data live
+  - `servers.manage` - melihat halaman manage dan daftar user
+  - `servers.provision` - membuat/link user dan domain
+  - `servers.suspend` - suspend/activate akun
+  - `servers.reset_password` - reset password akun
+  - `servers.delete_user` - hapus user remote
+- Role default:
+  - Owner (semua)
+  - Admin (semua)
+  - NOC (`servers.connect`, `servers.manage`, `servers.suspend`; tanpa `servers.delete_user`)
+
 ### IP Transit
 
 - Permission:

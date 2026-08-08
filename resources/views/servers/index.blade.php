@@ -225,8 +225,14 @@
                                 className: "p-4 pr-6 text-center",
                                 orderable: false,
                                 render: function (data, type, row) {
+                                    const manageBtn = (row.type === 'hestiacp' && row.is_active)
+                                        ? `<a href="${baseUrl}/servers/${row.id}/manage" class="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 rounded-lg transition-colors" title="Manage Server">
+                                            <i data-lucide="settings-2" class="w-4 h-4"></i>
+                                        </a>`
+                                        : '';
                                     return `
                                         <div class="flex items-center justify-center gap-2">
+                                            ${manageBtn}
                                             <button onclick="window.editData(${row.id})" class="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 text-yellow-600 rounded-lg transition-colors" title="Edit">
                                                 <i data-lucide="pencil" class="w-4 h-4"></i>
                                             </button>

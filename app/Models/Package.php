@@ -12,6 +12,7 @@ class Package extends Model
 
     protected $fillable = [
         'service_id',
+        'hestia_package',
         'name',
         'price',
         'unit',
