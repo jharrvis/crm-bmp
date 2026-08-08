@@ -13,6 +13,8 @@ Semua perubahan penting pada project ini dicatat di file ini.
 ### Changed
 - Perubahan status langganan tidak lagi otomatis suspend atau aktifkan akun HestiaCP. Automasi billing-to-hosting ditunda sampai aturan grace period dan pembayaran tersedia.
 - Snapshot HestiaCP menggunakan lock agar refresh bersamaan tidak menghasilkan beberapa snapshot aktif.
+- Form Server Hosting sekarang memisahkan credential HestiaCP (Access Key dan Secret Key) dari konfigurasi Zimbra, serta memakai payload form native agar create/update tersimpan konsisten.
+- Tipe server dibatasi menjadi HestiaCP untuk web hosting, serta Zimbra dan Postfix untuk mail hosting. Postfix tersedia sebagai inventaris pending tanpa integrasi remote.
 
 ### Added
 - Modul **Manage Server Web Hosting (HestiaCP)**: konsol operasional berupa ringkasan snapshot server, daftar user live dengan cache singkat, test koneksi manual, refresh data, dan tautan user Hestia existing ke subscription hosting.

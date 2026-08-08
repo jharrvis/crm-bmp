@@ -101,6 +101,11 @@ Detail lengkap ada di `docs/modules/web-hosting.md`. Ringkasan:
   `DeleteHostingAccountJob`, `RefreshHestiaServerSnapshotJob`).
 - Hanya server `type=hestiacp` dan `is_active=true` yang dapat dikelola.
 
+## Server Mail Hosting
+
+- Server mail menggunakan tipe `zimbra` untuk integrasi SOAP Admin API.
+- Tipe `postfix` tersedia sebagai inventaris pending; belum memiliki adapter, test koneksi, atau pengelolaan akun.
+
 ## Catatan Keamanan
 
 - Jangan mencatat password, API key, atau credential perangkat ke Activity Log.

@@ -3,7 +3,7 @@
         $pageTitle = $category === 'mail' ? 'Manajemen Server Mail Hosting' : ($category === 'web' ? 'Manajemen Server Web Hosting' : 'Manajemen Server');
         $pageDescription = $category === 'mail'
             ? 'Kelola server Zimbra dan kredensial SOAP Admin API.'
-            : ($category === 'web' ? 'Kelola server HestiaCP, cPanel, dan CyberPanel.' : 'Kelola data server web dan mail hosting.');
+            : ($category === 'web' ? 'Kelola server HestiaCP.' : 'Kelola server Zimbra dan inventaris Postfix.');
     @endphp
     <div class="space-y-6">
         <div
@@ -58,7 +58,7 @@
                         <i data-lucide="x" class="w-6 h-6"></i>
                     </button>
                 </div>
-                <form id="dataForm">
+                <form id="dataForm" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" id="dataId" name="id">
                     <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
@@ -84,7 +84,7 @@
                                     class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
                             </div>
                         </div>
-                        <div>
+                        <div id="zimbraEndpointField" class="hidden">
                             <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">API Endpoint
                                 (opsional)</label>
                             <input type="text" id="api_endpoint" name="api_endpoint"
@@ -95,13 +95,15 @@
                             <div>
                                 <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Tipe
                                     Panel</label>
-                                <select id="type" name="type"
+                                <select id="type" name="type" onchange="updateServerTypeFields()"
                                     class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
-                                    <option value="hestiacp">HestiaCP</option>
-                                    <option value="cpanel">cPanel</option>
-                                    <option value="cyberpanel">CyberPanel</option>
-                                    <option value="zimbra">Zimbra Mail Server</option>
-                                    <option value="other">Lainnya</option>
+                                    @if ($category !== 'mail')
+                                        <option value="hestiacp">HestiaCP</option>
+                                    @endif
+                                    @if ($category !== 'web')
+                                        <option value="zimbra">Zimbra Mail Server</option>
+                                        <option value="postfix">Postfix (Pending Integrasi)</option>
+                                    @endif
                                 </select>
                             </div>
                             <div>
@@ -112,28 +114,33 @@
                                     placeholder="Contoh: Jakarta">
                             </div>
                         </div>
-                        <div>
+                        <div id="maxAccountsField">
                             <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Maksimal Akun
                                 (0 = Unlimited)</label>
                             <input type="number" id="max_accounts" name="max_accounts" required value="0" min="0"
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
                         </div>
-                        <div>
+                        <div id="adminUsernameField">
                             <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Admin
                                 Username</label>
                             <input type="text" id="username" name="username"
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                                 placeholder="admin">
                         </div>
-                        <div>
+                        <div id="accessKeyField">
                             <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">API Key /
                                 Access Key</label>
                             <input type="password" id="api_key" name="api_key"
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
                         </div>
-                        <div>
-                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Secret
-                                Key</label>
+                        <div id="hestiaCredentialsHelp" class="hidden rounded-xl border border-blue-200 bg-blue-50 p-4 text-xs text-blue-800 dark:border-blue-900/60 dark:bg-blue-900/20 dark:text-blue-200">
+                            HestiaCP memakai <strong>Access Key</strong> dan <strong>Secret Key</strong>. Admin Username dan API Endpoint tidak digunakan untuk koneksi Hestia.
+                        </div>
+                        <div id="postfixPendingHelp" class="hidden rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-900/20 dark:text-amber-200">
+                            Integrasi Postfix masih pending. Data server hanya dicatat sebagai inventaris dan belum menyediakan test koneksi atau pengelolaan akun.
+                        </div>
+                        <div id="secretKeyField">
+                            <label id="secretKeyLabel" class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Secret Key</label>
                             <input type="password" id="secret_key" name="secret_key"
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
                         </div>
@@ -293,7 +300,32 @@
                         document.getElementById('type').value = 'hestiacp';
                         document.getElementById('port').value = 8083;
                     }
+
+                    updateServerTypeFields();
                 }
+
+                window.updateServerTypeFields = function () {
+                    const type = document.getElementById('type').value;
+                    const isHestia = type === 'hestiacp';
+                    const isZimbra = type === 'zimbra';
+                    const isPostfix = type === 'postfix';
+
+                    document.getElementById('zimbraEndpointField').classList.toggle('hidden', !isZimbra);
+                    document.getElementById('adminUsernameField').classList.toggle('hidden', !isZimbra);
+                    document.getElementById('accessKeyField').classList.toggle('hidden', !isHestia);
+                    document.getElementById('maxAccountsField').classList.toggle('hidden', isZimbra || isPostfix);
+                    document.getElementById('secretKeyField').classList.toggle('hidden', !isHestia && !isZimbra);
+                    document.getElementById('hestiaCredentialsHelp').classList.toggle('hidden', !isHestia);
+                    document.getElementById('postfixPendingHelp').classList.toggle('hidden', !isPostfix);
+                    document.getElementById('secretKeyLabel').innerText = isZimbra ? 'Password Admin Zimbra' : 'Hestia Secret Key';
+
+                    if (isHestia && !document.getElementById('dataId').value) {
+                        document.getElementById('port').value = 8083;
+                    }
+                    if (isZimbra && !document.getElementById('dataId').value) {
+                        document.getElementById('port').value = 7071;
+                    }
+                };
 
                 window.closeModal = function () {
                     const modal = document.getElementById('formModal');
@@ -328,6 +360,8 @@
                         // Keys are not sent back for security (usually), so they are blank.
                         document.getElementById('api_key').value = '';
                         document.getElementById('secret_key').value = '';
+
+                        updateServerTypeFields();
 
                         window.openModal(true);
                     }
@@ -386,19 +420,15 @@
 
                     const formData = new FormData(this);
                     if (isUpdate) formData.append('_method', 'PUT');
-
-                    const data = {};
-                    formData.forEach((value, key) => data[key] = value);
-                    data.is_active = document.getElementById('is_active').checked ? 1 : 0;
+                    formData.set('is_active', document.getElementById('is_active').checked ? '1' : '0');
 
                     fetch(url, {
                         method: 'POST',
                         headers: {
                             'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json'
+                            'Accept': 'application/json'
                         },
-                        body: JSON.stringify(data)
+                        body: formData
                     })
                         .then(r => r.json())
                         .then(res => {

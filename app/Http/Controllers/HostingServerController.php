@@ -6,6 +6,7 @@ use App\Models\HostingServer;
 use App\Services\ZimbraService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class HostingServerController extends Controller
 {
@@ -26,8 +27,8 @@ class HostingServerController extends Controller
         abort_unless(in_array($category, ['', 'web', 'mail'], true), 404);
 
         $servers = HostingServer::query()
-            ->when($category === 'web', fn ($query) => $query->whereIn('type', ['hestiacp', 'cpanel', 'cyberpanel']))
-            ->when($category === 'mail', fn ($query) => $query->where('type', 'zimbra'))
+            ->when($category === 'web', fn ($query) => $query->where('type', 'hestiacp'))
+            ->when($category === 'mail', fn ($query) => $query->whereIn('type', ['zimbra', 'postfix']))
             ->latest()
             ->get();
 
@@ -49,14 +50,17 @@ class HostingServerController extends Controller
             'host' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9.-]+$/'],
             'port' => 'required|integer|between:1,65535',
             'api_endpoint' => ['nullable', 'string', 'max:255', 'regex:#^/[A-Za-z0-9/_-]*$#'],
-            'type' => ['required', Rule::in(['hestiacp', 'cpanel', 'cyberpanel', 'zimbra', 'other'])],
+            'type' => ['required', Rule::in(['hestiacp', 'zimbra', 'postfix'])],
             'location' => 'nullable|string',
-            'max_accounts' => 'required|integer',
+            'max_accounts' => 'required|integer|min:0',
+            'is_active' => 'nullable|boolean',
             'username' => 'nullable|string|max:255',
             'api_key' => 'nullable|string',
             'secret_key' => 'nullable|string',
             'description' => 'nullable|string',
         ]);
+
+        $this->applyTypeSpecificValidation($request, $validated, true);
 
         $server = HostingServer::create($validated);
 
@@ -97,12 +101,15 @@ class HostingServerController extends Controller
             'host' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9.-]+$/'],
             'port' => 'required|integer|between:1,65535',
             'api_endpoint' => ['nullable', 'string', 'max:255', 'regex:#^/[A-Za-z0-9/_-]*$#'],
-            'type' => ['required', Rule::in(['hestiacp', 'cpanel', 'cyberpanel', 'zimbra', 'other'])],
+            'type' => ['required', Rule::in(['hestiacp', 'zimbra', 'postfix'])],
             'location' => 'nullable|string',
-            'max_accounts' => 'required|integer',
+            'max_accounts' => 'required|integer|min:0',
+            'is_active' => 'nullable|boolean',
             'username' => 'nullable|string|max:255',
             'description' => 'nullable|string',
         ]);
+
+        $this->applyTypeSpecificValidation($request, $validated, false);
 
         if ($request->filled('api_key')) {
             $validated['api_key'] = $request->api_key;
@@ -134,6 +141,33 @@ class HostingServerController extends Controller
         }
 
         return redirect()->route('servers.index')->with('success', 'Server berhasil diperbarui.');
+    }
+
+    /**
+     * Keep Hestia and Zimbra credentials separate even though they share a table.
+     * Hestia uses an API access/secret key pair; it does not use a SOAP endpoint.
+     */
+    private function applyTypeSpecificValidation(Request $request, array &$validated, bool $isCreating): void
+    {
+        if ($validated['type'] !== 'hestiacp') {
+            if ($validated['type'] === 'postfix') {
+                // Postfix is recorded for inventory only until its adapter is implemented.
+                $validated['api_endpoint'] = null;
+                $validated['username'] = null;
+            }
+
+            return;
+        }
+
+        if ($isCreating && (! $request->filled('api_key') || ! $request->filled('secret_key'))) {
+            throw ValidationException::withMessages([
+                'api_key' => 'Access Key dan Secret Key HestiaCP wajib diisi saat membuat server HestiaCP.',
+            ]);
+        }
+
+        // Prevent Zimbra-only configuration from being persisted on Hestia servers.
+        $validated['api_endpoint'] = null;
+        $validated['username'] = null;
     }
 
     /**
