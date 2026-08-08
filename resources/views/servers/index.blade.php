@@ -79,6 +79,13 @@
                                     class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
                             </div>
                         </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">API Endpoint
+                                (opsional)</label>
+                            <input type="text" id="api_endpoint" name="api_endpoint"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                placeholder="Contoh: /service/admin/soap (khusus Zimbra)">
+                        </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Tipe
@@ -88,6 +95,7 @@
                                     <option value="hestiacp">HestiaCP</option>
                                     <option value="cpanel">cPanel</option>
                                     <option value="cyberpanel">CyberPanel</option>
+                                    <option value="zimbra">Zimbra Mail Server</option>
                                     <option value="other">Lainnya</option>
                                 </select>
                             </div>
@@ -284,6 +292,7 @@
                         document.getElementById('name').value = item.name;
                         document.getElementById('host').value = item.host;
                         document.getElementById('port').value = item.port;
+                        document.getElementById('api_endpoint').value = item.api_endpoint || '';
                         document.getElementById('type').value = item.type;
                         document.getElementById('location').value = item.location || '';
                         document.getElementById('max_accounts').value = item.max_accounts;

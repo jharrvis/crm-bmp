@@ -57,6 +57,9 @@ class PackageController extends Controller
             'bandwidth_down' => 'nullable|string',
             'bandwidth_up' => 'nullable|string',
             'quota' => 'nullable|string',
+            'max_mailboxes' => 'nullable|integer|min:0',
+            'mailbox_quota_mb' => 'nullable|integer|min:0',
+            'alias_max' => 'nullable|integer|min:0',
             'description' => 'nullable|string',
         ]);
 
@@ -101,6 +104,9 @@ class PackageController extends Controller
             'bandwidth_down' => 'nullable|string',
             'bandwidth_up' => 'nullable|string',
             'quota' => 'nullable|string',
+            'max_mailboxes' => 'nullable|integer|min:0',
+            'mailbox_quota_mb' => 'nullable|integer|min:0',
+            'alias_max' => 'nullable|integer|min:0',
             'description' => 'nullable|string',
         ]);
 

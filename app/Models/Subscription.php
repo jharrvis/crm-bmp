@@ -73,6 +73,16 @@ class Subscription extends Model
         return $this->hasOne(SubscriptionDomain::class);
     }
 
+    public function mailHosting()
+    {
+        return $this->hasOne(SubscriptionMailHosting::class);
+    }
+
+    public function mailboxList()
+    {
+        return $this->hasManyThrough(Mailbox::class, SubscriptionMailHosting::class, 'subscription_id', 'subscription_mail_hosting_id');
+    }
+
     public function topology()
     {
         return $this->hasOne(SubscriptionTopology::class);

@@ -48,6 +48,11 @@ Route::middleware('auth')->group(function () {
         Route::resource('clients', \App\Http\Controllers\ClientController::class);
         Route::resource('clients.contacts', \App\Http\Controllers\ClientContactController::class)->only(['store', 'update', 'destroy']);
         Route::resource('subscriptions', \App\Http\Controllers\SubscriptionController::class);
+        Route::get('subscriptions/{subscription}/mailboxes', [\App\Http\Controllers\MailboxController::class, 'index'])->name('subscriptions.mailboxes.index');
+        Route::post('subscriptions/{subscription}/mailboxes', [\App\Http\Controllers\MailboxController::class, 'store'])->name('subscriptions.mailboxes.store');
+        Route::post('subscriptions/{subscription}/mailboxes/{mailbox}/suspend', [\App\Http\Controllers\MailboxController::class, 'suspend'])->name('subscriptions.mailboxes.suspend');
+        Route::post('subscriptions/{subscription}/mailboxes/{mailbox}/activate', [\App\Http\Controllers\MailboxController::class, 'activate'])->name('subscriptions.mailboxes.activate');
+        Route::delete('subscriptions/{subscription}/mailboxes/{mailbox}', [\App\Http\Controllers\MailboxController::class, 'destroy'])->name('subscriptions.mailboxes.destroy');
         Route::get('zabbix-monitors/groups', [\App\Http\Controllers\ZabbixMonitorController::class, 'groups'])->name('zabbix-monitors.groups');
         Route::get('zabbix-monitors/hosts', [\App\Http\Controllers\ZabbixMonitorController::class, 'hosts'])->name('zabbix-monitors.hosts');
         Route::get('zabbix-monitors/graphs', [\App\Http\Controllers\ZabbixMonitorController::class, 'graphs'])->name('zabbix-monitors.graphs');

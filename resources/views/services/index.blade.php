@@ -82,6 +82,7 @@
                                     <option value="vps">VPS / Cloud</option>
                                     <option value="colocation">Colocation</option>
                                     <option value="domain">Domain Registration</option>
+                                    <option value="mail">Mail Hosting</option>
                                     <option value="other">Lainnya</option>
                                 </select>
                             </div>
@@ -156,6 +157,7 @@
                                     else if (data === 'hosting') label = 'Web Hosting';
                                     else if (data === 'vps') label = 'VPS / Cloud';
                                     else if (data === 'domain') label = 'Domain Registration';
+                                    else if (data === 'mail') label = 'Mail Hosting';
                                     return `<span class="text-slate-600 dark:text-slate-400 capitalize">${label}</span>`;
                                 }
                             },

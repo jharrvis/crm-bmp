@@ -5,9 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\Service;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ServiceController extends Controller
 {
+    public const SERVICE_TYPES = [
+        'connectivity',
+        'hosting',
+        'vps',
+        'colocation',
+        'domain',
+        'mail',
+        'other',
+    ];
     public function __construct()
     {
         $this->middleware('permission:services.view')->only(['index', 'show']);
@@ -38,7 +48,7 @@ class ServiceController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:255|unique:services,code',
-            'type' => 'required|string',
+            'type' => ['required', 'string', Rule::in(self::SERVICE_TYPES)],
             'description' => 'nullable|string',
         ]);
 
@@ -96,7 +106,7 @@ class ServiceController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:255|unique:services,code,' . $service->id,
-            'type' => 'required|string',
+            'type' => ['required', 'string', Rule::in(self::SERVICE_TYPES)],
             'description' => 'nullable|string',
         ]);
 

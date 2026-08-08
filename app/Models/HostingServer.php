@@ -14,6 +14,7 @@ class HostingServer extends Model
         'name',
         'host',
         'port',
+        'api_endpoint',
         'username',
         'api_key',
         'secret_key',
@@ -28,6 +29,14 @@ class HostingServer extends Model
         'is_active' => 'boolean',
         'api_key' => 'encrypted',
         'secret_key' => 'encrypted',
+    ];
+
+    /**
+     * Credentials must never be included in JSON responses used by edit modals.
+     */
+    protected $hidden = [
+        'api_key',
+        'secret_key',
     ];
 
     protected array $activitylogExcludeAttributes = [

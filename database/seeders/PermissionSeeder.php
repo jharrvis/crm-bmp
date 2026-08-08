@@ -39,8 +39,9 @@ class PermissionSeeder extends Seeder
             'clients' => ['view', 'create', 'update', 'delete'],
             'subscriptions' => ['view', 'create', 'update', 'delete', 'suspend', 'activate'],
             'invoices' => ['view', 'create', 'update', 'delete', 'send', 'mark_paid'],
-            'payments' => ['view', 'create', 'update', 'delete', 'verify'],
+'payments' => ['view', 'create', 'update', 'delete', 'verify'],
             'financial_reports' => ['view'],
+            'mailboxes' => ['view', 'create', 'update', 'delete', 'suspend'],
 
             // Support
             'tickets' => ['view', 'create', 'update', 'delete', 'assign', 'close'],
@@ -133,7 +134,7 @@ class PermissionSeeder extends Seeder
         $employeeRole->givePermissionTo($employeePermissions);
 
         $billingRole = Role::findByName('Billing');
-        $billingRole->syncPermissions([
+        $billingRole->givePermissionTo([
             'clients.view',
             'subscriptions.view',
             'invoices.view',
@@ -154,7 +155,7 @@ class PermissionSeeder extends Seeder
         ]);
 
         $nocRole = Role::findByName('NOC');
-        $nocRole->syncPermissions([
+        $nocRole->givePermissionTo([
             'clients.view',
             'subscriptions.view',
             'subscriptions.update',
@@ -184,7 +185,7 @@ class PermissionSeeder extends Seeder
         ]);
 
         $csRole = Role::findByName('CS');
-        $csRole->syncPermissions([
+        $csRole->givePermissionTo([
             'clients.view',
             'clients.create',
             'clients.update',
@@ -200,7 +201,7 @@ class PermissionSeeder extends Seeder
         ]);
 
         $salesRole = Role::findByName('Sales');
-        $salesRole->syncPermissions([
+        $salesRole->givePermissionTo([
             'clients.view',
             'clients.create',
             'clients.update',
@@ -215,7 +216,7 @@ class PermissionSeeder extends Seeder
         ]);
 
         $financeRole = Role::findByName('Finance');
-        $financeRole->syncPermissions([
+        $financeRole->givePermissionTo([
             'clients.view',
             'subscriptions.view',
             'invoices.view',

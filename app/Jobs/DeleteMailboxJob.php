@@ -1,0 +1,43 @@
+<?php
+
+namespace App\Jobs;
+
+use App\Models\Mailbox;
+use App\Services\MailServerResolver;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Throwable;
+
+class DeleteMailboxJob implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public int $tries = 3;
+    public array $backoff = [60, 300, 900];
+
+    public function __construct(public int $mailboxId)
+    {
+    }
+
+    public function handle(MailServerResolver $resolver): void
+    {
+        $mailbox = Mailbox::with('mailHosting.mailServer')->findOrFail($this->mailboxId);
+
+        if (! $resolver->resolve($mailbox->mailHosting->mailServer)->deleteAccount($mailbox->email)) {
+            throw new \RuntimeException('Zimbra tidak dapat menghapus mailbox.');
+        }
+
+        $mailbox->delete();
+    }
+
+    public function failed(Throwable $exception): void
+    {
+        Mailbox::whereKey($this->mailboxId)->update([
+            'provisioning_status' => 'delete_failed',
+            'provisioning_error' => 'Mailbox belum dapat dihapus dari server mail.',
+        ]);
+    }
+}

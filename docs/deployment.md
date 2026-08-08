@@ -32,7 +32,7 @@ php artisan optimize:clear
 ## Catatan Khusus
 
 - Jika ada perubahan `config/app.php` atau `.env`, wajib jalankan `php artisan config:clear`.
-- Jika ada permission baru, jalankan `PermissionSeeder` lalu `php artisan permission:cache-reset`.
+- Jika ada permission baru, jalankan `PermissionSeeder` lalu `php artisan permission:cache-reset`. Seeder hanya menambahkan permission default dan tidak mencabut permission role yang telah diatur di production.
 - Untuk koreksi prefix kode pelanggan, backup database terlebih dahulu lalu jalankan `php artisan clients:reconcile-codes --branch={id} --dry-run`. Command tidak mengubah data pada mode default. Bila prefix target sudah dipakai, command mengalokasikan nomor urut kosong berikutnya tanpa menimpa kode yang ada; gunakan `--apply --confirm` hanya setelah laporan audit diverifikasi.
 - Jika ada rewrite history Git, server production tidak boleh memakai `git pull` biasa. Gunakan sinkronisasi branch yang sesuai.
 - Jika ada migration invoice manual baru, jalankan `php artisan migrate`.

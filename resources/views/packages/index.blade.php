@@ -171,6 +171,33 @@
                             </select>
                         </div>
 
+                        <!-- Mail Hosting Fields -->
+                        <div id="fields-mail" class="hidden">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Jumlah
+                                        Mailbox (Max)</label>
+                                    <input type="number" id="max_mailboxes" name="max_mailboxes" min="0"
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                        placeholder="Contoh: 5">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Kuota
+                                        per Mailbox (MB)</label>
+                                    <input type="number" id="mailbox_quota_mb" name="mailbox_quota_mb" min="0"
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                        placeholder="Contoh: 1024">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Alias per
+                                    Mailbox (Max)</label>
+                                <input type="number" id="alias_max" name="alias_max" min="0"
+                                    class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                    placeholder="Contoh: 10">
+                            </div>
+                        </div>
+
                         <div>
                             <label
                                 class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Deskripsi</label>
@@ -232,11 +259,13 @@
                     const fieldsConn = document.getElementById('fields-connectivity');
                     const fieldsQuota = document.getElementById('fields-quota');
                     const fieldsCustom = document.getElementById('fields-custom');
+                    const fieldsMail = document.getElementById('fields-mail');
 
                     // Reset
                     fieldsConn.classList.add('hidden');
                     fieldsQuota.classList.add('hidden');
                     fieldsCustom.classList.add('hidden');
+                    fieldsMail.classList.add('hidden');
 
                     if (type === 'connectivity') {
                         fieldsConn.classList.remove('hidden');
@@ -245,6 +274,8 @@
                         fieldsQuota.classList.remove('hidden'); // Storage
                     } else if (type === 'custom') {
                         fieldsCustom.classList.remove('hidden');
+                    } else if (type === 'mail') {
+                        fieldsMail.classList.remove('hidden');
                     }
                 }
 
@@ -280,6 +311,11 @@
                                     if (row.bandwidth_down) spec.push('↓ ' + row.bandwidth_down);
                                     if (row.bandwidth_up) spec.push('↑ ' + row.bandwidth_up);
                                     if (row.quota) spec.push('Qt: ' + row.quota);
+                                    if (serviceType === 'mail') {
+                                        if (row.max_mailboxes) spec.push('MBX: ' + row.max_mailboxes);
+                                        if (row.mailbox_quota_mb) spec.push('Kuota: ' + row.mailbox_quota_mb + 'MB');
+                                        if (row.alias_max) spec.push('Alias: ' + row.alias_max);
+                                    }
 
                                     if (spec.length === 0) return '-';
                                     return `<span class="text-sm text-slate-600 dark:text-slate-400">${spec.join(' | ')}</span>`;
@@ -387,6 +423,9 @@
                         document.getElementById('bandwidth_down').value = item.bandwidth_down || '';
                         document.getElementById('bandwidth_up').value = item.bandwidth_up || '';
                         document.getElementById('quota').value = item.quota || '';
+                        document.getElementById('max_mailboxes').value = item.max_mailboxes || '';
+                        document.getElementById('mailbox_quota_mb').value = item.mailbox_quota_mb || '';
+                        document.getElementById('alias_max').value = item.alias_max || '';
                         document.getElementById('unit').value = item.unit || '';
                         document.getElementById('description').value = item.description || '';
                         document.getElementById('is_active').checked = item.is_active;

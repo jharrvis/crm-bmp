@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\HostingServer;
+use App\Services\ZimbraService;
 use Illuminate\Http\Request;
 
 class HostingServerController extends Controller
@@ -36,8 +37,9 @@ class HostingServerController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'host' => 'required|string|max:255',
-            'port' => 'required|string',
+            'host' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9.-]+$/'],
+            'port' => 'required|integer|between:1,65535',
+            'api_endpoint' => ['nullable', 'string', 'max:255', 'regex:#^/[A-Za-z0-9/_-]*$#'],
             'type' => 'required|string',
             'location' => 'nullable|string',
             'max_accounts' => 'required|integer',
@@ -83,8 +85,9 @@ class HostingServerController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'host' => 'required|string|max:255',
-            'port' => 'required|string',
+            'host' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9.-]+$/'],
+            'port' => 'required|integer|between:1,65535',
+            'api_endpoint' => ['nullable', 'string', 'max:255', 'regex:#^/[A-Za-z0-9/_-]*$#'],
             'type' => 'required|string',
             'location' => 'nullable|string',
             'max_accounts' => 'required|integer',
@@ -99,6 +102,8 @@ class HostingServerController extends Controller
             $validated['secret_key'] = $request->secret_key;
         }
 
+        $previousType = $server->type;
+        ZimbraService::forgetAuthToken($server);
         $server->fill($validated);
         if ($request->has('is_active')) {
             $server->is_active = $request->boolean('is_active');
@@ -106,6 +111,10 @@ class HostingServerController extends Controller
             $server->is_active = $request->has('is_active');
         }
         $server->save();
+
+        if ($previousType === 'zimbra' || $server->type === 'zimbra') {
+            ZimbraService::forgetAuthToken($server);
+        }
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([

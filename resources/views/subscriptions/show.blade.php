@@ -86,6 +86,13 @@
                         <span>Domain</span>
                     </button>
                 @endif
+                @if($subscription->mailHosting)
+                    <button type="button" id="tabMail" onclick="switchTab('mail')"
+                        class="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-colors text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700">
+                        <i data-lucide="mail" class="w-4 h-4"></i>
+                        <span>Mail Hosting</span>
+                    </button>
+                @endif
             </div>
         </div>
 
@@ -631,6 +638,108 @@
             </div>
         </div>
     @endif
+
+    <!-- Mail Hosting Tab -->
+    @if($subscription->mailHosting)
+        <div id="panelMail" class="tab-panel hidden">
+            <div class="space-y-6">
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+                    <h4 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2">
+                        <i data-lucide="mail" class="w-4 h-4"></i>
+                        Detail Mail Hosting
+                    </h4>
+                    <div class="flex justify-end mb-4">
+                        @can('mailboxes.view')
+                            <a href="{{ route('subscriptions.mailboxes.index', $subscription) }}"
+                                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200 dark:shadow-none transition-all text-sm">
+                                <i data-lucide="users" class="w-4 h-4"></i>
+                                Kelola Mailbox
+                            </a>
+                        @endcan
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Domain</p>
+                            <p class="text-slate-800 dark:text-white font-mono text-lg">
+                                {{ $subscription->mailHosting->domain ?? '-' }}
+                            </p>
+                        </div>
+                        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Mail Server</p>
+                            <p class="text-slate-800 dark:text-white font-medium text-lg">
+                                {{ $subscription->mailHosting->mailServer->name ?? '-' }}
+                            </p>
+                        </div>
+                        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Tipe Server</p>
+                            <p class="text-slate-800 dark:text-white font-medium text-lg uppercase">
+                                {{ $subscription->mailHosting->type ?? '-' }}
+                            </p>
+                        </div>
+                        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Admin Email</p>
+                            <p class="text-slate-800 dark:text-white font-mono text-lg">
+                                {{ $subscription->mailHosting->admin_email ?? '-' }}
+                            </p>
+                        </div>
+                        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Total Mailbox</p>
+                            <p class="text-slate-800 dark:text-white font-medium text-lg">
+                                {{ $subscription->mailHosting->mailboxes->count() }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h4 class="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                            <i data-lucide="users" class="w-4 h-4"></i>
+                            Mailbox List
+                        </h4>
+                        <span class="text-sm font-bold text-slate-500 uppercase tracking-widest">Silakan kelola dari menu Mail Hosting</span>
+                    </div>
+                    @if($subscription->mailHosting->mailboxes && $subscription->mailHosting->mailboxes->count() > 0)
+                        <div class="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700">
+                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                                <thead class="bg-slate-50 dark:bg-slate-700/30">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Email</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Quota</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+                                    @foreach($subscription->mailHosting->mailboxes as $mailbox)
+                                        <tr>
+                                            <td class="px-6 py-4 text-sm font-mono text-slate-800 dark:text-white">{{ $mailbox->email }}</td>
+                                            <td class="px-6 py-4 text-sm text-slate-500">{{ $mailbox->quota_mb }} MB</td>
+                                            <td class="px-6 py-4 text-sm text-slate-500">
+                                                <span @class([
+                                                    'px-2 py-1 rounded-full text-xs font-bold',
+                                                    'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' => $mailbox->is_active,
+                                                    'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' => !$mailbox->is_active,
+                                                ])>
+                                                    {{ $mailbox->is_active ? 'Aktif' : 'Nonaktif' }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div class="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center">
+                            <p class="text-sm font-semibold text-slate-600 dark:text-slate-300">Belum ada mailbox.</p>
+                            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Mailbox dapat dikelola dari menu Mail Hosting.</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
     </div>
 
     <!-- Client Profile Modal -->
@@ -757,7 +866,7 @@
     <script>
         // Tab switching
         function switchTab(tab) {
-            const tabs = ['Info', 'Teknis', 'Monitoring', 'Topologi', 'Hosting', 'Domain'];
+            const tabs = ['Info', 'Teknis', 'Monitoring', 'Topologi', 'Hosting', 'Domain', 'Mail'];
             const activeClass = 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
             const inactiveClass = 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700';
 
@@ -1544,6 +1653,33 @@
                                 </div>
                             </div>
 
+<div id="fields-mail" class="hidden space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Mail Server <span class="text-red-500">*</span></label>
+                                        <select id="mail_server_id" name="mail_server_id"
+                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                            <option value="">-- Pilih Mail Server --</option>
+                                            @foreach($mailServers as $server)
+                                                <option value="{{ $server->id }}">{{ $server->name }} ({{ $server->host }})</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Domain <span class="text-red-500">*</span></label>
+                                        <input type="text" name="mail_domain" id="mail_domain" placeholder="example.com"
+                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Kontak Admin <span class="text-xs text-slate-400 font-normal">(opsional, tidak membuat mailbox)</span></label>
+                                        <input type="email" name="admin_email" id="admin_email" placeholder="admin@example.com"
+                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                    </div>
+                                </div>
+                            </div>
+
                             <div id="technical-empty-state" class="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center">
                                 <p class="text-sm font-semibold text-slate-600 dark:text-slate-300">Pilih paket layanan terlebih dahulu.</p>
                                 <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Form teknis akan menyesuaikan otomatis untuk internet atau hosting.</p>
@@ -1936,15 +2072,16 @@
                         priceDisplay.textContent = 'Rp ' + Number(price).toLocaleString('id-ID');
                     }
 
-                    const detailsSection = document.getElementById('technical-details');
+const detailsSection = document.getElementById('technical-details');
                     const fieldsConn = document.getElementById('fields-connectivity');
                     const fieldsHost = document.getElementById('fields-hosting');
                     const fieldsDomain = document.getElementById('fields-domain');
+                    const fieldsMail = document.getElementById('fields-mail');
                     const metroSection = document.getElementById('metro-ethernet-section');
                     const technicalEmptyState = document.getElementById('technical-empty-state');
                     const isConnectivity = serviceType === 'connectivity';
 
-                    [fieldsConn, fieldsHost, fieldsDomain].forEach((section) => {
+                    [fieldsConn, fieldsHost, fieldsDomain, fieldsMail].forEach((section) => {
                         if (!section) return;
                         section.classList.add('hidden');
                         section.querySelectorAll('input, select, textarea').forEach((field) => {
@@ -1974,9 +2111,14 @@
                                 fieldsHost.classList.remove('hidden');
                                 fieldsHost.querySelectorAll('input, select, textarea').forEach((field) => field.disabled = false);
                             }
-                        } else if (serviceType === 'domain' && fieldsDomain) {
+} else if (serviceType === 'domain' && fieldsDomain) {
                             fieldsDomain.classList.remove('hidden');
                             fieldsDomain.querySelectorAll('input, select, textarea').forEach((field) => field.disabled = false);
+                        } else if (serviceType === 'mail') {
+                            if (fieldsMail) {
+                                fieldsMail.classList.remove('hidden');
+                                fieldsMail.querySelectorAll('input, select, textarea').forEach((field) => field.disabled = false);
+                            }
                         }
                     }
 
@@ -2271,8 +2413,13 @@
                                 document.getElementById('registrar').value = data.domain.registrar || '';
                                 document.getElementById('registered_at').value = data.domain.registered_at ? data.domain.registered_at.split('T')[0] : '';
                                 document.getElementById('expires_at').value = data.domain.expires_at ? data.domain.expires_at.split('T')[0] : '';
-                                document.getElementById('auth_code').value = '';
+document.getElementById('auth_code').value = '';
                                 document.getElementById('domain_notes').value = data.domain.notes || '';
+                            }
+                            if (data.mailHosting) {
+                                document.getElementById('mail_server_id').value = data.mailHosting.mail_server_id || '';
+                                document.getElementById('mail_domain').value = data.mailHosting.domain || '';
+                                document.getElementById('admin_email').value = data.mailHosting.admin_email || '';
                             }
 
                             resetSubscriptionFormTabs();

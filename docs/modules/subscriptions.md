@@ -2,7 +2,7 @@
 
 ## Tujuan
 
-Mengelola langganan layanan pelanggan ISP. Mendukung tiga jenis layanan: connectivity (internet), hosting, dan domain. Setiap subscription terkait dengan satu client dan satu paket layanan, dengan pricing model yang fleksibel.
+Mengelola langganan layanan pelanggan ISP. Mendukung empat jenis layanan: connectivity (internet), hosting, domain, dan mail hosting. Setiap subscription terkait dengan satu client dan satu paket layanan, dengan pricing model yang fleksibel.
 
 ## Entitas Terkait
 
@@ -12,6 +12,8 @@ Mengelola langganan layanan pelanggan ISP. Mendukung tiga jenis layanan: connect
 | `SubscriptionConnectivity` | `app/Models/SubscriptionConnectivity.php` | Detail teknis koneksi internet |
 | `SubscriptionHosting` | `app/Models/SubscriptionHosting.php` | Detail server hosting |
 | `SubscriptionDomain` | `app/Models/SubscriptionDomain.php` | Detail domain registrasi |
+| `SubscriptionMailHosting` | `app/Models/SubscriptionMailHosting.php` | Detail layanan mail hosting |
+| `Mailbox` | `app/Models/Mailbox.php` | Akun mailbox pada layanan mail hosting |
 | `SubscriptionTopology` | `app/Models/SubscriptionTopology.php` | Topologi jaringan per subscription |
 | `SubscriptionTopologyHistory` | `app/Models/SubscriptionTopologyHistory.php` | Riwayat perubahan topologi |
 | `Service` | `app/Models/Service.php` | Jenis layanan (connectivity/hosting/domain) |
@@ -24,6 +26,8 @@ Mengelola langganan layanan pelanggan ISP. Mendukung tiga jenis layanan: connect
 - `connectivity()` → hasOne `SubscriptionConnectivity`
 - `hosting()` → hasOne `SubscriptionHosting`
 - `domain()` → hasOne `SubscriptionDomain`
+- `mailHosting()` → hasOne `SubscriptionMailHosting`
+- `mailboxList()` → hasManyThrough `Mailbox`
 - `topology()` → hasOne `SubscriptionTopology`
 - `tickets()` → hasMany `Ticket`
 
@@ -100,11 +104,12 @@ PPN dan PPh23 rate saat ini hardcoded. Lihat plan audit tagihan untuk rencana mi
 ### Pembuatan Langganan
 
 1. Staff memilih client dan paket layanan.
-2. Sistem mendeteksi tipe layanan dari paket (connectivity/hosting/domain).
+2. Sistem mendeteksi tipe layanan dari paket (connectivity/hosting/domain/mail).
 3. Form menampilkan field teknis sesuai tipe:
    - **Connectivity**: router, IP, PPPoE, ONT S/N, Zabbix monitoring, Metro Ethernet
    - **Hosting**: server, domain, username, password (terenkripsi), disk quota
    - **Domain**: nama domain, registrar, tanggal registrasi/berakhir, auth code (terenkripsi), dan catatan domain
+   - **Mail**: mail server Zimbra, domain, admin email, admin password
 4. Sistem generate `subscription_code` format: `{client_code}-{SERVICE_CODE}{NN}` (contoh: `126001-INT01`).
 5. `billing_cycle_day` diambil dari tanggal instalasi.
 6. `next_billing_date` = tanggal instalasi + 1 bulan.
@@ -115,7 +120,7 @@ PPN dan PPh23 rate saat ini hardcoded. Lihat plan audit tagihan untuk rencana mi
 - Paket dapat diubah dari form edit selama masih berada pada jenis layanan yang sama, misalnya paket internet ke paket internet lain.
 - Saat paket berubah, sistem memperbarui harga paket yang terkunci, periode billing, pajak, `billing_cycle_day`, dan `next_billing_date` dari tanggal pemasangan.
 - Prorata upgrade/downgrade memakai harga dan periode paket lama sebelum perubahan.
-- Perpindahan antar jenis layanan (connectivity, hosting, domain) tidak diizinkan dari form edit karena perlu migrasi data teknis dan, untuk hosting, koordinasi akun HestiaCP.
+- Perpindahan antar jenis layanan (connectivity, hosting, domain, mail) tidak diizinkan dari form edit karena perlu migrasi data teknis dan, untuk hosting, koordinasi akun HestiaCP.
 
 ### Connectivity-specific
 
@@ -131,8 +136,15 @@ PPN dan PPh23 rate saat ini hardcoded. Lihat plan audit tagihan untuk rencana mi
 
 ### Domain-specific
 
-- Detail domain disimpan pada `SubscriptionDomain`; field domain tidak lagi menggunakan field panel hosting.
+- Detail domain disimpan pada `domain`; tidak lagi field panel hosting.
 - Auth code bersifat opsional dan disimpan terenkripsi. Saat edit, auth code lama tidak ditampilkan dan hanya berubah bila nilai baru diisi.
+
+### Mail-specific
+
+- Tipe layanan `mail` memakai `SubscriptionMailHosting` + `Mailbox`.
+- `ensureDomain(domain)` pada `ZimbraService` dipanggil saat store/update agar domain tersedia di server Zimbra.
+- Mail server dipilih dari daftar `HostingServer` tipe `zimbra`.
+- Pembuatan/suspend/activate/delete mailbox langsung diproksikan ke Zimbra SOAP lewat `MailboxController`.
 
 ### Status Langganan
 
@@ -156,12 +168,14 @@ PPN dan PPh23 rate saat ini hardcoded. Lihat plan audit tagihan untuk rencana mi
 | Metro Ethernet | Connectivity bisa terkait link metro ethernet |
 | Zabbix | Monitoring koneksi via Zabbix API |
 | Topology | Topologi jaringan visual per subscription |
+| Hosting Server (zimbra) | Mail hosting terkait server Zimbra via `SubscriptionMailHosting` |
 
 ## Seeder / Migration Terkait
 
 | File | Keterangan |
 |------|------------|
 | `create_subscriptions_table` | Tabel utama langganan |
+| `create_subscription_mail_hostings_table` | Detail mail hosting per subscription |
 | `create_subscription_connectivities_table` | Detail teknis koneksi |
 | `create_subscription_hostings_table` | Detail hosting |
 | `create_subscription_domains_table` | Detail domain |

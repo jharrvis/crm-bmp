@@ -4,10 +4,29 @@ Semua perubahan penting pada project ini dicatat di file ini.
 
 ## 2026-08-08
 
+### Added
+- Modul baru **Mail Hosting** dengan integrasi server Zimbra (SOAP Admin API). Admin dapat menambahkan layanan mail pada paket berjenis `mail`, memilih server Zimbra, dan mengantrekan provisioning domain secara aman.
+- Manajemen **mailbox** per langganan: buat account, quota, aktif/nonaktif (suspend/activate), dan hapus melalui queue. Akses via tab mail pada detail layanan atau menu Mail Hosting sidebar.
+- Field paket untuk kotak surat (max_mailboxes, mailbox_quota_mb, alias_max) dan field `api_endpoint` pada Hosting Server tipe `zimbra`.
+- Permission baru `mailboxes.*` (view, create, update, delete, suspend) untuk membatasi akses mailbox.
+
 ### Fixed
+- Credential Zimbra, password mailbox, dan password admin mail tidak lagi ikut terkirim pada respons JSON atau activity log.
+- Validasi mail hosting kini hanya menerima server Zimbra aktif, domain valid, domain unik per server, alamat mailbox unik, serta quota yang tidak melebihi paket langganan.
+- Edit layanan tidak dapat mengganti domain atau server mail setelah mailbox dibuat. Suspend/terminate layanan kini mengantrekan suspend mailbox terkait secara aman.
+- `PermissionSeeder` tidak lagi memakai `syncPermissions()` untuk role default, sehingga permission yang sudah dikonfigurasi di production tidak dicabut saat seeder dijalankan ulang.
 - Form edit layanan sekarang menyimpan perubahan paket, harga paket terkunci, periode billing, pajak, tanggal billing, dan detail teknis ke database.
 - Perhitungan prorata perubahan paket kini memakai harga serta periode paket lama yang benar.
 - Perubahan paket antar jenis layanan diblokir dengan validasi yang jelas untuk mencegah data konektivitas, hosting, atau domain tidak konsisten.
+
+### Changed
+- Sidebar menambahkan menu **Mail Hosting** yang menampilkan langganan paket tipe `mail`.
+
+### Deployment Notes
+- Jalankan `php artisan migrate` untuk membuat tabel `subscription_mail_hostings` dan `mailboxes`, menambahkan kolom `api_endpoint` dan field paket mail, serta constraint/provisioning status (migration 2026_08_08_000001 s.d. 000005).
+- Jalankan `php artisan db:seed --class=PermissionSeeder` lalu `php artisan permission:cache-reset` untuk permission Mail Hosting.
+- Pastikan queue worker production aktif (`php artisan queue:work`) agar domain dan mailbox diprovisikan.
+- Untuk integrasi Zimbra, isi `api_endpoint`, `username`, dan `secret_key` (password admin Zimbra) pada tiap Hosting Server tipe `zimbra`.
 
 ## 2026-08-07
 

@@ -13,11 +13,15 @@ use App\Models\Subscription;
 use App\Models\SubscriptionConnectivity;
 use App\Models\SubscriptionDomain;
 use App\Models\SubscriptionHosting;
+use App\Models\SubscriptionMailHosting;
 use App\Models\Vendor;
+use App\Jobs\EnsureMailDomainJob;
+use App\Jobs\SetMailboxStatusJob;
 use App\Services\ProrataCalculationService;
 use App\Services\ZabbixService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class SubscriptionController extends Controller
@@ -44,16 +48,23 @@ class SubscriptionController extends Controller
             });
         }
 
+        if ($request->has('type') && $request->type) {
+            $query->whereHas('package.service', function ($q) use ($request) {
+                $q->where('type', $request->type);
+            });
+        }
+
         $subscriptions = $query->get();
         // Pre-fetch data for modals
         $clients = Client::orderBy('name')->get();
         $packages = Package::with('service')->where('is_active', true)->get();
         $routers = Router::where('is_active', true)->get();
         $servers = HostingServer::where('is_active', true)->get();
+        $mailServers = HostingServer::where('is_active', true)->where('type', 'zimbra')->get();
         // Fetch Metro Ethernets with Vendor for selection
         $metroEthernets = MetroEthernet::with('vendor')->latest()->get();
 
-        return view('subscriptions.index', compact('subscriptions', 'clients', 'packages', 'routers', 'servers', 'metroEthernets'));
+        return view('subscriptions.index', compact('subscriptions', 'clients', 'packages', 'routers', 'servers', 'metroEthernets', 'mailServers'));
     }
 
     /**
@@ -114,8 +125,23 @@ class SubscriptionController extends Controller
                 'auth_code' => 'nullable|string|max:255',
                 'domain_notes' => 'nullable|string',
             ]);
+        } elseif ($serviceType === 'mail') {
+            $request->validate([
+                'mail_server_id' => ['required', Rule::exists('hosting_servers', 'id')->where(fn ($query) => $query->where('type', 'zimbra')->where('is_active', true))],
+                'mail_domain' => ['required', 'string', 'max:253', 'regex:/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i'],
+                'admin_email' => 'nullable|email|max:255',
+                'admin_password' => 'nullable|string|max:255',
+            ]);
+
+            $domain = strtolower(trim($request->mail_domain));
+            if (SubscriptionMailHosting::where('mail_server_id', $request->mail_server_id)->where('domain', $domain)->exists()) {
+                throw ValidationException::withMessages([
+                    'mail_domain' => 'Domain tersebut sudah digunakan oleh layanan mail hosting lain pada server ini.',
+                ]);
+            }
         }
 
+        $mailDomainProvisioningId = null;
         DB::beginTransaction();
         try {
             $client = Client::findOrFail($request->client_id);
@@ -249,6 +275,24 @@ class SubscriptionController extends Controller
                     'expires_at' => $request->expires_at,
                     'notes' => $request->domain_notes,
                 ]);
+            } elseif ($serviceType === 'mail') {
+                $server = HostingServer::findOrFail($request->mail_server_id);
+                $mailHosting = SubscriptionMailHosting::create([
+                    'subscription_id' => $subscription->id,
+                    'mail_server_id' => $request->mail_server_id,
+                    'domain' => strtolower(trim($request->mail_domain)),
+                    'admin_email' => $request->admin_email,
+                    'admin_password_encrypted' => $request->filled('admin_password')
+                        ? $request->admin_password
+                        : null,
+                    'max_mailboxes' => $package->max_mailboxes ?? 0,
+                    'mailbox_quota_mb' => $package->mailbox_quota_mb ?? 0,
+                    'alias_max' => $package->alias_max ?? 0,
+                    'mail_server_type' => $server->type,
+                    'status' => 'active',
+                    'provisioning_status' => 'pending',
+                ]);
+                $mailDomainProvisioningId = $mailHosting->id;
             }
 
             $prorataService = new ProrataCalculationService;
@@ -282,6 +326,10 @@ class SubscriptionController extends Controller
 
             DB::commit();
 
+            if ($mailDomainProvisioningId) {
+                EnsureMailDomainJob::dispatch($mailDomainProvisioningId)->afterCommit();
+            }
+
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
@@ -308,7 +356,7 @@ class SubscriptionController extends Controller
     public function show(Subscription $subscription)
     {
         // Load all relationships
-        $subscription->load(['client', 'package.service', 'connectivity.metroEthernet.vendor', 'hosting.hostingServer', 'domain']);
+        $subscription->load(['client', 'package.service', 'connectivity.metroEthernet.vendor', 'hosting.hostingServer', 'domain', 'mailHosting.mailServer', 'mailHosting.mailboxes']);
 
         if (request()->wantsJson() || request()->ajax()) {
             return response()->json($subscription);
@@ -318,9 +366,10 @@ class SubscriptionController extends Controller
         $packages = Package::with('service')->get();
         $routers = Router::all();
         $servers = HostingServer::all();
+        $mailServers = HostingServer::where('type', 'zimbra')->get();
         $metroEthernets = MetroEthernet::with('vendor')->latest()->get();
 
-        return view('subscriptions.show', compact('subscription', 'clients', 'packages', 'routers', 'servers', 'metroEthernets'));
+        return view('subscriptions.show', compact('subscription', 'clients', 'packages', 'routers', 'servers', 'metroEthernets', 'mailServers'));
     }
 
     /**
@@ -349,6 +398,8 @@ class SubscriptionController extends Controller
 
         $serviceType = $package->service->type;
 
+        $mailDomainProvisioningId = null;
+        $mailboxStatusJobs = [];
         DB::beginTransaction();
         try {
             $oldBillingPeriodMonths = max(1, (int) $subscription->billing_period_months);
@@ -513,6 +564,67 @@ class SubscriptionController extends Controller
                         'notes' => $request->domain_notes,
                     ]
                 );
+            } elseif ($serviceType === 'mail') {
+                $request->validate([
+                    'mail_server_id' => ['required', Rule::exists('hosting_servers', 'id')->where(fn ($query) => $query->where('type', 'zimbra')->where('is_active', true))],
+                    'mail_domain' => ['required', 'string', 'max:253', 'regex:/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i'],
+                    'admin_email' => 'nullable|email|max:255',
+                    'admin_password' => 'nullable|string|max:255',
+                ]);
+
+                $server = HostingServer::findOrFail($request->mail_server_id);
+                $mailHosting = $subscription->mailHosting;
+                $domain = strtolower(trim($request->mail_domain));
+
+                if (SubscriptionMailHosting::where('mail_server_id', $request->mail_server_id)
+                    ->where('domain', $domain)
+                    ->when($mailHosting, fn ($query) => $query->whereKeyNot($mailHosting->id))
+                    ->exists()) {
+                    throw ValidationException::withMessages([
+                        'mail_domain' => 'Domain tersebut sudah digunakan oleh layanan mail hosting lain pada server ini.',
+                    ]);
+                }
+
+                if ($mailHosting && $mailHosting->mailboxes()->exists()
+                    && ($mailHosting->mail_server_id !== (int) $request->mail_server_id || $mailHosting->domain !== $domain)) {
+                    throw ValidationException::withMessages([
+                        'mail_domain' => 'Server atau domain tidak dapat diubah setelah mailbox dibuat. Gunakan proses migrasi mail hosting.',
+                    ]);
+                }
+
+                $requiresProvisioning = ! $mailHosting
+                    || $mailHosting->mail_server_id !== (int) $request->mail_server_id
+                    || $mailHosting->domain !== $domain;
+
+                $mailHosting = $subscription->mailHosting()->updateOrCreate(
+                    ['subscription_id' => $subscription->id],
+                    [
+                        'mail_server_id' => $request->mail_server_id,
+                        'domain' => $domain,
+                        'admin_email' => $request->admin_email,
+                        'admin_password_encrypted' => $request->filled('admin_password')
+                            ? $request->admin_password
+                            : $mailHosting?->admin_password_encrypted,
+                        'max_mailboxes' => $package->max_mailboxes ?? ($mailHosting?->max_mailboxes ?? 0),
+                        'mailbox_quota_mb' => $package->mailbox_quota_mb ?? ($mailHosting?->mailbox_quota_mb ?? 0),
+                        'alias_max' => $package->alias_max ?? ($mailHosting?->alias_max ?? 0),
+                        'mail_server_type' => $server->type,
+                        'provisioning_status' => $requiresProvisioning ? 'pending' : $mailHosting?->provisioning_status,
+                        'provisioning_error' => $requiresProvisioning ? null : $mailHosting?->provisioning_error,
+                    ]
+                );
+
+                if ($requiresProvisioning) {
+                    $mailDomainProvisioningId = $mailHosting->id;
+                }
+
+                if ($subscription->wasChanged('status')) {
+                    if (in_array($subscription->status, ['suspended', 'terminated'], true)) {
+                        $mailboxStatusJobs = $mailHosting->mailboxes()->where('is_active', true)->pluck('id')->all();
+                    } elseif ($subscription->status === 'active') {
+                        $mailboxStatusJobs = $mailHosting->mailboxes()->where('suspended_by_subscription', true)->pluck('id')->all();
+                    }
+                }
             }
 
             $prorataService = new ProrataCalculationService;
@@ -551,6 +663,14 @@ class SubscriptionController extends Controller
             }
 
             DB::commit();
+
+            if ($mailDomainProvisioningId) {
+                EnsureMailDomainJob::dispatch($mailDomainProvisioningId)->afterCommit();
+            }
+
+            foreach ($mailboxStatusJobs as $mailboxId) {
+                SetMailboxStatusJob::dispatch($mailboxId, $subscription->status === 'active', $subscription->status !== 'active')->afterCommit();
+            }
 
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([

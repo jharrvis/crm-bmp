@@ -510,6 +510,33 @@
                                 </div>
                             </div>
 
+                            <div id="fields-mail" class="hidden space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Mail Server <span class="text-red-500">*</span></label>
+                                        <select id="mail_server_id" name="mail_server_id"
+                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                            <option value="">-- Pilih Mail Server --</option>
+                                            @foreach($mailServers as $server)
+                                                <option value="{{ $server->id }}">{{ $server->name }} ({{ $server->host }})</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Domain <span class="text-red-500">*</span></label>
+                                        <input type="text" name="mail_domain" id="mail_domain" placeholder="example.com"
+                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Kontak Admin <span class="text-xs text-slate-400 font-normal">(opsional, tidak membuat mailbox)</span></label>
+                                        <input type="email" name="admin_email" id="admin_email" placeholder="admin@example.com"
+                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                    </div>
+                                </div>
+                            </div>
+
                             <div id="technical-empty-state" class="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center">
                                 <p class="text-sm font-semibold text-slate-600 dark:text-slate-300">Pilih paket layanan terlebih dahulu.</p>
                                 <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Form teknis akan menyesuaikan otomatis untuk internet atau hosting.</p>
@@ -873,15 +900,16 @@
                         priceDisplay.textContent = 'Rp ' + Number(price).toLocaleString('id-ID');
                     }
 
-                    const detailsSection = document.getElementById('technical-details');
+const detailsSection = document.getElementById('technical-details');
                     const fieldsConn = document.getElementById('fields-connectivity');
                     const fieldsHost = document.getElementById('fields-hosting');
                     const fieldsDomain = document.getElementById('fields-domain');
+                    const fieldsMail = document.getElementById('fields-mail');
                     const metroSection = document.getElementById('metro-ethernet-section');
                     const technicalEmptyState = document.getElementById('technical-empty-state');
                     const isConnectivity = serviceType === 'connectivity';
 
-                    [fieldsConn, fieldsHost, fieldsDomain].forEach((section) => {
+                    [fieldsConn, fieldsHost, fieldsDomain, fieldsMail].forEach((section) => {
                         if (!section) return;
                         section.classList.add('hidden');
                         section.querySelectorAll('input, select, textarea').forEach((field) => {
@@ -911,9 +939,14 @@
                                 fieldsHost.classList.remove('hidden');
                                 fieldsHost.querySelectorAll('input, select, textarea').forEach((field) => field.disabled = false);
                             }
-                        } else if (serviceType === 'domain' && fieldsDomain) {
+} else if (serviceType === 'domain' && fieldsDomain) {
                             fieldsDomain.classList.remove('hidden');
                             fieldsDomain.querySelectorAll('input, select, textarea').forEach((field) => field.disabled = false);
+                        } else if (serviceType === 'mail') {
+                            if (fieldsMail) {
+                                fieldsMail.classList.remove('hidden');
+                                fieldsMail.querySelectorAll('input, select, textarea').forEach((field) => field.disabled = false);
+                            }
                         }
                     }
 
@@ -1460,8 +1493,13 @@
                                 document.getElementById('registrar').value = data.domain.registrar || '';
                                 document.getElementById('registered_at').value = data.domain.registered_at ? data.domain.registered_at.split('T')[0] : '';
                                 document.getElementById('expires_at').value = data.domain.expires_at ? data.domain.expires_at.split('T')[0] : '';
-                                document.getElementById('auth_code').value = '';
+document.getElementById('auth_code').value = '';
                                 document.getElementById('domain_notes').value = data.domain.notes || '';
+                            }
+                            if (data.mailHosting) {
+                                document.getElementById('mail_server_id').value = data.mailHosting.mail_server_id || '';
+                                document.getElementById('mail_domain').value = data.mailHosting.domain || '';
+                                document.getElementById('admin_email').value = data.mailHosting.admin_email || '';
                             }
 
                             window.openModal(true);
