@@ -57,7 +57,7 @@ class HestiaCPService implements WebHostingServerAdapter
                     'status' => $response->status(),
                 ]);
 
-                return $this->error("Connection failed with HTTP {$response->status()}");
+                return $this->error('Koneksi API HestiaCP ditolak atau tidak tersedia.', 'http_'.$response->status());
             }
 
             $body = trim($response->body());
@@ -72,7 +72,7 @@ class HestiaCPService implements WebHostingServerAdapter
                     'cmd' => $cmd,
                 ]);
 
-                return $this->error('Server HestiaCP menolak permintaan.');
+                return $this->error('Server HestiaCP menolak permintaan.', 'remote_rejected');
             }
 
             $decoded = json_decode($body, true);
@@ -91,13 +91,13 @@ class HestiaCPService implements WebHostingServerAdapter
                 'exception' => $e->getMessage(),
             ]);
 
-            return $this->error('Terjadi kesalahan koneksi ke server HestiaCP.');
+            return $this->error('Terjadi kesalahan koneksi ke server HestiaCP.', 'network_error');
         }
     }
 
-    protected function error(string $message): array
+    protected function error(string $message, ?string $code = null): array
     {
-        return ['success' => false, 'data' => null, 'code' => null, 'message' => $message];
+        return ['success' => false, 'data' => null, 'code' => $code, 'message' => $message];
     }
 
     protected function looksLikePlainText(string $body): bool
@@ -110,7 +110,9 @@ class HestiaCPService implements WebHostingServerAdapter
      */
     public function testConnection(): array
     {
-        return $this->request('v-list-sys-info', ['arg1' => 'json']);
+        // Use a command required by this integration, so a green check also
+        // proves the Access Key has a useful minimum permission.
+        return $this->listUsers();
     }
 
     /**

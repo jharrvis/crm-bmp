@@ -83,8 +83,18 @@ class ServerManageController extends Controller
             'success' => $result['success'],
             'message' => $result['success']
                 ? 'Koneksi ke server berhasil.'
-                : 'Koneksi ke server gagal. Periksa kredensial dan IP whitelist.',
+                : $this->connectionFailureMessage($result['code'] ?? null),
         ]);
+    }
+
+    private function connectionFailureMessage(?string $code): string
+    {
+        return match ($code) {
+            'http_401', 'http_403', 'remote_rejected' => 'HestiaCP menolak akses. Periksa Access Key, Secret Key, permission command, dan IP whitelist.',
+            'http_404' => 'Endpoint API tidak ditemukan. Pastikan host mengarah ke panel HestiaCP dan port API adalah 8083.',
+            'network_error' => 'Host, port, firewall, atau sertifikat TLS tidak dapat dijangkau dari server CRM.',
+            default => 'Koneksi ke server gagal. Periksa kredensial, API HestiaCP, dan IP whitelist.',
+        };
     }
 
     /**

@@ -15,9 +15,11 @@ Semua perubahan penting pada project ini dicatat di file ini.
 - Snapshot HestiaCP menggunakan lock agar refresh bersamaan tidak menghasilkan beberapa snapshot aktif.
 - Form Server Hosting sekarang memisahkan credential HestiaCP (Access Key dan Secret Key) dari konfigurasi Zimbra, serta memakai payload form native agar create/update tersimpan konsisten.
 - Tipe server dibatasi menjadi HestiaCP untuk web hosting, serta Zimbra dan Postfix untuk mail hosting. Postfix tersedia sebagai inventaris pending tanpa integrasi remote.
+- Test koneksi HestiaCP sekarang memverifikasi command `v-list-users` dan memberikan diagnosis aman untuk masalah credential, permission, IP whitelist, endpoint, atau TLS.
 
 ### Added
 - Modul **Manage Server Web Hosting (HestiaCP)**: konsol operasional berupa ringkasan snapshot server, daftar user live dengan cache singkat, test koneksi manual, refresh data, dan tautan user Hestia existing ke subscription hosting.
+- Form tambah dan edit layanan hosting sekarang menyediakan pilihan untuk membuat akun HestiaCP baru atau menautkan user beserta domain yang sudah ada. Mode tautkan memverifikasi data remote dan tidak menjalankan provisioning maupun perubahan akun.
 - **Provisioning berbasis queue** untuk langganan hosting. Pembuatan user dan web domain diantrekan (`ProvisionHostingAccountJob`) dan ditandai idempoten; status `pending/provisioning/ready/failed/deleting/delete_failed` tercatat di `subscription_hostings`.
 - Snapshot server `hosting_server_snapshots` dengan satu snapshot aktif per server (ringkasan JSON, status, waktu sinkron, pesan error).
 - Lifecycle akun Hestia melalui queue: suspend/activate (`SetHostingAccountStatusJob`), reset password (`ResetHostingAccountPasswordJob`), dan hapus (`DeleteHostingAccountJob`) — hanya untuk akun yang benar-benar dikelola CRM (`managed_by_crm=true`).

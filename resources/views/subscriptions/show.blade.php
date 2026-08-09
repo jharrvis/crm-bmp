@@ -1579,6 +1579,20 @@
                             </div>
 
                             <div id="fields-hosting" class="hidden space-y-4">
+                                <div class="rounded-lg border border-blue-100 bg-blue-50/60 p-4 dark:border-blue-900/50 dark:bg-blue-950/20">
+                                    <p class="text-sm font-bold text-slate-800 dark:text-slate-100">Metode akun HestiaCP</p>
+                                    <div class="mt-3 grid gap-3 md:grid-cols-2">
+                                        <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800">
+                                            <input type="radio" name="hosting_account_mode" value="new" checked onchange="toggleHostingAccountMode()" class="mt-1 text-blue-600 focus:ring-blue-500">
+                                            <span><span class="block text-sm font-semibold text-slate-800 dark:text-white">Buat akun baru</span><span class="block text-xs text-slate-500 dark:text-slate-400">CRM membuat user dan domain melalui antrean provisioning.</span></span>
+                                        </label>
+                                        <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800">
+                                            <input type="radio" name="hosting_account_mode" value="existing" onchange="toggleHostingAccountMode()" class="mt-1 text-blue-600 focus:ring-blue-500">
+                                            <span><span class="block text-sm font-semibold text-slate-800 dark:text-white">Tautkan user existing</span><span class="block text-xs text-slate-500 dark:text-slate-400">CRM hanya menautkan akun yang sudah ada, tanpa mengubah server.</span></span>
+                                        </label>
+                                    </div>
+                                    <p id="hosting-account-mode-help" class="mt-3 text-xs text-slate-500 dark:text-slate-400"></p>
+                                </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div id="div-hosting-server">
                                         <label
@@ -1607,7 +1621,7 @@
                                         <input type="text" name="username" id="username"
                                             class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
                                     </div>
-                                    <div>
+                                    <div id="hosting-password-field">
                                         <label
                                             class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Password</label>
                                         <input type="password" name="password" id="password"
@@ -2111,6 +2125,7 @@ const detailsSection = document.getElementById('technical-details');
                                 fieldsHost.classList.remove('hidden');
                                 fieldsHost.querySelectorAll('input, select, textarea').forEach((field) => field.disabled = false);
                             }
+                            toggleHostingAccountMode();
 } else if (serviceType === 'domain' && fieldsDomain) {
                             fieldsDomain.classList.remove('hidden');
                             fieldsDomain.querySelectorAll('input, select, textarea').forEach((field) => field.disabled = false);
@@ -2143,6 +2158,27 @@ const detailsSection = document.getElementById('technical-details');
                     } else {
                         newForm.classList.add('hidden');
                         hiddenIdInput.value = '';
+                    }
+                };
+
+                window.toggleHostingAccountMode = function() {
+                    const mode = document.querySelector('input[name="hosting_account_mode"]:checked')?.value || 'new';
+                    const passwordField = document.getElementById('hosting-password-field');
+                    const password = document.getElementById('password');
+                    const help = document.getElementById('hosting-account-mode-help');
+
+                    if (!passwordField || !password) return;
+
+                    const isExisting = mode === 'existing';
+                    passwordField.classList.toggle('hidden', isExisting);
+                    password.disabled = isExisting;
+                    password.required = false;
+
+                    if (isExisting) password.value = '';
+                    if (help) {
+                        help.textContent = isExisting
+                            ? 'Username dan domain akan diverifikasi pada HestiaCP. Akun tertaut bersifat read-only dan tidak akan diprovisikan atau diubah oleh CRM.'
+                            : 'Kosongkan password jika tidak ingin mengubah password akun yang dibuat CRM.';
                     }
                 };
 
@@ -2407,6 +2443,9 @@ const detailsSection = document.getElementById('technical-details');
                                 document.getElementById('domain').value = data.hosting.domain || '';
                                 document.getElementById('username').value = data.hosting.username || '';
                                 document.getElementById('password').value = '';
+                                const hostingMode = data.hosting.managed_by_crm ? 'new' : 'existing';
+                                document.querySelector(`input[name="hosting_account_mode"][value="${hostingMode}"]`).checked = true;
+                                toggleHostingAccountMode();
                             }
                             if (data.domain) {
                                 document.getElementById('domain_name').value = data.domain.domain_name || '';

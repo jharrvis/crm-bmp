@@ -43,7 +43,7 @@ Modul ini hanya berlaku untuk entitas `HostingServer` dengan `type=hestiacp` dan
 | `delete_requested_at` | Waktu permintaan delete yang sudah dikonfirmasi Owner |
 | `managed_by_crm` | `true` = dibuat CRM, `false` = hanya ditautkan (read-only lifecycle) |
 | `suspended_by_subscription` | Penanda suspend oleh status langganan |
-| `hestia_package` | Nama paket Hestia tujuan (wajib dan diverifikasi pada server target) |
+| `hestia_package` | Nama paket Hestia tujuan (wajib untuk akun baru yang dikelola CRM; kosong untuk akun existing yang hanya ditautkan) |
 
 ## Route Utama
 
@@ -99,6 +99,17 @@ permission custom yang dibuat admin di production tetap utuh.
 5. Worker memverifikasi email kontak utama, package dan kapasitas server sebelum membuat user dan web domain, lalu set `provisioning_status=ready`.
 6. Jika username sudah ada tanpa penanda `remote_user_created_at`, job gagal aman dan tidak mengubah akun/domain existing.
 
+### Menautkan akun existing dari form layanan
+
+Form tambah dan edit langganan hosting menyediakan dua mode akun:
+
+1. **Buat akun baru**: membutuhkan mapping `hestia_package` dan password, lalu menjalankan provisioning melalui queue.
+2. **Tautkan user existing**: membutuhkan username dan domain yang telah ada. CRM memverifikasi keduanya melalui `v-list-user` dan `v-list-web-domains`, kemudian menyimpan relasi dengan `managed_by_crm=false` dan status `ready` tanpa memanggil API perubahan apa pun.
+
+Akun existing yang ditautkan bersifat read-only untuk lifecycle CRM. Server, username,
+domain, dan password tidak dapat diubah dari form langganan agar tidak ada perubahan
+tidak sengaja pada data hosting yang sudah berjalan.
+
 ### Test Koneksi dan Refresh
 
 - `testConnection` memanggil `WebHostResolver->resolve($server)->testConnection()`.
@@ -114,8 +125,8 @@ menampilkan aksi lifecycle; akun yang hanya ditautkan (`managed_by_crm=false`) r
 ### Link User Existing
 
 - Subscription harus berjenis layanan `hosting` dan belum punya `SubscriptionHosting`.
-- Username harus benar-benar ada di server Hestia.
-- Record dibuat `managed_by_crm=false`, status `ready` tanpa memanggil `createUser`.
+- Username serta domain harus benar-benar ada dan saling terkait di server Hestia.
+- Record dibuat `managed_by_crm=false`, status `ready` tanpa memanggil `createUser` atau `createWebDomain`.
 
 ### Suspend / Activate / Reset Password
 
@@ -167,6 +178,19 @@ Interface `app/Services/WebHostingServerAdapter.php`, resolver
 Konfigurasi TLS mengikuti `config/hestiacp.php`: `verify_ssl` default `true` (
 `HESTIACP_VERIFY_SSL`). `Http::timeout(30)` dipakai; verifikasi sertifikat tidak
 dinonaktifkan global.
+
+### Konfigurasi Access Key HestiaCP
+
+Access Key harus dibuat untuk user `admin` atau akun operasional yang memang memiliki
+hak menjalankan command tersebut. Permission minimum untuk fitur CRM saat ini:
+
+- `v-list-users`, `v-list-user`, `v-list-user-packages`, `v-list-web-domains`
+- `v-add-user`, `v-add-web-domain`
+- `v-suspend-user`, `v-unsuspend-user`, `v-change-user-password`, `v-delete-user`
+
+Aktifkan API Hestia dan whitelist **IP publik server CRM** pada server Hestia.
+Tombol Test Koneksi memakai `v-list-users`, sehingga sukses berarti koneksi, key,
+permission minimum, dan whitelist dapat digunakan oleh integrasi.
 
 ## Seeder / Migration Terkait
 
