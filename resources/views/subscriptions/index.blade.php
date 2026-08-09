@@ -961,6 +961,7 @@ const detailsSection = document.getElementById('technical-details');
                                 fieldsConn.classList.remove('hidden');
                                 fieldsConn.querySelectorAll('input, select, textarea').forEach((field) => field.disabled = false);
                             }
+                            loadZabbixGroups();
                             toggleMetroForm();
                         } else if (serviceType === 'hosting') {
                             if (fieldsHost) {
@@ -1226,8 +1227,6 @@ const detailsSection = document.getElementById('technical-details');
                     const toggle = document.getElementById('zabbixInterfaceToggle');
                     const dropdown = document.getElementById('zabbixInterfaceDropdown');
 
-                    loadZabbixGroups();
-
                     groupSelect.addEventListener('change', async function() {
                         updateZabbixNameField('zabbix_group_name', groupSelect);
                         clearZabbixInterfaces();
@@ -1258,14 +1257,17 @@ const detailsSection = document.getElementById('technical-details');
                     const groupSelect = document.getElementById('zabbix_group_id');
                     try {
                         const response = await fetch(zabbixRoutes.groups, { headers: { 'Accept': 'application/json' } });
-                        const groups = await response.json();
+                        const payload = await response.json();
+                        if (!response.ok) throw new Error(payload.message || 'Group Zabbix tidak dapat dimuat.');
+                        const groups = payload;
                         groupSelect.innerHTML = '<option value="">Pilih group</option>';
                         groups.forEach(group => {
                             groupSelect.insertAdjacentHTML('beforeend', `<option value="${group.groupid}">${group.name}</option>`);
                         });
                         groupSelect.value = selectedValue;
                     } catch (error) {
-                        showToast('Gagal memuat group Zabbix', 'error');
+                        groupSelect.innerHTML = '<option value="">Group Zabbix tidak tersedia</option>';
+                        showToast(error.message || 'Gagal memuat group Zabbix', 'error');
                     }
                 }
 
