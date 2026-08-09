@@ -58,6 +58,8 @@ Route::middleware('auth')->group(function () {
             ->name('map-locations.search');
         Route::resource('clients', \App\Http\Controllers\ClientController::class);
         Route::resource('clients.contacts', \App\Http\Controllers\ClientContactController::class)->only(['store', 'update', 'destroy']);
+        Route::get('subscriptions/hosting-servers/{server}/users', [\App\Http\Controllers\SubscriptionController::class, 'hestiaUsers'])->name('subscriptions.hestia-users');
+        Route::get('subscriptions/hosting-servers/{server}/domains', [\App\Http\Controllers\SubscriptionController::class, 'hestiaUserDomains'])->name('subscriptions.hestia-user-domains');
         Route::resource('subscriptions', \App\Http\Controllers\SubscriptionController::class);
         Route::get('subscriptions/{subscription}/mailboxes', [\App\Http\Controllers\MailboxController::class, 'index'])->name('subscriptions.mailboxes.index');
         Route::post('subscriptions/{subscription}/mailboxes', [\App\Http\Controllers\MailboxController::class, 'store'])->name('subscriptions.mailboxes.store');

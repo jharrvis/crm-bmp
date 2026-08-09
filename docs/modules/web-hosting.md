@@ -106,6 +106,11 @@ Form tambah dan edit langganan hosting menyediakan dua mode akun:
 1. **Buat akun baru**: membutuhkan mapping `hestia_package` dan password, lalu menjalankan provisioning melalui queue.
 2. **Tautkan user existing**: membutuhkan username dan domain yang telah ada. CRM memverifikasi keduanya melalui `v-list-user` dan `v-list-web-domains`, kemudian menyimpan relasi dengan `managed_by_crm=false` dan status `ready` tanpa memanggil API perubahan apa pun.
 
+Pada mode tautkan, operator memilih server terlebih dahulu, lalu mencari username dari
+daftar user HestiaCP dan memilih domain yang dimiliki username tersebut. Data picker
+hanya mengirim username/domain, memakai cache sukses selama dua menit, dan tetap
+divalidasi ulang oleh server saat disimpan.
+
 Akun existing yang ditautkan bersifat read-only untuk lifecycle CRM. Server, username,
 domain, dan password tidak dapat diubah dari form langganan agar tidak ada perubahan
 tidak sengaja pada data hosting yang sudah berjalan.

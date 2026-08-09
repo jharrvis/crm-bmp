@@ -23,6 +23,7 @@ use App\Services\ProrataCalculationService;
 use App\Services\WebHostResolver;
 use App\Services\ZabbixService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -37,6 +38,7 @@ class SubscriptionController extends Controller
         $this->middleware('permission:subscriptions.create')->only(['store']);
         $this->middleware('permission:subscriptions.update')->only(['update']);
         $this->middleware('permission:subscriptions.delete')->only(['destroy']);
+        $this->middleware('permission:subscriptions.create|subscriptions.update')->only(['hestiaUsers', 'hestiaUserDomains']);
     }
 
     /**
@@ -69,6 +71,71 @@ class SubscriptionController extends Controller
         $metroEthernets = MetroEthernet::with('vendor')->latest()->get();
 
         return view('subscriptions.index', compact('subscriptions', 'clients', 'packages', 'routers', 'servers', 'metroEthernets', 'mailServers'));
+    }
+
+    /**
+     * Return only Hestia usernames for the existing-account picker.
+     */
+    public function hestiaUsers(HostingServer $server)
+    {
+        $this->ensureActiveHestiaServer($server);
+
+        $cacheKey = "hestiacp:{$server->id}:linkable-users";
+        $usernames = Cache::get($cacheKey);
+
+        if ($usernames === null) {
+            $result = $this->webHostResolver->resolve($server)->listUsers();
+
+            if (! $result['success']) {
+                return response()->json(['message' => 'Daftar user HestiaCP tidak dapat dimuat. Periksa koneksi dan permission API.'], 422);
+            }
+
+            $usernames = collect(array_keys((array) $result['data']))
+                ->map(fn ($username) => strtolower((string) $username))
+                ->filter()
+                ->sort()
+                ->values()
+                ->all();
+
+            Cache::put($cacheKey, $usernames, now()->addMinutes(2));
+        }
+
+        return response()->json(['users' => $usernames]);
+    }
+
+    /**
+     * Return only domains owned by a selected Hestia user.
+     */
+    public function hestiaUserDomains(HostingServer $server, Request $request)
+    {
+        $this->ensureActiveHestiaServer($server);
+
+        $validated = $request->validate([
+            'username' => ['required', 'string', 'max:32', 'regex:/^[a-zA-Z0-9_]{1,32}$/'],
+        ]);
+
+        $username = strtolower($validated['username']);
+        $cacheKey = "hestiacp:{$server->id}:user-domains:{$username}";
+        $domains = Cache::get($cacheKey);
+
+        if ($domains === null) {
+            $result = $this->webHostResolver->resolve($server)->listWebDomains($username);
+
+            if (! $result['success']) {
+                return response()->json(['message' => 'Domain user HestiaCP tidak dapat dimuat. Periksa koneksi dan permission API.'], 422);
+            }
+
+            $domains = collect((array) $result['data'])
+                ->map(fn ($domain) => strtolower(trim((string) $domain)))
+                ->filter()
+                ->sort()
+                ->values()
+                ->all();
+
+            Cache::put($cacheKey, $domains, now()->addMinutes(2));
+        }
+
+        return response()->json(['domains' => $domains]);
     }
 
     /**
@@ -904,6 +971,15 @@ class SubscriptionController extends Controller
                 'hosting_server_id' => 'Koneksi ke HestiaCP gagal saat memverifikasi akun existing. Periksa konfigurasi server lalu coba lagi.',
             ]);
         }
+    }
+
+    protected function ensureActiveHestiaServer(HostingServer $server): void
+    {
+        abort_unless(
+            $server->is_active && $server->type === 'hestiacp',
+            404,
+            'Server HestiaCP aktif tidak ditemukan.'
+        );
     }
 
     protected function generateSubscriptionCode(Client $client, Package $package): string

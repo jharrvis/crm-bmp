@@ -455,7 +455,7 @@
                                         <label
                                             class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Hosting
                                             Server</label>
-                                        <select id="hosting_server_id" name="hosting_server_id"
+                                        <select id="hosting_server_id" name="hosting_server_id" onchange="handleHostingServerChange()"
                                             class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
                                             <option value="">-- Pilih Server Hosting --</option>
                                             @foreach($servers as $server)
@@ -463,20 +463,34 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div>
+                                    <div id="hosting-new-domain-field">
                                         <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nama
                                             Domain</label>
                                         <input type="text" name="domain" id="domain" placeholder="example.com"
                                             class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
                                     </div>
+                                    <div id="hosting-existing-domain-field" class="hidden">
+                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Domain akun</label>
+                                        <select name="domain" id="hosting_existing_domain" disabled
+                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                            <option value="">-- Pilih user terlebih dahulu --</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
+                                    <div id="hosting-new-username-field">
                                         <label
                                             class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Username
                                             (Panel)</label>
                                         <input type="text" name="username" id="username"
                                             class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                    </div>
+                                    <div id="hosting-existing-username-field" class="hidden">
+                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">User HestiaCP</label>
+                                        <select name="username" id="hosting_existing_username" disabled onchange="handleExistingHostingUserChange()"
+                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                            <option value="">-- Pilih server terlebih dahulu --</option>
+                                        </select>
                                     </div>
                                     <div id="hosting-password-field">
                                         <label
@@ -989,11 +1003,19 @@ const detailsSection = document.getElementById('technical-details');
                     }
                 };
 
-                window.toggleHostingAccountMode = function() {
+                window.toggleHostingAccountMode = function(loadUsers = true) {
                     const mode = document.querySelector('input[name="hosting_account_mode"]:checked')?.value || 'new';
                     const passwordField = document.getElementById('hosting-password-field');
                     const password = document.getElementById('password');
                     const help = document.getElementById('hosting-account-mode-help');
+                    const newUsernameField = document.getElementById('hosting-new-username-field');
+                    const newDomainField = document.getElementById('hosting-new-domain-field');
+                    const existingUsernameField = document.getElementById('hosting-existing-username-field');
+                    const existingDomainField = document.getElementById('hosting-existing-domain-field');
+                    const newUsername = document.getElementById('username');
+                    const newDomain = document.getElementById('domain');
+                    const existingUsername = document.getElementById('hosting_existing_username');
+                    const existingDomain = document.getElementById('hosting_existing_domain');
 
                     if (!passwordField || !password) return;
 
@@ -1001,6 +1023,14 @@ const detailsSection = document.getElementById('technical-details');
                     passwordField.classList.toggle('hidden', isExisting);
                     password.disabled = isExisting;
                     password.required = !isExisting && !document.getElementById('dataId')?.value;
+                    newUsernameField?.classList.toggle('hidden', isExisting);
+                    newDomainField?.classList.toggle('hidden', isExisting);
+                    existingUsernameField?.classList.toggle('hidden', !isExisting);
+                    existingDomainField?.classList.toggle('hidden', !isExisting);
+                    if (newUsername) newUsername.disabled = isExisting;
+                    if (newDomain) newDomain.disabled = isExisting;
+                    if (existingUsername) existingUsername.disabled = !isExisting;
+                    if (existingDomain) existingDomain.disabled = !isExisting;
 
                     if (isExisting) password.value = '';
                     if (help) {
@@ -1008,7 +1038,96 @@ const detailsSection = document.getElementById('technical-details');
                             ? 'Username dan domain akan diverifikasi pada HestiaCP. Akun tertaut bersifat read-only dan tidak akan diprovisikan atau diubah oleh CRM.'
                             : 'Password wajib untuk akun baru. CRM akan membuat user serta domain setelah layanan disimpan.';
                     }
+
+                    if (loadUsers && isExisting && document.getElementById('hosting_server_id')?.value) {
+                        window.loadExistingHostingUsers(existingUsername?.value || '', existingDomain?.value || '');
+                    }
                 };
+
+                window.loadExistingHostingUsers = async function(selectedUsername = '', selectedDomain = '') {
+                    const serverId = document.getElementById('hosting_server_id')?.value;
+                    const userSelect = document.getElementById('hosting_existing_username');
+
+                    if (!serverId || !userSelect) return;
+
+                    resetExistingHostingDomains();
+                    setExistingHostingOptions(userSelect, [], '-- Memuat user HestiaCP... --');
+
+                    try {
+                        const response = await fetch(`${baseUrl}/subscriptions/hosting-servers/${serverId}/users`, {
+                            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+                        const payload = await response.json();
+                        if (!response.ok) throw new Error(payload.message || 'Daftar user tidak dapat dimuat.');
+
+                        setExistingHostingOptions(userSelect, payload.users || [], '-- Pilih user HestiaCP --', selectedUsername);
+                        if (selectedUsername) await loadExistingHostingDomains(selectedUsername, selectedDomain);
+                    } catch (error) {
+                        setExistingHostingOptions(userSelect, [], '-- Gagal memuat user HestiaCP --');
+                        window.showToast?.(error.message || 'Daftar user HestiaCP tidak dapat dimuat.', 'error');
+                    }
+                };
+
+                window.handleHostingServerChange = function() {
+                    if (document.querySelector('input[name="hosting_account_mode"]:checked')?.value === 'existing') {
+                        window.loadExistingHostingUsers();
+                    }
+                };
+
+                window.handleExistingHostingUserChange = function() {
+                    const username = document.getElementById('hosting_existing_username')?.value;
+                    if (username) loadExistingHostingDomains(username);
+                    else resetExistingHostingDomains();
+                };
+
+                function resetExistingHostingDomains() {
+                    setExistingHostingOptions(document.getElementById('hosting_existing_domain'), [], '-- Pilih user terlebih dahulu --');
+                }
+
+                async function loadExistingHostingDomains(username, selectedDomain = '') {
+                    const serverId = document.getElementById('hosting_server_id')?.value;
+                    const domainSelect = document.getElementById('hosting_existing_domain');
+                    if (!serverId || !domainSelect) return;
+
+                    setExistingHostingOptions(domainSelect, [], '-- Memuat domain... --');
+                    try {
+                        const response = await fetch(`${baseUrl}/subscriptions/hosting-servers/${serverId}/domains?username=${encodeURIComponent(username)}`, {
+                            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+                        const payload = await response.json();
+                        if (!response.ok) throw new Error(payload.message || 'Domain tidak dapat dimuat.');
+
+                        setExistingHostingOptions(domainSelect, payload.domains || [], '-- Pilih domain akun --', selectedDomain);
+                    } catch (error) {
+                        setExistingHostingOptions(domainSelect, [], '-- Gagal memuat domain --');
+                        window.showToast?.(error.message || 'Domain HestiaCP tidak dapat dimuat.', 'error');
+                    }
+                }
+
+                function setExistingHostingOptions(select, values, placeholder, selectedValue = '') {
+                    if (!select) return;
+                    select.innerHTML = `<option value="">${placeholder}</option>` + values
+                        .map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)
+                        .join('');
+                    select.disabled = values.length === 0;
+                    if (selectedValue && values.includes(selectedValue)) select.value = selectedValue;
+
+                    if (select.id === 'hosting_existing_username' && window.hostingUserChoice) {
+                        window.hostingUserChoice.destroy();
+                        window.hostingUserChoice = null;
+                    }
+                    if (select.id === 'hosting_existing_username' && values.length > 0 && window.Choices) {
+                        window.hostingUserChoice = new Choices(select, {
+                            searchEnabled: true,
+                            searchPlaceholderValue: 'Cari user HestiaCP...',
+                            shouldSort: false,
+                            itemSelectText: ''
+                        });
+                        if (selectedValue && values.includes(selectedValue)) {
+                            window.hostingUserChoice.setChoiceByValue(selectedValue);
+                        }
+                    }
+                }
 
                 function initializeSubscriptionBillingListeners() {
                     ['custom_price', 'billing_period_months', 'package_id'].forEach(id => {
@@ -1521,11 +1640,15 @@ const detailsSection = document.getElementById('technical-details');
                             }
                             if (data.hosting) {
                                 document.getElementById('hosting_server_id').value = data.hosting.hosting_server_id || '';
-                                document.getElementById('domain').value = data.hosting.domain || '';
-                                document.getElementById('username').value = data.hosting.username || '';
                                 const hostingMode = data.hosting.managed_by_crm ? 'new' : 'existing';
                                 document.querySelector(`input[name="hosting_account_mode"][value="${hostingMode}"]`).checked = true;
-                                toggleHostingAccountMode();
+                                toggleHostingAccountMode(false);
+                                if (hostingMode === 'existing') {
+                                    await loadExistingHostingUsers(data.hosting.username || '', data.hosting.domain || '');
+                                } else {
+                                    document.getElementById('domain').value = data.hosting.domain || '';
+                                    document.getElementById('username').value = data.hosting.username || '';
+                                }
                             }
                             if (data.domain) {
                                 document.getElementById('domain_name').value = data.domain.domain_name || '';
