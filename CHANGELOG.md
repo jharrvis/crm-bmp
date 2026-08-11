@@ -28,6 +28,7 @@ Semua perubahan penting pada project ini dicatat di file ini.
 - Field `hestia_package` pada paket dan migration unik/index baru pada `subscription_hostings` (preflight pendeteksi duplikat legacy sebelum migrasi).
 
 ### Fixed
+- Provisioning domain Zimbra kembali berjalan karena HTTP client menggunakan `timeout()` yang didukung Laravel, bukan method `withTimeout()` yang tidak tersedia.
 - Form layanan tidak lagi memuat group Zabbix untuk paket non-konektivitas. Jika Zabbix gagal diakses pada layanan konektivitas, pesan konfigurasi atau API yang aman kini ditampilkan.
 - `SubscriptionController` tidak lagi menyimpan `SubscriptionHosting` saat panggilan `v-add-user` gagal; akun dibuat dengan status `pending` lalu diprovisikan via queue setelah commit.
 - Pemanggilan Hestia langsung dari request browser digantikan job queue agar tidak memblokir respons pada operasi lambat.

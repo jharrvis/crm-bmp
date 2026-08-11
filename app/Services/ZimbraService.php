@@ -43,7 +43,7 @@ class ZimbraService implements MailServerAdapter
         $this->lastFaultCode = null;
 
         try {
-            $response = Http::withTimeout(30)
+            $response = Http::timeout(30)
                 ->withHeaders([
                     'Content-Type' => 'application/soap+xml; charset=UTF-8',
                 ])
