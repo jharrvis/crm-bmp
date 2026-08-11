@@ -135,7 +135,7 @@
                                             <tr class="text-xs text-slate-500 uppercase tracking-wider">
                                                 <th class="text-left px-4 py-3 font-bold">Modul</th>
                                                 @php
-                                                    $allActions = ['view', 'create', 'update', 'delete', 'connect', 'assign', 'close', 'complete', 'suspend', 'activate', 'send', 'mark_paid', 'verify'];
+                                                    $allActions = ['view', 'create', 'update', 'delete', 'connect', 'assign', 'close', 'complete', 'suspend', 'activate', 'sync', 'send', 'mark_paid', 'verify'];
                                                     $groupActions = [];
                                                     foreach ($modules as $module) {
                                                         if (isset($permissions[$module])) {

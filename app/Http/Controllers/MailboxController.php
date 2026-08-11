@@ -8,6 +8,7 @@ use App\Models\SubscriptionMailHosting;
 use App\Jobs\DeleteMailboxJob;
 use App\Jobs\ProvisionMailboxJob;
 use App\Jobs\SetMailboxStatusJob;
+use App\Jobs\SyncZimbraMailboxesJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -82,6 +83,7 @@ class MailboxController extends Controller
                     'quota_mb' => $quota,
                     'alias_count' => 0,
                     'is_active' => false,
+                    'managed_by_crm' => true,
                     'provisioning_status' => 'pending',
                 ]);
             });
@@ -98,6 +100,24 @@ class MailboxController extends Controller
     }
 
     /**
+     * Import existing Zimbra accounts as local read-only mailbox records.
+     */
+    public function sync(Subscription $subscription)
+    {
+        $this->authorize('mailboxes.sync');
+
+        $mailHosting = $subscription->mailHosting()->with('mailServer')->first();
+
+        if (! $mailHosting || ! $mailHosting->mailServer) {
+            return back()->with('error', 'Layanan atau server mail hosting tidak ditemukan.');
+        }
+
+        SyncZimbraMailboxesJob::dispatch($mailHosting->id, auth()->id())->afterCommit();
+
+        return back()->with('success', 'Sinkronisasi mailbox dari Zimbra masuk antrean. Proses ini hanya membaca Zimbra dan menambahkan data lokal yang belum ada.');
+    }
+
+    /**
      * Suspend a mailbox (maintenance mode).
      */
     public function suspend(Subscription $subscription, Mailbox $mailbox)
@@ -108,6 +128,10 @@ class MailboxController extends Controller
 
         if (! $mailHosting || $mailbox->subscription_mail_hosting_id !== $mailHosting->id) {
             return back()->with('error', 'Mailbox tidak ditemukan pada layanan ini.');
+        }
+
+        if (! $mailbox->managed_by_crm) {
+            return back()->with('error', 'Mailbox hasil sinkronisasi bersifat read-only dan tidak dapat diubah dari CRM.');
         }
 
         SetMailboxStatusJob::dispatch($mailbox->id, false)->afterCommit();
@@ -128,6 +152,10 @@ class MailboxController extends Controller
             return back()->with('error', 'Mailbox tidak ditemukan pada layanan ini.');
         }
 
+        if (! $mailbox->managed_by_crm) {
+            return back()->with('error', 'Mailbox hasil sinkronisasi bersifat read-only dan tidak dapat diubah dari CRM.');
+        }
+
         SetMailboxStatusJob::dispatch($mailbox->id, true)->afterCommit();
 
         return back()->with('success', 'Permintaan mengaktifkan mailbox masuk antrean.');
@@ -144,6 +172,10 @@ class MailboxController extends Controller
 
         if (! $mailHosting || $mailbox->subscription_mail_hosting_id !== $mailHosting->id) {
             return back()->with('error', 'Mailbox tidak ditemukan pada layanan ini.');
+        }
+
+        if (! $mailbox->managed_by_crm) {
+            return back()->with('error', 'Mailbox hasil sinkronisasi bersifat read-only dan tidak dapat dihapus dari CRM.');
         }
 
         $mailbox->update(['provisioning_status' => 'deleting', 'provisioning_error' => null]);

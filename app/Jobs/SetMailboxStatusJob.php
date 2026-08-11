@@ -24,6 +24,11 @@ class SetMailboxStatusJob implements ShouldQueue
     public function handle(MailServerResolver $resolver): void
     {
         $mailbox = Mailbox::with('mailHosting.mailServer')->findOrFail($this->mailboxId);
+
+        if (! $mailbox->managed_by_crm) {
+            throw new \RuntimeException('Mailbox hasil sinkronisasi tidak dapat diubah oleh CRM.');
+        }
+
         $service = $resolver->resolve($mailbox->mailHosting->mailServer);
         $success = $this->activate ? $service->activate($mailbox->email) : $service->suspend($mailbox->email);
 

@@ -15,6 +15,18 @@
                             <a href="{{ route('subscriptions.show', $subscription) }}" class="text-sm text-blue-600 hover:underline">← Kembali ke detail layanan</a>
                         </div>
                     </div>
+                    @can('mailboxes.sync')
+                        <form method="POST" action="{{ route('subscriptions.mailboxes.sync', $subscription) }}"
+                            data-confirm-title="Sinkronkan Mailbox Zimbra?"
+                            data-confirm-text="CRM hanya akan membaca akun pada domain ini dan menambahkan record lokal yang belum ada. Tidak ada akun Zimbra yang dibuat, diubah, atau dihapus.">
+                            @csrf
+                            <button type="submit"
+                                class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600">
+                                <i data-lucide="refresh-cw" class="h-4 w-4"></i>
+                                Sinkronkan dari Zimbra
+                            </button>
+                        </form>
+                    @endcan
                 </div>
             </div>
 
@@ -113,9 +125,13 @@
                                     @if($mailbox->provisioning_error)
                                         <p class="mt-1 max-w-48 whitespace-normal text-xs text-red-600 dark:text-red-400">{{ $mailbox->provisioning_error }}</p>
                                     @endif
+                                    @if(! $mailbox->managed_by_crm)
+                                        <p class="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">Read-only dari Zimbra</p>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex items-center justify-end gap-2">
+                                        @if($mailbox->managed_by_crm)
                                         @can('mailboxes.update')
                                             @if($mailbox->provisioning_status === 'ready')
                                             @if($mailbox->is_active)
@@ -152,6 +168,7 @@
                                                 </button>
                                             </form>
                                         @endcan
+                                        @endif
                                     </div>
                                 </td>
                             </tr>

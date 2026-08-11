@@ -47,6 +47,7 @@ Mengelola layanan *mail hosting* untuk langganan pelanggan ISP. Modul ini terint
 | `quota_mb` | Kuota dalam MB |
 | `alias_count` | Jumlah alias |
 | `is_active` | Status aktif (sync dari server) |
+| `managed_by_crm` | `true` bila mailbox dibuat CRM; `false` bila diimpor dari Zimbra dan hanya dapat dibaca dari CRM |
 
 ## Route Utama
 
@@ -54,6 +55,7 @@ Mengelola layanan *mail hosting* untuk langganan pelanggan ISP. Modul ini terint
 |--------|-----|------------|------------|
 | GET | `/subscriptions/{subscription}/mailboxes` | `MailboxController@index` | `mailboxes.view` |
 | POST | `/subscriptions/{subscription}/mailboxes` | `MailboxController@store` | `mailboxes.create` |
+| POST | `/subscriptions/{subscription}/mailboxes/sync` | `MailboxController@sync` | `mailboxes.sync` |
 | POST | `/subscriptions/{subscription}/mailboxes/{mailbox}/suspend` | `MailboxController@suspend` | `mailboxes.update` |
 | POST | `/subscriptions/{subscription}/mailboxes/{mailbox}/activate` | `MailboxController@activate` | `mailboxes.update` |
 | DELETE | `/subscriptions/{subscription}/mailboxes/{mailbox}` | `MailboxController@destroy` | `mailboxes.delete` |
@@ -70,6 +72,7 @@ Mengelola layanan *mail hosting* untuk langganan pelanggan ISP. Modul ini terint
 | `mailboxes.create` | Membuat mailbox baru |
 | `mailboxes.update` | Mengantrekan perubahan status mail (suspend/activate) |
 | `mailboxes.delete` | Mengantrekan penghapusan mailbox |
+| `mailboxes.sync` | Mengantrekan sinkronisasi read-only mailbox existing dari Zimbra |
 
 ### Default Role Mapping
 
@@ -85,6 +88,14 @@ Mengelola layanan *mail hosting* untuk langganan pelanggan ISP. Modul ini terint
 4. Simpan mailbox sebagai `pending`, lalu antrekan provisioning setelah transaction database selesai.
 5. Worker memanggil `ZimbraService.createAccount(email, pass, attrs)` dan menandai record `ready` atau `failed`.
 6. Jika job gagal, pesan aman ditampilkan di daftar mailbox dan job dapat dicoba ulang dari queue.
+
+### Sinkronisasi Mailbox Existing dari Zimbra
+
+1. Staff dengan permission `mailboxes.sync` menekan **Sinkronkan dari Zimbra** pada daftar mailbox.
+2. Job membaca akun untuk domain layanan menggunakan filter Zimbra `(mail=*@domain)`. Operasi ini tidak membuat, mengubah, menonaktifkan, maupun menghapus akun di Zimbra.
+3. Akun yang belum ada di tabel lokal `mailboxes` diimpor dengan `managed_by_crm=false`, status `ready`, dan tanpa password.
+4. Akun lokal yang sudah ada tidak ditimpa. Jika email sudah terkait ke layanan mail hosting lain, akun dilewati dan relasinya tidak diubah.
+5. Mailbox hasil impor tampil sebagai **Read-only dari Zimbra**. Aksi suspend, activate, dan hapus tidak tersedia dari CRM untuk mencegah perubahan tidak sengaja pada akun legacy.
 
 ### Suspend / Activate
 
@@ -137,8 +148,9 @@ Server mail tetap memakai entitas `HostingServer` yang sama dengan web hosting a
 | `2026_08_08_000002_add_api_endpoint_to_hosting_servers_table` | api_endpoint kolom pada server |
 | `2026_08_08_000003_create_subscription_mail_hostings_table` | Tabel induk mail hosting |
 | `2026_08_08_000004_create_mailboxes_table` | Tabel mailbox |
+| `2026_08_11_000001_add_managed_by_crm_to_mailboxes_table` | Penanda mailbox yang dibuat CRM atau diimpor read-only dari Zimbra |
 
-Seeder: `PermissionSeeder` menambah modul `mailboxes`.
+Seeder: `PermissionSeeder` menambah modul `mailboxes`, termasuk permission `mailboxes.sync`. Seeder menambahkan permission tanpa mereset permission role custom yang sudah ada.
 
 ## Postfix (Engine) Kandidat
 
@@ -150,6 +162,7 @@ Seeder: `PermissionSeeder` menambah modul `mailboxes`.
 - Zimbra: `zimbra` account status `maintenance` dipakai untuk suspend.
 - Auth token dik-cache 55 menit per server dan dibersihkan saat konfigurasi server diperbarui.
 - Credential tidak disertakan pada respons JSON atau activity log.
+- Sinkronisasi mailbox existing bersifat import metadata satu arah. Status, quota, alias, dan penghapusan akun existing belum disinkronkan atau diubah oleh CRM.
 - Domain/server tidak dapat diganti setelah mailbox dibuat; gunakan prosedur migrasi mail hosting.
 - Alias belum diimplementasikan. `alias_max` hanya dicatat sebagai batas paket dan tidak boleh ditampilkan sebagai fitur yang sudah tersedia.
 - Gunakan versi Zimbra yang masih menerima security update; Zimbra 8.8.15 sudah melewati masa technical guidance.

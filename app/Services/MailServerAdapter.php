@@ -41,6 +41,8 @@ interface MailServerAdapter
 
     /**
      * List email accounts belonging to a domain.
+     *
+     * Returns ['success' => bool, 'data' => array, 'message' => string].
      */
     public function listAccounts(string $domain): array;
 }

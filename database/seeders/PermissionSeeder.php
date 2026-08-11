@@ -41,7 +41,7 @@ class PermissionSeeder extends Seeder
             'invoices' => ['view', 'create', 'update', 'delete', 'send', 'mark_paid'],
 'payments' => ['view', 'create', 'update', 'delete', 'verify'],
             'financial_reports' => ['view'],
-            'mailboxes' => ['view', 'create', 'update', 'delete', 'suspend'],
+            'mailboxes' => ['view', 'create', 'update', 'delete', 'suspend', 'sync'],
 
             // Support
             'tickets' => ['view', 'create', 'update', 'delete', 'assign', 'close'],

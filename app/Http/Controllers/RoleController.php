@@ -122,7 +122,7 @@ class RoleController extends Controller
         $moduleGroups = [
             'Master Data' => ['branches', 'divisions', 'employees'],
             'Infrastruktur' => ['routers', 'servers', 'vendors', 'metro_ethernets', 'ip_transits', 'zabbix_monitors', 'services', 'packages', 'towers', 'odps'],
-            'Bisnis' => ['clients', 'subscriptions', 'invoices', 'payments', 'financial_reports'],
+            'Bisnis' => ['clients', 'subscriptions', 'invoices', 'payments', 'financial_reports', 'mailboxes'],
             'Support' => ['tickets', 'work_orders'],
             'Sistem' => ['system_updates', 'documentation', 'logs', 'roles', 'settings'],
         ];

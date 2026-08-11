@@ -286,18 +286,18 @@ class ZimbraService implements MailServerAdapter
     {
         $token = $this->authToken();
         if (! $token) {
-            return [];
+            return ['success' => false, 'data' => [], 'message' => 'Gagal autentikasi ke server Zimbra.'];
         }
 
         $body = '<SearchAccountsRequest xmlns="urn:zimbraAdmin">'
-            .'<query>(&amp;(domain='.e($domain).'))</query>'
+            .'<query>(mail=*@'.e($domain).')</query>'
             .'<limit>0</limit>'
             .'</SearchAccountsRequest>';
 
         $parsed = $this->request($body, $token);
 
         if ($parsed === false) {
-            return [];
+            return ['success' => false, 'data' => [], 'message' => 'Zimbra tidak dapat mengambil daftar mailbox.'];
         }
 
         $nodes = $parsed->xpath('//*[local-name()="account"]');
@@ -306,10 +306,10 @@ class ZimbraService implements MailServerAdapter
         foreach ($nodes as $node) {
             $accounts[] = [
                 'id' => (string) $node['id'],
-                'name' => (string) $node['name'],
+                'email' => strtolower((string) $node['name']),
             ];
         }
 
-        return $accounts;
+        return ['success' => true, 'data' => $accounts, 'message' => 'OK'];
     }
 }

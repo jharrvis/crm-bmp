@@ -63,6 +63,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('subscriptions', \App\Http\Controllers\SubscriptionController::class);
         Route::get('subscriptions/{subscription}/mailboxes', [\App\Http\Controllers\MailboxController::class, 'index'])->name('subscriptions.mailboxes.index');
         Route::post('subscriptions/{subscription}/mailboxes', [\App\Http\Controllers\MailboxController::class, 'store'])->name('subscriptions.mailboxes.store');
+        Route::post('subscriptions/{subscription}/mailboxes/sync', [\App\Http\Controllers\MailboxController::class, 'sync'])->name('subscriptions.mailboxes.sync');
         Route::post('subscriptions/{subscription}/mailboxes/{mailbox}/suspend', [\App\Http\Controllers\MailboxController::class, 'suspend'])->name('subscriptions.mailboxes.suspend');
         Route::post('subscriptions/{subscription}/mailboxes/{mailbox}/activate', [\App\Http\Controllers\MailboxController::class, 'activate'])->name('subscriptions.mailboxes.activate');
         Route::delete('subscriptions/{subscription}/mailboxes/{mailbox}', [\App\Http\Controllers\MailboxController::class, 'destroy'])->name('subscriptions.mailboxes.destroy');

@@ -19,6 +19,7 @@ class Mailbox extends Model
         'quota_mb',
         'alias_count',
         'is_active',
+        'managed_by_crm',
         'suspended_by_subscription',
         'provisioning_status',
         'provisioning_error',
@@ -30,6 +31,7 @@ class Mailbox extends Model
         'quota_mb' => 'integer',
         'alias_count' => 'integer',
         'is_active' => 'boolean',
+        'managed_by_crm' => 'boolean',
         'suspended_by_subscription' => 'boolean',
         'provisioned_at' => 'datetime',
     ];

@@ -60,6 +60,12 @@ Dokumen ini merangkum hubungan antara menu, permission, dan role default.
 
 - Permission utama: `subscriptions.view`
 
+### Mail Hosting dan Mailbox
+
+- Permission: `mailboxes.view`, `mailboxes.create`, `mailboxes.update`, `mailboxes.delete`, `mailboxes.sync`
+- `mailboxes.sync` menjalankan impor metadata mailbox existing dari Zimbra secara read-only.
+- Role default: Owner dan Admin. Role operasional dapat diberi akses melalui Manajemen Role sesuai prosedur mail hosting.
+
 ### Tagihan
 
 - Permission utama: `invoices.view`

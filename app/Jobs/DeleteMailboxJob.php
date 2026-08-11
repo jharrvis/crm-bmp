@@ -26,6 +26,10 @@ class DeleteMailboxJob implements ShouldQueue
     {
         $mailbox = Mailbox::with('mailHosting.mailServer')->findOrFail($this->mailboxId);
 
+        if (! $mailbox->managed_by_crm) {
+            throw new \RuntimeException('Mailbox hasil sinkronisasi tidak dapat dihapus oleh CRM.');
+        }
+
         if (! $resolver->resolve($mailbox->mailHosting->mailServer)->deleteAccount($mailbox->email)) {
             throw new \RuntimeException('Zimbra tidak dapat menghapus mailbox.');
         }
