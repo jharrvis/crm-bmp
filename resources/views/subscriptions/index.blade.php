@@ -551,9 +551,10 @@
                                         </select>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Domain <span class="text-red-500">*</span></label>
+                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Domain Layanan Mail <span class="text-red-500">*</span></label>
                                         <input type="text" name="mail_domain" id="mail_domain" placeholder="example.com"
                                             class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Hanya mailbox dengan domain ini yang akan ditampilkan dan disinkronkan dari Zimbra.</p>
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-1 gap-6">
@@ -1679,7 +1680,7 @@ document.getElementById('auth_code').value = '';
                 let deleteId = null;
                 window.deleteData = function (id) {
                     deleteId = id;
-                    showConfirmModal('Hapus Layanan?', 'Data langganan akan dihapus permanen. Tagihan terkait mungkin akan terpengaruh.', () => {
+                    showConfirmModal('Hapus Layanan?', 'Layanan non-mail akan dihapus permanen. Layanan mail hosting akan diarsipkan agar mailbox CRM dan akun Zimbra tetap aman.', () => {
                         const btn = document.getElementById('confirmYesBtn');
                         const spinner = document.getElementById('confirmSpinner');
                         const text = document.getElementById('confirmBtnText');
@@ -1698,7 +1699,10 @@ document.getElementById('auth_code').value = '';
                             .then(data => {
                                 setButtonLoading(btn, spinner, text, false, 'Ya, Hapus!');
                                 hideConfirmModal();
-                                if (data.success) {
+                                if (data.archived) {
+                                    showToast(data.message, 'success');
+                                    window.location.reload();
+                                } else if (data.success) {
                                     tableData = tableData.filter(d => d.id !== deleteId);
                                     table.clear().rows.add(tableData).draw();
                                     showToast('Layanan berhasil dihapus!');

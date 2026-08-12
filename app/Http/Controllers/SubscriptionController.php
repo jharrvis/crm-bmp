@@ -22,6 +22,7 @@ use App\Jobs\SetMailboxStatusJob;
 use App\Services\ProrataCalculationService;
 use App\Services\WebHostResolver;
 use App\Services\ZabbixService;
+use App\Services\ZimbraMailboxSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -32,7 +33,8 @@ class SubscriptionController extends Controller
 {
     public function __construct(
         protected ZabbixService $zabbixService,
-        protected WebHostResolver $webHostResolver
+        protected WebHostResolver $webHostResolver,
+        protected ZimbraMailboxSyncService $zimbraMailboxSyncService
     ) {
         $this->middleware('permission:subscriptions.view')->only(['index', 'show']);
         $this->middleware('permission:subscriptions.create')->only(['store']);
@@ -454,6 +456,21 @@ class SubscriptionController extends Controller
      */
     public function show(Subscription $subscription)
     {
+        $mailboxSyncWarning = null;
+
+        if (! (request()->wantsJson() || request()->ajax()) && auth()->user()?->can('mailboxes.view')) {
+            $mailHosting = $subscription->mailHosting()->with('mailServer')->first();
+
+            if ($mailHosting?->mailServer?->type === 'zimbra') {
+                try {
+                    $this->zimbraMailboxSyncService->sync($mailHosting);
+                } catch (\Throwable $exception) {
+                    report($exception);
+                    $mailboxSyncWarning = 'Data mailbox dari Zimbra tidak dapat diperbarui saat ini. Data lokal terakhir tetap ditampilkan.';
+                }
+            }
+        }
+
         // Load all relationships
         $subscription->load(['client', 'package.service', 'connectivity.metroEthernet.vendor', 'hosting.hostingServer', 'domain', 'mailHosting.mailServer', 'mailHosting.mailboxes']);
 
@@ -468,7 +485,7 @@ class SubscriptionController extends Controller
         $mailServers = HostingServer::where('type', 'zimbra')->get();
         $metroEthernets = MetroEthernet::with('vendor')->latest()->get();
 
-        return view('subscriptions.show', compact('subscription', 'clients', 'packages', 'routers', 'servers', 'metroEthernets', 'mailServers'));
+        return view('subscriptions.show', compact('subscription', 'clients', 'packages', 'routers', 'servers', 'metroEthernets', 'mailServers', 'mailboxSyncWarning'));
     }
 
     /**
@@ -783,6 +800,9 @@ class SubscriptionController extends Controller
                         'mailbox_quota_mb' => $package->mailbox_quota_mb ?? ($mailHosting?->mailbox_quota_mb ?? 0),
                         'alias_max' => $package->alias_max ?? ($mailHosting?->alias_max ?? 0),
                         'mail_server_type' => $server->type,
+                        'status' => in_array($subscription->status, ['suspended', 'terminated'], true)
+                            ? $subscription->status
+                            : 'active',
                         'provisioning_status' => $requiresProvisioning ? 'pending' : $mailHosting?->provisioning_status,
                         'provisioning_error' => $requiresProvisioning ? null : $mailHosting?->provisioning_error,
                     ]
@@ -792,13 +812,7 @@ class SubscriptionController extends Controller
                     $mailDomainProvisioningId = $mailHosting->id;
                 }
 
-                if ($subscription->wasChanged('status')) {
-                    if (in_array($subscription->status, ['suspended', 'terminated'], true)) {
-                        $mailboxStatusJobs = $mailHosting->mailboxes()->where('is_active', true)->pluck('id')->all();
-                    } elseif ($subscription->status === 'active') {
-                        $mailboxStatusJobs = $mailHosting->mailboxes()->where('suspended_by_subscription', true)->pluck('id')->all();
-                    }
-                }
+                // Subscription status is local-only for mail hosting and must not alter Zimbra mailboxes.
             }
 
             $prorataService = new ProrataCalculationService;
@@ -878,6 +892,35 @@ class SubscriptionController extends Controller
      */
     public function destroy(Request $request, Subscription $subscription)
     {
+        $mailHosting = $subscription->mailHosting;
+
+        if ($mailHosting) {
+            // Preserve local mail history and never propagate subscription removal to Zimbra.
+            DB::transaction(function () use ($subscription, $mailHosting) {
+                $subscription->update([
+                    'status' => 'terminated',
+                    'terminated_at' => $subscription->terminated_at ?? now(),
+                    'termination_reason' => $subscription->termination_reason ?? 'Layanan mail hosting dihentikan dari CRM. Akun Zimbra dipertahankan.',
+                ]);
+
+                $mailHosting->update(['status' => 'terminated']);
+                $mailHosting->mailboxes()
+                    ->where('provisioning_status', 'deleting')
+                    ->update([
+                        'provisioning_status' => 'ready',
+                        'provisioning_error' => 'Penghapusan dibatalkan karena layanan dihentikan dari CRM.',
+                    ]);
+            });
+
+            $message = 'Layanan mail hosting ditandai berhenti dan diarsipkan. Data mailbox CRM serta akun Zimbra tetap dipertahankan.';
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => true, 'archived' => true, 'message' => $message]);
+            }
+
+            return redirect()->route('subscriptions.index')->with('success', $message);
+        }
+
         $subscription->delete(); // Cascade defined in DB
 
         if ($request->wantsJson() || $request->ajax()) {

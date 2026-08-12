@@ -7,12 +7,20 @@ Semua perubahan penting pada project ini dicatat di file ini.
 ### Added
 - Mail Hosting sekarang dapat menyinkronkan akun existing dari Zimbra ke daftar mailbox CRM melalui proses queue read-only. Akun hasil impor ditandai **Read-only dari Zimbra** sehingga tidak dapat disuspend, diaktifkan, atau dihapus secara tidak sengaja dari CRM.
 - Permission `mailboxes.sync` ditampilkan pada group **Bisnis** di Manajemen Role untuk mengatur akses sinkronisasi mailbox.
+- Daftar Mailbox sekarang menyediakan pencarian alamat email dan pagination agar domain dengan banyak akun tetap mudah dikelola.
+
+### Changed
+- Halaman detail subscription mail hosting dan Kelola Mailbox kini menarik metadata read-only dari Zimbra saat dibuka. Status akun, quota, dan display name lokal diperbarui tanpa membuat perubahan pada Zimbra.
+- Domain layanan mail kini dijelaskan sebagai batas sinkronisasi: hanya alamat email pada domain layanan yang dapat ditampilkan dan ditautkan ke mailbox CRM.
+
+### Security
+- Penghapusan layanan mail hosting sekarang mengarsipkan layanan secara lokal, bukan menghapus record cascade. Data mailbox CRM serta akun/domain Zimbra dipertahankan, dan job Zimbra yang masih antre berhenti jika layanan tidak lagi aktif.
 
 ### Fixed
 - Pencarian akun Zimbra untuk domain mail kini memakai filter `mail=*@domain`, sehingga akun existing pada domain layanan dapat ditemukan dengan benar.
 
 ### Deployment Notes
-- Jalankan `php artisan migrate` untuk menambahkan penanda mailbox managed/read-only.
+- Jalankan `php artisan migrate` untuk menambahkan penanda mailbox managed/read-only serta metadata sinkronisasi Zimbra.
 - Jalankan `php artisan db:seed --class=PermissionSeeder` lalu `php artisan permission:cache-reset` untuk membuat permission `mailboxes.sync` tanpa menghapus permission role custom.
 - Pastikan queue worker aktif, kemudian jalankan sinkronisasi dari halaman daftar mailbox layanan terkait.
 

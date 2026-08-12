@@ -48,6 +48,7 @@ Mengelola layanan *mail hosting* untuk langganan pelanggan ISP. Modul ini terint
 | `alias_count` | Jumlah alias |
 | `is_active` | Status aktif (sync dari server) |
 | `managed_by_crm` | `true` bila mailbox dibuat CRM; `false` bila diimpor dari Zimbra dan hanya dapat dibaca dari CRM |
+| `remote_status` | Status terakhir dari Zimbra, mis. `active`, `maintenance`, atau `locked` |
 
 ## Route Utama
 
@@ -92,10 +93,23 @@ Mengelola layanan *mail hosting* untuk langganan pelanggan ISP. Modul ini terint
 ### Sinkronisasi Mailbox Existing dari Zimbra
 
 1. Staff dengan permission `mailboxes.sync` menekan **Sinkronkan dari Zimbra** pada daftar mailbox.
-2. Job membaca akun untuk domain layanan menggunakan filter Zimbra `(mail=*@domain)`. Operasi ini tidak membuat, mengubah, menonaktifkan, maupun menghapus akun di Zimbra.
+2. Job membaca akun untuk domain layanan menggunakan filter Zimbra `(mail=*@domain)` serta metadata `displayName`, `zimbraMailQuota`, dan `zimbraAccountStatus`. Operasi ini tidak membuat, mengubah, menonaktifkan, maupun menghapus akun di Zimbra.
 3. Akun yang belum ada di tabel lokal `mailboxes` diimpor dengan `managed_by_crm=false`, status `ready`, dan tanpa password.
-4. Akun lokal yang sudah ada tidak ditimpa. Jika email sudah terkait ke layanan mail hosting lain, akun dilewati dan relasinya tidak diubah.
+4. Untuk akun yang sudah terkait pada layanan yang sama, CRM memperbarui metadata lokal status, quota, dan display name dari Zimbra. Jika email sudah terkait ke layanan mail hosting lain, akun dilewati dan relasinya tidak diubah.
 5. Mailbox hasil impor tampil sebagai **Read-only dari Zimbra**. Aksi suspend, activate, dan hapus tidak tersedia dari CRM untuk mencegah perubahan tidak sengaja pada akun legacy.
+
+### Pembaruan Saat Halaman Dibuka
+
+- Saat halaman detail subscription mail hosting atau halaman **Kelola Mailbox** dibuka oleh user dengan `mailboxes.view`, CRM menjalankan pull metadata Zimbra secara langsung.
+- Jika Zimbra gagal dihubungi, halaman tetap menampilkan data lokal terakhir beserta peringatan aman. Kegagalan tidak menghapus atau mengubah status mailbox lokal.
+- Daftar mailbox menggunakan pagination dan pencarian alamat email dari database lokal setelah proses pull selesai.
+
+### Batas Domain dan Penghapusan Layanan
+
+- Domain adalah field wajib pada setiap layanan mail hosting. Sinkronisasi hanya menerima email dengan suffix `@domain` yang tersimpan pada layanan tersebut; mailbox dari domain lain tidak akan ditampilkan atau ditautkan.
+- Aksi hapus pada layanan mail hosting tidak melakukan hard delete. CRM mengubah status layanan menjadi `terminated` dan mempertahankan record mail hosting serta mailbox lokal sebagai arsip.
+- Penghapusan layanan tidak memanggil `DeleteAccount`, `DeleteDomain`, atau API Zimbra lain. Akun, domain, dan isi mailbox di Zimbra tetap utuh.
+- Job provisioning, perubahan status, atau penghapusan mailbox yang masih mengantre akan berhenti bila layanan sudah berstatus bukan `active`, sehingga tidak ada operasi Zimbra lanjutan setelah layanan dihentikan dari CRM.
 
 ### Suspend / Activate
 
@@ -149,6 +163,7 @@ Server mail tetap memakai entitas `HostingServer` yang sama dengan web hosting a
 | `2026_08_08_000003_create_subscription_mail_hostings_table` | Tabel induk mail hosting |
 | `2026_08_08_000004_create_mailboxes_table` | Tabel mailbox |
 | `2026_08_11_000001_add_managed_by_crm_to_mailboxes_table` | Penanda mailbox yang dibuat CRM atau diimpor read-only dari Zimbra |
+| `2026_08_11_000002_add_remote_sync_metadata_to_mailboxes_table` | Status remote dan waktu/error sinkronisasi mailbox Zimbra |
 
 Seeder: `PermissionSeeder` menambah modul `mailboxes`, termasuk permission `mailboxes.sync`. Seeder menambahkan permission tanpa mereset permission role custom yang sudah ada.
 
@@ -162,7 +177,7 @@ Seeder: `PermissionSeeder` menambah modul `mailboxes`, termasuk permission `mail
 - Zimbra: `zimbra` account status `maintenance` dipakai untuk suspend.
 - Auth token dik-cache 55 menit per server dan dibersihkan saat konfigurasi server diperbarui.
 - Credential tidak disertakan pada respons JSON atau activity log.
-- Sinkronisasi mailbox existing bersifat import metadata satu arah. Status, quota, alias, dan penghapusan akun existing belum disinkronkan atau diubah oleh CRM.
+- Sinkronisasi mailbox existing bersifat import metadata satu arah. Status, quota, dan display name dibaca dari Zimbra; alias dan deteksi akun remote yang sudah hilang belum diimplementasikan.
 - Domain/server tidak dapat diganti setelah mailbox dibuat; gunakan prosedur migrasi mail hosting.
 - Alias belum diimplementasikan. `alias_max` hanya dicatat sebagai batas paket dan tidak boleh ditampilkan sebagai fitur yang sudah tersedia.
 - Gunakan versi Zimbra yang masih menerima security update; Zimbra 8.8.15 sudah melewati masa technical guidance.

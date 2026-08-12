@@ -20,6 +20,7 @@ class Mailbox extends Model
         'alias_count',
         'is_active',
         'managed_by_crm',
+        'remote_status',
         'suspended_by_subscription',
         'provisioning_status',
         'provisioning_error',

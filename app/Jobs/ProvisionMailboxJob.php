@@ -35,6 +35,10 @@ class ProvisionMailboxJob implements ShouldQueue
         }
 
         $mailHosting = $mailbox->mailHosting;
+        if ($mailHosting->status !== 'active') {
+            return;
+        }
+
         if ($mailHosting->provisioning_status !== 'ready') {
             $this->release(60);
 

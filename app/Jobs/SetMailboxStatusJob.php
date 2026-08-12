@@ -29,6 +29,10 @@ class SetMailboxStatusJob implements ShouldQueue
             throw new \RuntimeException('Mailbox hasil sinkronisasi tidak dapat diubah oleh CRM.');
         }
 
+        if ($mailbox->mailHosting->status !== 'active') {
+            return;
+        }
+
         $service = $resolver->resolve($mailbox->mailHosting->mailServer);
         $success = $this->activate ? $service->activate($mailbox->email) : $service->suspend($mailbox->email);
 

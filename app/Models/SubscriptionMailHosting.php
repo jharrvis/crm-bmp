@@ -24,6 +24,8 @@ class SubscriptionMailHosting extends Model
         'provisioning_status',
         'provisioning_error',
         'provisioned_at',
+        'mailboxes_last_synced_at',
+        'mailboxes_sync_error',
     ];
 
     protected $casts = [
@@ -32,6 +34,7 @@ class SubscriptionMailHosting extends Model
         'alias_max' => 'integer',
         'admin_password_encrypted' => 'encrypted',
         'provisioned_at' => 'datetime',
+        'mailboxes_last_synced_at' => 'datetime',
     ];
 
     protected $hidden = [

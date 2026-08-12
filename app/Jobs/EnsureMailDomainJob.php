@@ -26,6 +26,10 @@ class EnsureMailDomainJob implements ShouldQueue
     {
         $mailHosting = SubscriptionMailHosting::with('mailServer')->findOrFail($this->mailHostingId);
 
+        if ($mailHosting->status !== 'active') {
+            return;
+        }
+
         if ($mailHosting->provisioning_status === 'ready') {
             return;
         }

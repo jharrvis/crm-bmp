@@ -9,6 +9,7 @@ use App\Jobs\DeleteMailboxJob;
 use App\Jobs\ProvisionMailboxJob;
 use App\Jobs\SetMailboxStatusJob;
 use App\Jobs\SyncZimbraMailboxesJob;
+use App\Services\ZimbraMailboxSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -17,15 +18,34 @@ class MailboxController extends Controller
     /**
      * Display a listing of mailboxes for a subscription.
      */
-    public function index(Subscription $subscription)
+    public function index(Request $request, Subscription $subscription, ZimbraMailboxSyncService $syncService)
     {
         $this->authorize('mailboxes.view');
 
-        $mailHosting = $subscription->mailHosting()->with(['mailServer', 'mailboxes'])->first();
+        $mailHosting = $subscription->mailHosting()->with('mailServer')->first();
 
         abort_if(! $mailHosting, 404, 'Langganan ini tidak memiliki layanan mail hosting.');
 
-        return view('mailboxes.index', compact('subscription', 'mailHosting'));
+        $syncWarning = null;
+
+        if ($mailHosting->mailServer?->type === 'zimbra') {
+            try {
+                $syncService->sync($mailHosting);
+                $mailHosting->refresh();
+            } catch (\Throwable $exception) {
+                report($exception);
+                $syncWarning = 'Data Zimbra tidak dapat diperbarui saat ini. Menampilkan data lokal terakhir.';
+            }
+        }
+
+        $search = trim((string) $request->query('search', ''));
+        $mailboxes = $mailHosting->mailboxes()
+            ->when($search !== '', fn ($query) => $query->where('email', 'like', '%'.$search.'%'))
+            ->orderBy('email')
+            ->paginate(50)
+            ->withQueryString();
+
+        return view('mailboxes.index', compact('subscription', 'mailHosting', 'mailboxes', 'search', 'syncWarning'));
     }
 
     /**
@@ -110,6 +130,10 @@ class MailboxController extends Controller
 
         if (! $mailHosting || ! $mailHosting->mailServer) {
             return back()->with('error', 'Layanan atau server mail hosting tidak ditemukan.');
+        }
+
+        if ($mailHosting->mailServer->type !== 'zimbra') {
+            return back()->with('error', 'Sinkronisasi mailbox saat ini hanya tersedia untuk server Zimbra.');
         }
 
         SyncZimbraMailboxesJob::dispatch($mailHosting->id, auth()->id())->afterCommit();

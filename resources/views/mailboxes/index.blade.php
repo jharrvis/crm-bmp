@@ -14,8 +14,14 @@
                         <div class="mt-2">
                             <a href="{{ route('subscriptions.show', $subscription) }}" class="text-sm text-blue-600 hover:underline">← Kembali ke detail layanan</a>
                         </div>
+                        @if($mailHosting->mailboxes_last_synced_at)
+                            <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                                Metadata Zimbra terakhir diperbarui {{ $mailHosting->mailboxes_last_synced_at->diffForHumans() }}.
+                            </p>
+                        @endif
                     </div>
                     @can('mailboxes.sync')
+                        @if($mailHosting->mailServer?->type === 'zimbra')
                         <form method="POST" action="{{ route('subscriptions.mailboxes.sync', $subscription) }}"
                             data-confirm-title="Sinkronkan Mailbox Zimbra?"
                             data-confirm-text="CRM hanya akan membaca akun pada domain ini dan menambahkan record lokal yang belum ada. Tidak ada akun Zimbra yang dibuat, diubah, atau dihapus.">
@@ -26,6 +32,7 @@
                                 Sinkronkan dari Zimbra
                             </button>
                         </form>
+                        @endif
                     @endcan
                 </div>
             </div>
@@ -47,6 +54,12 @@
                             <li>{{ $error }}</li>
                         @endforeach
                     </ul>
+                </div>
+            @endif
+
+            @if($syncWarning ?? false)
+                <div class="mx-6 mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+                    {{ $syncWarning }}
                 </div>
             @endif
 
@@ -88,6 +101,17 @@
                 </div>
             @endcan
 
+            <div class="px-6 py-4 md:px-8 border-b border-slate-200 dark:border-slate-700">
+                <form method="GET" class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="relative w-full sm:max-w-md">
+                        <i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"></i>
+                        <input type="search" name="search" value="{{ $search }}" placeholder="Cari alamat email..."
+                            class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white">
+                    </div>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">{{ $mailboxes->total() }} mailbox ditemukan</p>
+                </form>
+            </div>
+
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm whitespace-nowrap">
                     <thead>
@@ -101,7 +125,7 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-                        @forelse($mailHosting->mailboxes as $mailbox)
+                        @forelse($mailboxes as $mailbox)
                             <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
                                 <td class="px-6 py-4 font-mono text-slate-800 dark:text-slate-200">{{ $mailbox->email }}</td>
                                 <td class="px-6 py-4 text-slate-800 dark:text-slate-200">{{ $mailbox->display_name ?? '-' }}</td>
@@ -119,7 +143,14 @@
                                             'deleting' => 'Menunggu penghapusan',
                                             'failed' => 'Provisioning gagal',
                                             'delete_failed' => 'Hapus gagal',
-                                            default => $mailbox->is_active ? 'Aktif' : 'Nonaktif',
+                                            default => match($mailbox->remote_status) {
+                                                'maintenance' => 'Maintenance',
+                                                'locked' => 'Terkunci',
+                                                'closed' => 'Ditutup',
+                                                'lockout' => 'Lockout',
+                                                'unknown' => 'Status tidak diketahui',
+                                                default => $mailbox->is_active ? 'Aktif' : 'Nonaktif',
+                                            },
                                         } }}
                                     </span>
                                     @if($mailbox->provisioning_error)
@@ -182,6 +213,11 @@
                     </tbody>
                 </table>
             </div>
+            @if($mailboxes->hasPages())
+                <div class="px-6 py-4 md:px-8 border-t border-slate-200 dark:border-slate-700">
+                    {{ $mailboxes->links() }}
+                </div>
+            @endif
         </div>
     </div>
 </x-app-layout>
