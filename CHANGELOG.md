@@ -9,6 +9,7 @@ Semua perubahan penting pada project ini dicatat di file ini.
 - Detail Mail Hosting diringkas menjadi informasi layanan, server, pemakaian akun, dan akses ke halaman Kelola Mailbox. Daftar mailbox penuh dipusatkan pada Kelola Mailbox.
 - Kelola Mailbox menampilkan pemakaian akun terkini, sinkronisasi metadata Zimbra saat halaman dibuka, serta pencarian alamat email live tanpa reload dan tanpa pull Zimbra berulang.
 - Detail Mail Hosting kini memakai username dan credential admin dari konfigurasi Mail Server. Kelola Mailbox menampilkan pemakaian ruang aktual tiap akun dari Zimbra bila atribut `zimbraMailUsedQuota` tersedia.
+- Server Mail Zimbra kini memiliki halaman detail dengan konfigurasi lokal, versi bila tersedia, daftar service aktif, status service, serta port service yang dibaca secara read-only dari Admin SOAP API.
 
 ### Security
 - Integrasi Zimbra ditegaskan sebagai read-only: CRM tidak lagi memprovisikan domain, membuat, mengubah status, atau menghapus mailbox Zimbra, termasuk dari job yang telah lebih dahulu masuk antrean.

@@ -32,6 +32,7 @@ class ZimbraService implements MailServerAdapter
         $baseUrl = "https://{$server->host}:{$server->port}{$endpoint}";
 
         Cache::forget('zimbra:token:'.sha1($baseUrl.'|'.$account));
+        Cache::forget('zimbra:server-overview:'.$server->id);
     }
 
     /**
@@ -330,5 +331,98 @@ class ZimbraService implements MailServerAdapter
         }
 
         return ['success' => true, 'data' => $accounts, 'message' => 'OK'];
+    }
+
+    /**
+     * Read a small, safe subset of server metadata for the CRM detail page.
+     * Failures are returned as warnings so unavailable optional API rights do not break the page.
+     */
+    public function serverOverview(): array
+    {
+        $cacheKey = 'zimbra:server-overview:'.$this->server->id;
+
+        return Cache::remember($cacheKey, now()->addMinutes(5), function (): array {
+            $token = $this->authToken();
+            if (! $token) {
+                return ['success' => false, 'message' => 'Autentikasi Zimbra gagal.', 'data' => []];
+            }
+
+            $warnings = [];
+            $data = [
+                'server_id' => null,
+                'server_name' => $this->server->host,
+                'attributes' => [],
+                'version' => null,
+                'services' => [],
+            ];
+
+            $requestedAttributes = implode(',', [
+                'zimbraServiceHostname', 'zimbraServiceEnabled', 'zimbraMailHost', 'zimbraMtaMyHostname',
+                'zimbraAdminPort', 'zimbraMailPort', 'zimbraMailSSLPort', 'zimbraImapBindPort',
+                'zimbraImapSSLBindPort', 'zimbraPop3BindPort', 'zimbraPop3SSLBindPort', 'zimbraLmtpBindPort',
+            ]);
+            $serverResponse = $this->request(
+                '<GetServerRequest xmlns="urn:zimbraAdmin" applyConfig="1" attrs="'.e($requestedAttributes).'">'
+                .'<server by="name">'.e($this->server->host).'</server>'
+                .'</GetServerRequest>',
+                $token,
+            );
+
+            if ($serverResponse === false) {
+                $warnings[] = 'Detail konfigurasi server tidak tersedia dari API.';
+            } else {
+                $serverNode = $serverResponse->xpath('//*[local-name()="server"]')[0] ?? null;
+                if ($serverNode) {
+                    $data['server_id'] = (string) $serverNode['id'];
+                    $data['server_name'] = (string) $serverNode['name'] ?: $data['server_name'];
+                    foreach ($serverNode->xpath('./*[local-name()="a"]') as $attribute) {
+                        $name = (string) $attribute['n'];
+                        $value = (string) $attribute;
+                        if ($name === 'zimbraServiceEnabled') {
+                            $data['attributes'][$name][] = $value;
+                        } else {
+                            $data['attributes'][$name] = $value;
+                        }
+                    }
+                }
+            }
+
+            $versionResponse = $this->request('<GetVersionInfoRequest xmlns="urn:zimbraAdmin"/>', $token);
+            if ($versionResponse === false) {
+                $warnings[] = 'Versi Zimbra tidak diizinkan atau tidak tersedia dari API.';
+            } else {
+                $versionNode = $versionResponse->xpath('//*[local-name()="versionInfo" or local-name()="version"]')[0] ?? null;
+                $data['version'] = $versionNode
+                    ? (trim((string) $versionNode['version']) ?: trim((string) $versionNode))
+                    : null;
+            }
+
+            $serviceResponse = $this->request('<GetServiceStatusRequest xmlns="urn:zimbraAdmin"/>', $token);
+            if ($serviceResponse === false) {
+                $warnings[] = 'Status service tidak tersedia dari API.';
+            } else {
+                $hostnames = array_filter([
+                    strtolower($this->server->host),
+                    strtolower((string) ($data['attributes']['zimbraServiceHostname'] ?? '')),
+                    strtolower($data['server_name']),
+                ]);
+                foreach ($serviceResponse->xpath('//*[local-name()="status"]') as $status) {
+                    if (! in_array(strtolower((string) $status['server']), $hostnames, true)) {
+                        continue;
+                    }
+                    $data['services'][] = [
+                        'name' => (string) $status['service'],
+                        'running' => (string) $status === '1',
+                        'checked_at' => (int) $status['t'],
+                    ];
+                }
+            }
+
+            return [
+                'success' => true,
+                'message' => $warnings === [] ? null : implode(' ', $warnings),
+                'data' => $data,
+            ];
+        });
     }
 }

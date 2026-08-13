@@ -135,6 +135,16 @@ Mengelola layanan *mail hosting* untuk langganan pelanggan ISP. Modul ini terint
 
 Server mail tetap memakai entitas `HostingServer` yang sama dengan web hosting agar credential, permission, audit log, dan koneksi infrastruktur tidak terduplikasi. Tampilan Infrastruktur memisahkan daftar **Server Web Hosting** dan **Server Mail Hosting** berdasarkan tipe.
 
+### Detail Server Zimbra
+
+Halaman detail server mail membaca data berikut secara *read-only* dan menyimpannya pada cache singkat (5 menit):
+
+- `GetServerRequest`: ID/hostname server, service yang diaktifkan, serta port service yang dikonfigurasi.
+- `GetVersionInfoRequest`: versi Zimbra jika server mengizinkan informasi versi melalui API.
+- `GetServiceStatusRequest`: status `running/stopped` service pada hostname server.
+
+Data OS, kapasitas disk fisik, CPU, RAM, dan beban server tidak diambil dari Admin SOAP API pada tahap ini karena bukan kontrak data yang konsisten untuk semua instalasi Zimbra. Gunakan Zabbix atau monitoring agent untuk metrik infrastruktur tersebut.
+
 `HostingServer` untuk mail perlu diisi:
 
 - `type=zimbra`

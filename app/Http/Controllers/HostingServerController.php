@@ -83,6 +83,17 @@ class HostingServerController extends Controller
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json($server);
         }
+
+        if ($server->type === 'zimbra') {
+            if ($request->boolean('refresh')) {
+                ZimbraService::forgetAuthToken($server);
+            }
+
+            $overview = (new ZimbraService($server))->serverOverview();
+
+            return view('servers.show-mail', compact('server', 'overview'));
+        }
+
         return redirect()->route('servers.index');
     }
 
