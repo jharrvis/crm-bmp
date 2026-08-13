@@ -289,7 +289,7 @@ class ZimbraService implements MailServerAdapter
             return ['success' => false, 'data' => [], 'message' => 'Gagal autentikasi ke server Zimbra.'];
         }
 
-        $body = '<SearchAccountsRequest xmlns="urn:zimbraAdmin" applyCos="1" attrs="displayName,zimbraMailQuota,zimbraAccountStatus">'
+        $body = '<SearchAccountsRequest xmlns="urn:zimbraAdmin" applyCos="1" attrs="displayName,zimbraMailQuota,zimbraMailUsedQuota,zimbraAccountStatus">'
             .'<query>(mail=*@'.e($domain).')</query>'
             .'<limit>0</limit>'
             .'</SearchAccountsRequest>';
@@ -310,6 +310,7 @@ class ZimbraService implements MailServerAdapter
             }
 
             $quotaBytes = $attributes['zimbraMailQuota'] ?? null;
+            $usedQuotaBytes = $attributes['zimbraMailUsedQuota'] ?? null;
             $accounts[] = [
                 'id' => (string) $node['id'],
                 'email' => strtolower((string) $node['name']),
@@ -319,6 +320,10 @@ class ZimbraService implements MailServerAdapter
                 'quota_mb' => is_numeric($quotaBytes) && (int) $quotaBytes > 0
                     ? (int) ceil(((int) $quotaBytes) / 1048576)
                     : 0,
+                'has_used_quota' => array_key_exists('zimbraMailUsedQuota', $attributes),
+                'used_quota_mb' => is_numeric($usedQuotaBytes) && (int) $usedQuotaBytes >= 0
+                    ? (int) ceil(((int) $usedQuotaBytes) / 1048576)
+                    : null,
                 'has_status' => array_key_exists('zimbraAccountStatus', $attributes),
                 'status' => strtolower($attributes['zimbraAccountStatus'] ?? 'active'),
             ];

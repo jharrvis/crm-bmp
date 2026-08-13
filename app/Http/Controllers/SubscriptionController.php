@@ -165,20 +165,22 @@ class SubscriptionController extends Controller
     {
         $this->authorize('servers.manage');
 
-        $mailHosting = $subscription->mailHosting;
+        $mailHosting = $subscription->mailHosting()->with('mailServer')->first();
         abort_if(! $mailHosting, 404, 'Langganan ini tidak memiliki layanan mail hosting.');
+        abort_if(! $mailHosting->mailServer, 404, 'Server mail hosting tidak ditemukan.');
 
-        activity('mail-hosting')
-            ->performedOn($mailHosting)
+        activity('servers')
+            ->performedOn($mailHosting->mailServer)
             ->causedBy(auth()->user())
             ->withProperties([
-                'subject_label' => $mailHosting->domain,
+                'subject_label' => $mailHosting->mailServer->name,
                 'event_label' => 'Akses kredensial admin mail hosting',
             ])
             ->log('Menyalin password admin mail hosting');
 
         return response()->json([
-            'password' => $mailHosting->admin_password_encrypted,
+            'admin_email' => $mailHosting->mailServer->username ?: $mailHosting->mailServer->api_key,
+            'password' => $mailHosting->mailServer->secret_key,
         ]);
     }
 

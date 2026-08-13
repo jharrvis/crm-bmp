@@ -69,6 +69,10 @@ class ZimbraMailboxSyncService
                         $metadata['quota_mb'] = max(0, (int) ($account['quota_mb'] ?? 0));
                     }
 
+                    if ($account['has_used_quota'] ?? false) {
+                        $metadata['used_quota_mb'] = max(0, (int) ($account['used_quota_mb'] ?? 0));
+                    }
+
                     if ($account['has_status'] ?? false) {
                         $remoteStatus = $this->normalizeStatus($account['status'] ?? null);
                         $metadata['is_active'] = $remoteStatus === 'active';
@@ -79,6 +83,7 @@ class ZimbraMailboxSyncService
                         $metadata = array_replace([
                             'display_name' => null,
                             'quota_mb' => 0,
+                            'used_quota_mb' => null,
                             'is_active' => true,
                             'remote_status' => 'unknown',
                         ], $metadata);
@@ -89,6 +94,7 @@ class ZimbraMailboxSyncService
                             'zimbra_id' => filled($account['id'] ?? null) ? $account['id'] : null,
                             'display_name' => $metadata['display_name'],
                             'quota_mb' => $metadata['quota_mb'],
+                            'used_quota_mb' => $metadata['used_quota_mb'],
                             'alias_count' => 0,
                             'is_active' => $metadata['is_active'],
                             'managed_by_crm' => false,

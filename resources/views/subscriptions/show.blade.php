@@ -682,9 +682,9 @@
                             </p>
                         </div>
                         <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
-                            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Admin Email</p>
+                            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Admin Server Mail</p>
                             <p class="text-slate-800 dark:text-white font-mono text-lg">
-                                {{ $subscription->mailHosting->admin_email ?? '-' }}
+                                {{ $subscription->mailHosting->mailServer?->username ?: $subscription->mailHosting->mailServer?->api_key ?: '-' }}
                             </p>
                         </div>
                         <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
@@ -2609,7 +2609,7 @@ document.getElementById('auth_code').value = '';
                             return;
                         }
                         await navigator.clipboard.writeText(payload.password);
-                        window.showToast?.('Password admin berhasil disalin.', 'success');
+                        window.showToast?.(`Password admin ${payload.admin_email || 'server'} berhasil disalin.`, 'success');
                     } catch (_) {
                         window.showToast?.('Password admin tidak dapat disalin. Periksa hak akses Anda.', 'error');
                     }

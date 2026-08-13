@@ -4,7 +4,7 @@
             <tr class="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
                 <th class="px-6 py-4 font-bold text-slate-500 dark:text-slate-400">Email</th>
                 <th class="px-6 py-4 font-bold text-slate-500 dark:text-slate-400">Display Name</th>
-                <th class="px-6 py-4 font-bold text-slate-500 dark:text-slate-400">Quota</th>
+                <th class="px-6 py-4 font-bold text-slate-500 dark:text-slate-400">Pemakaian Storage</th>
                 <th class="px-6 py-4 font-bold text-slate-500 dark:text-slate-400">Alias</th>
                 <th class="px-6 py-4 font-bold text-slate-500 dark:text-slate-400">Status</th>
                 <th class="px-6 py-4 font-bold text-slate-500 dark:text-slate-400 text-right">Aksi</th>
@@ -15,7 +15,20 @@
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
                     <td class="px-6 py-4 font-mono text-slate-800 dark:text-slate-200">{{ $mailbox->email }}</td>
                     <td class="px-6 py-4 text-slate-800 dark:text-slate-200">{{ $mailbox->display_name ?? '-' }}</td>
-                    <td class="px-6 py-4 text-slate-800 dark:text-slate-200">{{ $mailbox->quota_mb }}{{ $mailbox->quota_mb > 0 ? ' MB' : '' }}</td>
+                    <td class="px-6 py-4 text-slate-800 dark:text-slate-200">
+                        @if($mailbox->used_quota_mb !== null)
+                            <p class="font-medium">{{ number_format($mailbox->used_quota_mb, 0, ',', '.') }} MB{{ $mailbox->quota_mb > 0 ? ' / '.number_format($mailbox->quota_mb, 0, ',', '.').' MB' : '' }}</p>
+                            @if($mailbox->quota_mb > 0)
+                                <div class="mt-1 h-1.5 w-28 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                                    <div class="h-full rounded-full {{ $mailbox->used_quota_mb > $mailbox->quota_mb ? 'bg-red-500' : 'bg-blue-500' }}" style="width: {{ min(100, (int) round(($mailbox->used_quota_mb / $mailbox->quota_mb) * 100)) }}%"></div>
+                                </div>
+                            @endif
+                        @elseif($mailbox->quota_mb > 0)
+                            <span class="text-slate-500 dark:text-slate-400">- / {{ number_format($mailbox->quota_mb, 0, ',', '.') }} MB</span>
+                        @else
+                            <span class="text-slate-500 dark:text-slate-400">Belum tersedia</span>
+                        @endif
+                    </td>
                     <td class="px-6 py-4 text-slate-800 dark:text-slate-200">{{ $mailbox->alias_count }}</td>
                     <td class="px-6 py-4">
                         <span @class([

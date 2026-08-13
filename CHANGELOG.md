@@ -8,13 +8,15 @@ Semua perubahan penting pada project ini dicatat di file ini.
 - Form layanan Mail Hosting kini menawarkan domain yang sudah tercatat pada langganan domain pelanggan, dengan opsi input manual bila domain belum dikelola CRM. Domain dan server mail yang tersimpan kini dimuat kembali saat edit layanan.
 - Detail Mail Hosting diringkas menjadi informasi layanan, server, pemakaian akun, dan akses ke halaman Kelola Mailbox. Daftar mailbox penuh dipusatkan pada Kelola Mailbox.
 - Kelola Mailbox menampilkan pemakaian akun terkini, sinkronisasi metadata Zimbra saat halaman dibuka, serta pencarian alamat email live tanpa reload dan tanpa pull Zimbra berulang.
+- Detail Mail Hosting kini memakai username dan credential admin dari konfigurasi Mail Server. Kelola Mailbox menampilkan pemakaian ruang aktual tiap akun dari Zimbra bila atribut `zimbraMailUsedQuota` tersedia.
 
 ### Security
 - Integrasi Zimbra ditegaskan sebagai read-only: CRM tidak lagi memprovisikan domain, membuat, mengubah status, atau menghapus mailbox Zimbra, termasuk dari job yang telah lebih dahulu masuk antrean.
 - Password admin mail hosting dapat disalin hanya oleh pengguna dengan permission `servers.manage`; aksesnya dicatat tanpa menyimpan credential pada Activity Log.
 
 ### Deployment Notes
-- Tidak ada migration atau seeder baru. Jalankan `php artisan optimize:clear` dan restart queue worker setelah deploy agar job lama memakai aturan read-only terbaru.
+- Jalankan `php artisan migrate` untuk menambahkan kolom pemakaian ruang mailbox.
+- Jalankan `php artisan optimize:clear` dan restart queue worker setelah deploy agar job lama memakai aturan read-only terbaru.
 
 ## 2026-08-11
 

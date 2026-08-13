@@ -17,6 +17,7 @@ class Mailbox extends Model
         'display_name',
         'password_encrypted',
         'quota_mb',
+        'used_quota_mb',
         'alias_count',
         'is_active',
         'managed_by_crm',
@@ -30,6 +31,7 @@ class Mailbox extends Model
     protected $casts = [
         'password_encrypted' => 'encrypted',
         'quota_mb' => 'integer',
+        'used_quota_mb' => 'integer',
         'alias_count' => 'integer',
         'is_active' => 'boolean',
         'managed_by_crm' => 'boolean',

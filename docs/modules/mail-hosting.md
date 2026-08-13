@@ -45,6 +45,7 @@ Mengelola layanan *mail hosting* untuk langganan pelanggan ISP. Modul ini terint
 | `display_name` | Nama tampilan |
 | `password_encrypted` | Password mailbox, dienkripsi dan tidak pernah dikirim pada respons JSON |
 | `quota_mb` | Kuota dalam MB |
+| `used_quota_mb` | Pemakaian ruang terakhir dari Zimbra dalam MB; `null` bila atribut belum tersedia |
 | `alias_count` | Jumlah alias |
 | `is_active` | Status aktif (sync dari server) |
 | `managed_by_crm` | Penanda asal record. Pada integrasi Zimbra read-only, akun hasil sync selalu `false` dan tidak dapat diubah dari CRM |
@@ -98,7 +99,7 @@ Mengelola layanan *mail hosting* untuk langganan pelanggan ISP. Modul ini terint
 
 ### Pembaruan Saat Halaman Dibuka
 
-- Saat halaman detail subscription mail hosting atau halaman **Kelola Mailbox** dibuka oleh user dengan `mailboxes.view`, CRM menjalankan pull metadata Zimbra secara langsung. Halaman Kelola Mailbox juga menampilkan pemakaian akun aktual terhadap limit paket.
+- Saat halaman detail subscription mail hosting atau halaman **Kelola Mailbox** dibuka oleh user dengan `mailboxes.view`, CRM menjalankan pull metadata Zimbra secara langsung. Halaman Kelola Mailbox juga menampilkan pemakaian ruang aktual setiap akun (`zimbraMailUsedQuota`) terhadap quota mailbox bila atribut tersedia.
 - Jika Zimbra gagal dihubungi, halaman tetap menampilkan data lokal terakhir beserta peringatan aman. Kegagalan tidak menghapus atau mengubah status mailbox lokal.
 - Daftar mailbox menggunakan pagination dan pencarian alamat email live dari database lokal setelah proses pull selesai. Pencarian live tidak memanggil Zimbra berulang kali.
 
@@ -112,7 +113,7 @@ Mengelola layanan *mail hosting* untuk langganan pelanggan ISP. Modul ini terint
 ### Batas Aksi Zimbra
 
 - CRM tidak menyediakan tambah, suspend, aktifkan, hapus, reset password, atau provisioning domain untuk Zimbra.
-- Password admin layanan hanya dapat disalin oleh user dengan permission `servers.manage`; setiap akses dicatat di Activity Log tanpa menyimpan nilai password pada log.
+- Username dan password admin yang tampil pada detail layanan dibaca dari konfigurasi `HostingServer`, bukan dari data langganan. Password hanya dapat disalin oleh user dengan permission `servers.manage`; setiap akses dicatat di Activity Log tanpa menyimpan nilai password pada log.
 - Informasi server yang ditampilkan adalah konfigurasi yang tersedia secara lokal (engine, host/port, lokasi). Versi Zimbra dan OS tidak ditampilkan sampai endpoint read-only yang stabil tersedia dan teruji.
 
 ## Integrasi Modul Lain
