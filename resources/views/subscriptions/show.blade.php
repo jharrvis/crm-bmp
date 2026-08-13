@@ -648,13 +648,12 @@
                         {{ $mailboxSyncWarning }}
                     </div>
                 @endif
-                <div
-                    class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6">
-                    <h4 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2">
-                        <i data-lucide="mail" class="w-4 h-4"></i>
-                        Detail Mail Hosting
-                    </h4>
-                    <div class="flex justify-end mb-4">
+                <div class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+                    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <h4 class="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-slate-500"><i data-lucide="mail" class="w-4 h-4"></i>Detail Mail Hosting</h4>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Mailbox lengkap, pencarian, dan sinkronisasi tersedia pada halaman Kelola Mailbox.</p>
+                        </div>
                         @can('mailboxes.view')
                             <a href="{{ route('subscriptions.mailboxes.index', $subscription) }}"
                                 class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200 dark:shadow-none transition-all text-sm">
@@ -663,7 +662,7 @@
                             </a>
                         @endcan
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                         <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
                             <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Domain</p>
                             <p class="text-slate-800 dark:text-white font-mono text-lg">
@@ -679,7 +678,7 @@
                         <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
                             <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Tipe Server</p>
                             <p class="text-slate-800 dark:text-white font-medium text-lg uppercase">
-                                {{ $subscription->mailHosting->type ?? '-' }}
+                                {{ $subscription->mailHosting->mail_server_type ?? $subscription->mailHosting->mailServer?->type ?? '-' }}
                             </p>
                         </div>
                         <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
@@ -691,56 +690,24 @@
                         <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
                             <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Total Mailbox</p>
                             <p class="text-slate-800 dark:text-white font-medium text-lg">
-                                {{ $subscription->mailHosting->mailboxes->count() }}
+                                {{ $subscription->mailHosting->mailboxes->count() }} / {{ $subscription->mailHosting->max_mailboxes > 0 ? $subscription->mailHosting->max_mailboxes : 'Tidak dibatasi' }}
                             </p>
                         </div>
-                    </div>
-                </div>
-
-                <div
-                    class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6">
-                    <div class="flex items-center justify-between mb-6">
-                        <h4 class="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                            <i data-lucide="users" class="w-4 h-4"></i>
-                            Mailbox List
-                        </h4>
-                        <span class="text-sm font-bold text-slate-500 uppercase tracking-widest">Silakan kelola dari menu Mail Hosting</span>
-                    </div>
-                    @if($subscription->mailHosting->mailboxes && $subscription->mailHosting->mailboxes->count() > 0)
-                        <div class="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700">
-                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                                <thead class="bg-slate-50 dark:bg-slate-700/30">
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Email</th>
-                                        <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Quota</th>
-                                        <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
-                                    @foreach($subscription->mailHosting->mailboxes as $mailbox)
-                                        <tr>
-                                            <td class="px-6 py-4 text-sm font-mono text-slate-800 dark:text-white">{{ $mailbox->email }}</td>
-                                            <td class="px-6 py-4 text-sm text-slate-500">{{ $mailbox->quota_mb }} MB</td>
-                                            <td class="px-6 py-4 text-sm text-slate-500">
-                                                <span @class([
-                                                    'px-2 py-1 rounded-full text-xs font-bold',
-                                                    'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' => $mailbox->is_active,
-                                                    'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' => !$mailbox->is_active,
-                                                ])>
-                                                    {{ $mailbox->is_active ? 'Aktif' : 'Nonaktif' }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                            <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Koneksi Server</p>
+                            <p class="text-slate-800 dark:text-white font-mono text-sm">{{ $subscription->mailHosting->mailServer?->host ?? '-' }}{{ $subscription->mailHosting->mailServer?->port ? ':'.$subscription->mailHosting->mailServer->port : '' }}</p>
+                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ $subscription->mailHosting->mailServer?->location ?: 'Lokasi tidak dicatat' }}</p>
                         </div>
-                    @else
-                        <div class="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center">
-                            <p class="text-sm font-semibold text-slate-600 dark:text-slate-300">Belum ada mailbox.</p>
-                            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Mailbox dapat dikelola dari menu Mail Hosting.</p>
-                        </div>
-                    @endif
+                        @can('servers.manage')
+                            <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                                <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Password Admin</p>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono text-slate-800 dark:text-white">••••••••••••</span>
+                                    <button type="button" onclick="copyMailHostingAdminPassword('{{ route('subscriptions.mail-hosting.admin-credential', $subscription) }}')" class="rounded-lg p-1.5 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30" title="Salin password admin"><i data-lucide="copy" class="h-4 w-4"></i></button>
+                                </div>
+                            </div>
+                        @endcan
+                    </div>
                 </div>
             </div>
         </div>
@@ -1699,10 +1666,17 @@
                                         </select>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Domain Layanan Mail <span class="text-red-500">*</span></label>
-                                        <input type="text" name="mail_domain" id="mail_domain" placeholder="example.com"
+                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Domain Pelanggan</label>
+                                        <select id="mail_domain_option"
                                             class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Hanya mailbox dengan domain ini yang akan ditampilkan dan disinkronkan dari Zimbra.</p>
+                                            <option value="">-- Pilih domain pelanggan atau isi manual --</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Domain Layanan Mail <span class="text-red-500">*</span></label>
+                                        <input type="text" name="mail_domain" id="mail_domain" placeholder="example.com" autocomplete="off"
+                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Pilih domain yang tercatat pada pelanggan atau ketik manual. Hanya mailbox pada domain ini yang disinkronkan dari Zimbra.</p>
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-1 gap-6">
@@ -1879,7 +1853,34 @@
                     initializeZabbixSelectors();
                     initializeSubscriptionBillingListeners();
                     resetSubscriptionFormTabs();
+
+                    document.getElementById('client_id').addEventListener('change', function () {
+                        loadClientMailDomains(this.value);
+                    });
+                    document.getElementById('mail_domain_option').addEventListener('change', function () {
+                        if (this.value) document.getElementById('mail_domain').value = this.value;
+                    });
                 });
+
+                async function loadClientMailDomains(clientId, selectedDomain = '') {
+                    const select = document.getElementById('mail_domain_option');
+                    select.replaceChildren(new Option('-- Pilih domain pelanggan atau isi manual --', ''));
+
+                    if (!clientId) return;
+
+                    try {
+                        const response = await fetch(`${baseUrl}/subscriptions/clients/${encodeURIComponent(clientId)}/mail-domains`, {
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        const payload = await response.json();
+                        if (!response.ok) throw new Error(payload.message || 'Domain pelanggan tidak dapat dimuat.');
+
+                        (payload.domains || []).forEach((domain) => select.add(new Option(domain, domain)));
+                        select.value = selectedDomain || document.getElementById('mail_domain').value || '';
+                    } catch (error) {
+                        showToast(error.message || 'Gagal memuat domain pelanggan', 'error');
+                    }
+                }
 
                 function initializeZabbixSelectors() {
                     const groupSelect = document.getElementById('zabbix_group_id');
@@ -2586,14 +2587,32 @@ const detailsSection = document.getElementById('technical-details');
 document.getElementById('auth_code').value = '';
                                 document.getElementById('domain_notes').value = data.domain.notes || '';
                             }
-                            if (data.mailHosting) {
-                                document.getElementById('mail_server_id').value = data.mailHosting.mail_server_id || '';
-                                document.getElementById('mail_domain').value = data.mailHosting.domain || '';
-                                document.getElementById('admin_email').value = data.mailHosting.admin_email || '';
+                            const mailHosting = data.mail_hosting || data.mailHosting;
+                            if (mailHosting) {
+                                document.getElementById('mail_server_id').value = mailHosting.mail_server_id || '';
+                                document.getElementById('mail_domain').value = mailHosting.domain || '';
+                                document.getElementById('admin_email').value = mailHosting.admin_email || '';
+                                await loadClientMailDomains(data.client_id, mailHosting.domain || '');
                             }
 
                             resetSubscriptionFormTabs();
                         });
+                };
+
+                window.copyMailHostingAdminPassword = async (url) => {
+                    try {
+                        const response = await fetch(url, { headers: { Accept: 'application/json' } });
+                        if (! response.ok) throw new Error('credential request failed');
+                        const payload = await response.json();
+                        if (! payload.password) {
+                            window.showToast?.('Password admin belum disimpan pada layanan ini.', 'error');
+                            return;
+                        }
+                        await navigator.clipboard.writeText(payload.password);
+                        window.showToast?.('Password admin berhasil disalin.', 'success');
+                    } catch (_) {
+                        window.showToast?.('Password admin tidak dapat disalin. Periksa hak akses Anda.', 'error');
+                    }
                 };
 
             })();

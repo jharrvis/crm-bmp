@@ -30,6 +30,15 @@ class DeleteMailboxJob implements ShouldQueue
             throw new \RuntimeException('Mailbox hasil sinkronisasi tidak dapat dihapus oleh CRM.');
         }
 
+        if ($mailbox->mailHosting->mailServer?->type === 'zimbra') {
+            $mailbox->update([
+                'provisioning_status' => 'ready',
+                'provisioning_error' => 'Penghapusan dibatalkan: CRM untuk Zimbra bersifat read-only.',
+            ]);
+
+            return;
+        }
+
         if ($mailbox->mailHosting->status !== 'active') {
             return;
         }

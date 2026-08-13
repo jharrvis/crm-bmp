@@ -40,7 +40,7 @@ class SubscriptionController extends Controller
         $this->middleware('permission:subscriptions.create')->only(['store']);
         $this->middleware('permission:subscriptions.update')->only(['update']);
         $this->middleware('permission:subscriptions.delete')->only(['destroy']);
-        $this->middleware('permission:subscriptions.create|subscriptions.update')->only(['hestiaUsers', 'hestiaUserDomains']);
+        $this->middleware('permission:subscriptions.create|subscriptions.update')->only(['hestiaUsers', 'hestiaUserDomains', 'clientMailDomains']);
     }
 
     /**
@@ -138,6 +138,48 @@ class SubscriptionController extends Controller
         }
 
         return response()->json(['domains' => $domains]);
+    }
+
+    /**
+     * Return domains recorded under a client's domain subscriptions.
+     */
+    public function clientMailDomains(Client $client)
+    {
+        $domains = SubscriptionDomain::query()
+            ->whereHas('subscription', fn ($query) => $query->where('client_id', $client->id))
+            ->whereNotNull('domain_name')
+            ->orderBy('domain_name')
+            ->pluck('domain_name')
+            ->map(fn ($domain) => strtolower(trim((string) $domain)))
+            ->filter()
+            ->unique()
+            ->values();
+
+        return response()->json(['domains' => $domains]);
+    }
+
+    /**
+     * Return the locally encrypted mail-admin password only to server operators.
+     */
+    public function mailHostingAdminCredential(Subscription $subscription)
+    {
+        $this->authorize('servers.manage');
+
+        $mailHosting = $subscription->mailHosting;
+        abort_if(! $mailHosting, 404, 'Langganan ini tidak memiliki layanan mail hosting.');
+
+        activity('mail-hosting')
+            ->performedOn($mailHosting)
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'subject_label' => $mailHosting->domain,
+                'event_label' => 'Akses kredensial admin mail hosting',
+            ])
+            ->log('Menyalin password admin mail hosting');
+
+        return response()->json([
+            'password' => $mailHosting->admin_password_encrypted,
+        ]);
     }
 
     /**
@@ -384,9 +426,10 @@ class SubscriptionController extends Controller
                     'alias_max' => $package->alias_max ?? 0,
                     'mail_server_type' => $server->type,
                     'status' => 'active',
-                    'provisioning_status' => 'pending',
+                    // Zimbra is integrated read-only: CRM records the service without provisioning the remote domain.
+                    'provisioning_status' => $server->type === 'zimbra' ? 'ready' : 'pending',
                 ]);
-                $mailDomainProvisioningId = $mailHosting->id;
+                $mailDomainProvisioningId = $server->type === 'zimbra' ? null : $mailHosting->id;
             }
 
             $prorataService = new ProrataCalculationService;
@@ -783,9 +826,9 @@ class SubscriptionController extends Controller
                     ]);
                 }
 
-                $requiresProvisioning = ! $mailHosting
+                $requiresProvisioning = $server->type !== 'zimbra' && (! $mailHosting
                     || $mailHosting->mail_server_id !== (int) $request->mail_server_id
-                    || $mailHosting->domain !== $domain;
+                    || $mailHosting->domain !== $domain);
 
                 $mailHosting = $subscription->mailHosting()->updateOrCreate(
                     ['subscription_id' => $subscription->id],
@@ -803,7 +846,9 @@ class SubscriptionController extends Controller
                         'status' => in_array($subscription->status, ['suspended', 'terminated'], true)
                             ? $subscription->status
                             : 'active',
-                        'provisioning_status' => $requiresProvisioning ? 'pending' : $mailHosting?->provisioning_status,
+                        'provisioning_status' => $requiresProvisioning
+                            ? 'pending'
+                            : ($mailHosting?->provisioning_status ?? 'ready'),
                         'provisioning_error' => $requiresProvisioning ? null : $mailHosting?->provisioning_error,
                     ]
                 );

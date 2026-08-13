@@ -35,6 +35,16 @@ class ProvisionMailboxJob implements ShouldQueue
         }
 
         $mailHosting = $mailbox->mailHosting;
+
+        if ($mailHosting->mailServer?->type === 'zimbra') {
+            $mailbox->update([
+                'provisioning_status' => 'failed',
+                'provisioning_error' => 'CRM untuk Zimbra bersifat read-only. Buat mailbox dari panel Zimbra.',
+            ]);
+
+            return;
+        }
+
         if ($mailHosting->status !== 'active') {
             return;
         }

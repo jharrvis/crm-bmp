@@ -28,7 +28,8 @@ class MailboxController extends Controller
 
         $syncWarning = null;
 
-        if ($mailHosting->mailServer?->type === 'zimbra') {
+        // Refresh remote metadata only on the initial page load, not on each live-search request.
+        if (! $request->wantsJson() && $mailHosting->mailServer?->type === 'zimbra') {
             try {
                 $syncService->sync($mailHosting);
                 $mailHosting->refresh();
@@ -45,7 +46,16 @@ class MailboxController extends Controller
             ->paginate(50)
             ->withQueryString();
 
-        return view('mailboxes.index', compact('subscription', 'mailHosting', 'mailboxes', 'search', 'syncWarning'));
+        $mailboxUsageCount = $mailHosting->mailboxes()->count();
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'html' => view('mailboxes._table', compact('subscription', 'mailHosting', 'mailboxes'))->render(),
+                'total' => $mailboxes->total(),
+            ]);
+        }
+
+        return view('mailboxes.index', compact('subscription', 'mailHosting', 'mailboxes', 'mailboxUsageCount', 'search', 'syncWarning'));
     }
 
     /**
@@ -59,6 +69,10 @@ class MailboxController extends Controller
 
         if (! $mailHosting) {
             return back()->with('error', 'Layanan mail hosting tidak ditemukan.');
+        }
+
+        if ($mailHosting->mailServer?->type === 'zimbra') {
+            return back()->with('error', 'CRM untuk Zimbra bersifat read-only. Tambah mailbox dilakukan langsung dari panel Zimbra.');
         }
 
         $validated = $request->validate([
@@ -154,6 +168,10 @@ class MailboxController extends Controller
             return back()->with('error', 'Mailbox tidak ditemukan pada layanan ini.');
         }
 
+        if ($mailHosting->mailServer?->type === 'zimbra') {
+            return back()->with('error', 'CRM untuk Zimbra bersifat read-only. Status mailbox diubah dari panel Zimbra.');
+        }
+
         if (! $mailbox->managed_by_crm) {
             return back()->with('error', 'Mailbox hasil sinkronisasi bersifat read-only dan tidak dapat diubah dari CRM.');
         }
@@ -176,6 +194,10 @@ class MailboxController extends Controller
             return back()->with('error', 'Mailbox tidak ditemukan pada layanan ini.');
         }
 
+        if ($mailHosting->mailServer?->type === 'zimbra') {
+            return back()->with('error', 'CRM untuk Zimbra bersifat read-only. Status mailbox diubah dari panel Zimbra.');
+        }
+
         if (! $mailbox->managed_by_crm) {
             return back()->with('error', 'Mailbox hasil sinkronisasi bersifat read-only dan tidak dapat diubah dari CRM.');
         }
@@ -196,6 +218,10 @@ class MailboxController extends Controller
 
         if (! $mailHosting || $mailbox->subscription_mail_hosting_id !== $mailHosting->id) {
             return back()->with('error', 'Mailbox tidak ditemukan pada layanan ini.');
+        }
+
+        if ($mailHosting->mailServer?->type === 'zimbra') {
+            return back()->with('error', 'CRM untuk Zimbra bersifat read-only. Mailbox dihapus dari panel Zimbra.');
         }
 
         if (! $mailbox->managed_by_crm) {

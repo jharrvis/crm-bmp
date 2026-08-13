@@ -61,6 +61,8 @@ Route::middleware('auth')->group(function () {
         Route::get('subscriptions/hosting-servers/{server}/users', [\App\Http\Controllers\SubscriptionController::class, 'hestiaUsers'])->name('subscriptions.hestia-users');
         Route::get('subscriptions/hosting-servers/{server}/domains', [\App\Http\Controllers\SubscriptionController::class, 'hestiaUserDomains'])->name('subscriptions.hestia-user-domains');
         Route::resource('subscriptions', \App\Http\Controllers\SubscriptionController::class);
+        Route::get('subscriptions/clients/{client}/mail-domains', [\App\Http\Controllers\SubscriptionController::class, 'clientMailDomains'])->name('subscriptions.clients.mail-domains');
+        Route::get('subscriptions/{subscription}/mail-hosting/admin-credential', [\App\Http\Controllers\SubscriptionController::class, 'mailHostingAdminCredential'])->name('subscriptions.mail-hosting.admin-credential');
         Route::get('subscriptions/{subscription}/mailboxes', [\App\Http\Controllers\MailboxController::class, 'index'])->name('subscriptions.mailboxes.index');
         Route::post('subscriptions/{subscription}/mailboxes', [\App\Http\Controllers\MailboxController::class, 'store'])->name('subscriptions.mailboxes.store');
         Route::post('subscriptions/{subscription}/mailboxes/sync', [\App\Http\Controllers\MailboxController::class, 'sync'])->name('subscriptions.mailboxes.sync');

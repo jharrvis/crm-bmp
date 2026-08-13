@@ -34,6 +34,16 @@ class EnsureMailDomainJob implements ShouldQueue
             return;
         }
 
+        // Zimbra is intentionally a read-only integration. Never create a remote domain.
+        if ($mailHosting->mailServer?->type === 'zimbra') {
+            $mailHosting->update([
+                'provisioning_status' => 'ready',
+                'provisioning_error' => null,
+            ]);
+
+            return;
+        }
+
         if (! $resolver->resolve($mailHosting->mailServer)->ensureDomain($mailHosting->domain)) {
             throw new \RuntimeException('Zimbra tidak dapat menyiapkan domain.');
         }

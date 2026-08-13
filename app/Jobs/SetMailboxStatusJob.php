@@ -29,6 +29,10 @@ class SetMailboxStatusJob implements ShouldQueue
             throw new \RuntimeException('Mailbox hasil sinkronisasi tidak dapat diubah oleh CRM.');
         }
 
+        if ($mailbox->mailHosting->mailServer?->type === 'zimbra') {
+            return;
+        }
+
         if ($mailbox->mailHosting->status !== 'active') {
             return;
         }

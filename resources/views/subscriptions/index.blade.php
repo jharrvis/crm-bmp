@@ -551,10 +551,17 @@
                                         </select>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Domain Layanan Mail <span class="text-red-500">*</span></label>
-                                        <input type="text" name="mail_domain" id="mail_domain" placeholder="example.com"
+                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Domain Pelanggan</label>
+                                        <select id="mail_domain_option"
                                             class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Hanya mailbox dengan domain ini yang akan ditampilkan dan disinkronkan dari Zimbra.</p>
+                                            <option value="">-- Pilih domain pelanggan atau isi manual --</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Domain Layanan Mail <span class="text-red-500">*</span></label>
+                                        <input type="text" name="mail_domain" id="mail_domain" placeholder="example.com" autocomplete="off"
+                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Pilih domain yang tercatat pada pelanggan atau ketik manual. Hanya mailbox pada domain ini yang disinkronkan dari Zimbra.</p>
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-1 gap-6">
@@ -832,6 +839,13 @@
                     initializeSubscriptionBillingListeners();
                     resetSubscriptionFormTabs();
 
+                    document.getElementById('client_id').addEventListener('change', function () {
+                        loadClientMailDomains(this.value);
+                    });
+                    document.getElementById('mail_domain_option').addEventListener('change', function () {
+                        if (this.value) document.getElementById('mail_domain').value = this.value;
+                    });
+
                     // Initialize DataTable
                     table = $('#dataTable').DataTable({
                         data: tableData,
@@ -916,6 +930,26 @@
                         createdRow: function (row) { $(row).addClass('hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors'); }
                     });
                 });
+
+                async function loadClientMailDomains(clientId, selectedDomain = '') {
+                    const select = document.getElementById('mail_domain_option');
+                    select.replaceChildren(new Option('-- Pilih domain pelanggan atau isi manual --', ''));
+
+                    if (!clientId) return;
+
+                    try {
+                        const response = await fetch(`${baseUrl}/subscriptions/clients/${encodeURIComponent(clientId)}/mail-domains`, {
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        const payload = await response.json();
+                        if (!response.ok) throw new Error(payload.message || 'Domain pelanggan tidak dapat dimuat.');
+
+                        (payload.domains || []).forEach((domain) => select.add(new Option(domain, domain)));
+                        select.value = selectedDomain || document.getElementById('mail_domain').value || '';
+                    } catch (error) {
+                        showToast(error.message || 'Gagal memuat domain pelanggan', 'error');
+                    }
+                }
 
                 window.handlePackageChange = function () {
                     const packageSelect = document.getElementById('package_id');
@@ -1661,10 +1695,12 @@ const detailsSection = document.getElementById('technical-details');
 document.getElementById('auth_code').value = '';
                                 document.getElementById('domain_notes').value = data.domain.notes || '';
                             }
-                            if (data.mailHosting) {
-                                document.getElementById('mail_server_id').value = data.mailHosting.mail_server_id || '';
-                                document.getElementById('mail_domain').value = data.mailHosting.domain || '';
-                                document.getElementById('admin_email').value = data.mailHosting.admin_email || '';
+                            const mailHosting = data.mail_hosting || data.mailHosting;
+                            if (mailHosting) {
+                                document.getElementById('mail_server_id').value = mailHosting.mail_server_id || '';
+                                document.getElementById('mail_domain').value = mailHosting.domain || '';
+                                document.getElementById('admin_email').value = mailHosting.admin_email || '';
+                                await loadClientMailDomains(data.client_id, mailHosting.domain || '');
                             }
 
                             window.openModal(true);
