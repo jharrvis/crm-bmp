@@ -1268,13 +1268,12 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Jenis
-                                        Layanan <span class="text-red-500">*</span></label>
-                                    <select id="service_type" required onchange="handleServiceTypeChange()"
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Layanan <span class="text-red-500">*</span></label>
+                                    <select id="service_id" required onchange="handleServiceChange()"
                                         class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                                        <option value="">-- Pilih Jenis Layanan --</option>
-                                        @foreach($packages->pluck('service.type')->filter()->unique()->sort() as $serviceType)
-                                            <option value="{{ $serviceType }}">{{ ['connectivity' => 'Internet / Konektivitas', 'hosting' => 'Web Hosting', 'domain' => 'Domain', 'mail' => 'Mail Hosting'][$serviceType] ?? ucfirst($serviceType) }}</option>
+                                        <option value="">-- Pilih Layanan --</option>
+                                        @foreach($packages->pluck('service')->filter()->unique('id')->sortBy('name') as $service)
+                                            <option value="{{ $service->id }}">{{ $service->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -1283,15 +1282,15 @@
                                         Paket Layanan <span class="text-red-500">*</span></label>
                                     <select id="package_id" name="package_id" required disabled onchange="handlePackageChange()"
                                         class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                                        <option value="">-- Pilih jenis layanan terlebih dahulu --</option>
+                                        <option value="">-- Pilih layanan terlebih dahulu --</option>
                                         @foreach($packages as $pkg)
-                                            <option value="{{ $pkg->id }}" data-type="{{ $pkg->service->type }}"
+                                            <option value="{{ $pkg->id }}" data-service-id="{{ $pkg->service_id }}" data-type="{{ $pkg->service->type }}"
                                                 data-price="{{ $pkg->price }}">
                                                 {{ $pkg->name }} (Rp {{ number_format($pkg->price, 0, ',', '.') }})
                                             </option>
                                         @endforeach
                                     </select>
-                                    <p id="package-edit-hint" class="hidden mt-2 text-xs text-slate-500 dark:text-slate-400">Saat edit, jenis layanan dikunci. Paket hanya dapat diganti ke jenis layanan yang sama agar data teknis tetap konsisten.</p>
+                                    <p id="package-edit-hint" class="hidden mt-2 text-xs text-slate-500 dark:text-slate-400">Saat edit, layanan dikunci. Paket hanya dapat diganti dalam layanan yang sama agar data teknis tetap konsisten.</p>
                                 </div>
                             </div>
 
@@ -2155,22 +2154,22 @@
                         .replace(/>/g, '&gt;');
                 }
 
-                window.handleServiceTypeChange = function () {
-                    const serviceType = document.getElementById('service_type')?.value || '';
+                window.handleServiceChange = function () {
+                    const serviceId = document.getElementById('service_id')?.value || '';
                     const packageSelect = document.getElementById('package_id');
 
                     Array.from(packageSelect.options).forEach((option) => {
-                        const belongsToType = option.getAttribute('data-type') === serviceType;
-                        option.hidden = Boolean(option.value && (!serviceType || !belongsToType));
-                        option.disabled = Boolean(option.value && (!serviceType || !belongsToType));
+                        const belongsToService = option.getAttribute('data-service-id') === serviceId;
+                        option.hidden = Boolean(option.value && (!serviceId || !belongsToService));
+                        option.disabled = Boolean(option.value && (!serviceId || !belongsToService));
                     });
 
-                    packageSelect.disabled = !serviceType;
-                    packageSelect.options[0].text = serviceType
+                    packageSelect.disabled = !serviceId;
+                    packageSelect.options[0].text = serviceId
                         ? '-- Pilih Paket --'
-                        : '-- Pilih jenis layanan terlebih dahulu --';
+                        : '-- Pilih layanan terlebih dahulu --';
 
-                    if (!serviceType || packageSelect.selectedOptions[0]?.getAttribute('data-type') !== serviceType) {
+                    if (!serviceId || packageSelect.selectedOptions[0]?.getAttribute('data-service-id') !== serviceId) {
                         packageSelect.value = '';
                     }
 
@@ -2460,16 +2459,16 @@ const detailsSection = document.getElementById('technical-details');
                     window.switchSubscriptionFormTab('general');
                 }
 
-                function setPackageEditScope(serviceType = null) {
-                    const serviceTypeSelect = document.getElementById('service_type');
+                function setPackageEditScope(serviceId = null) {
+                    const serviceSelect = document.getElementById('service_id');
                     const packageSelect = document.getElementById('package_id');
                     const hint = document.getElementById('package-edit-hint');
 
-                    serviceTypeSelect.value = serviceType || '';
-                    serviceTypeSelect.disabled = Boolean(serviceType);
-                    window.handleServiceTypeChange();
+                    serviceSelect.value = serviceId || '';
+                    serviceSelect.disabled = Boolean(serviceId);
+                    window.handleServiceChange();
 
-                    hint?.classList.toggle('hidden', !serviceType);
+                    hint?.classList.toggle('hidden', !serviceId);
                 }
 
                 function setClientEditable(isEditable) {
@@ -2590,9 +2589,9 @@ const detailsSection = document.getElementById('technical-details');
                             // Fill Form Values
                             if(clientChoice) clientChoice.setChoiceByValue(data.client_id.toString());
                             document.getElementById('package_id').value = data.package_id;
-                            const currentServiceType = document.getElementById('package_id').selectedOptions[0]?.getAttribute('data-type');
+                            const currentServiceId = document.getElementById('package_id').selectedOptions[0]?.getAttribute('data-service-id');
                             setClientEditable(false);
-                            setPackageEditScope(currentServiceType);
+                            setPackageEditScope(currentServiceId);
                             document.getElementById('installed_at').value = data.installed_at ? data.installed_at.split('T')[0] : '';
                             document.getElementById('status').value = data.status;
                             document.getElementById('notes').value = data.notes || '';

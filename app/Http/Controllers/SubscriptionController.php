@@ -368,11 +368,7 @@ class SubscriptionController extends Controller
                 $hostingUsername = strtolower(trim((string) $request->username));
                 $hostingDomain = strtolower(trim((string) $request->domain));
 
-                if (SubscriptionHosting::where('hosting_server_id', $server->id)->where('username', $hostingUsername)->exists()) {
-                    throw ValidationException::withMessages([
-                        'username' => 'Username tersebut sudah terhubung pada server hosting ini.',
-                    ]);
-                }
+                $this->ensureHostingUsernameIsAvailable($server, $hostingUsername);
 
                 if ($hostingAccountMode === 'existing') {
                     $this->ensureExistingHestiaAccountOwnsDomain($server, $hostingUsername, $hostingDomain);
@@ -754,14 +750,7 @@ class SubscriptionController extends Controller
                     ResetHostingAccountPasswordJob::dispatch($hosting->id)->afterCommit();
                 }
 
-                if (SubscriptionHosting::where('hosting_server_id', $server->id)
-                    ->where('username', $newUsername)
-                    ->when($hosting, fn ($query) => $query->whereKeyNot($hosting->id))
-                    ->exists()) {
-                    throw ValidationException::withMessages([
-                        'username' => 'Username tersebut sudah terhubung pada server hosting ini.',
-                    ]);
-                }
+                $this->ensureHostingUsernameIsAvailable($server, $newUsername, $hosting?->id);
 
                 if (! $hosting && $hostingAccountMode === 'existing') {
                     $this->ensureExistingHestiaAccountOwnsDomain($server, $newUsername, $newDomain);
@@ -1088,6 +1077,33 @@ class SubscriptionController extends Controller
                 'hosting_server_id' => 'Koneksi ke HestiaCP gagal saat memverifikasi akun existing. Periksa konfigurasi server lalu coba lagi.',
             ]);
         }
+    }
+
+    /**
+     * Keep a remote Hestia account attached to exactly one CRM subscription.
+     */
+    protected function ensureHostingUsernameIsAvailable(HostingServer $server, string $username, ?int $ignoreHostingId = null): void
+    {
+        $existing = SubscriptionHosting::with('subscription')
+            ->where('hosting_server_id', $server->id)
+            ->where('username', $username)
+            ->when($ignoreHostingId, fn ($query) => $query->whereKeyNot($ignoreHostingId))
+            ->first();
+
+        if (! $existing) {
+            return;
+        }
+
+        $subscriptionCode = $existing->subscription?->subscription_code;
+        $message = 'Username tersebut sudah terhubung pada layanan lain di server hosting ini.';
+
+        if ($subscriptionCode) {
+            $message .= " Layanan yang memakai akun ini: {$subscriptionCode}.";
+        }
+
+        $message .= ' Satu akun HestiaCP hanya dapat ditautkan ke satu layanan CRM untuk mencegah perubahan akun yang tidak disengaja.';
+
+        throw ValidationException::withMessages(['username' => $message]);
     }
 
     protected function ensureActiveHestiaServer(HostingServer $server): void

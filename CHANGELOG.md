@@ -14,6 +14,8 @@ Semua perubahan penting pada project ini dicatat di file ini.
 
 ### Fixed
 - Memperbaiki ParseError pada detail layanan Web Hosting saat ringkasan pemakaian HestiaCP tersedia.
+- Filter paket layanan kini memakai master layanan spesifik, sehingga paket Web Hosting tidak tercampur atau tersembunyi oleh layanan lain dengan tipe teknis yang sama.
+- Validasi tautan akun HestiaCP kini menampilkan kode layanan yang sudah memakai username tersebut, tanpa mengizinkan satu akun dikendalikan oleh dua layanan CRM.
 
 ### Deployment Notes
 - Tidak memerlukan migration atau seeder. Pastikan Access Key HestiaCP memiliki izin read-only `v-list-databases` untuk menampilkan rincian database.

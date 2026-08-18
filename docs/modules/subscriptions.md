@@ -105,7 +105,7 @@ PPN dan PPh23 rate saat ini hardcoded. Lihat plan audit tagihan untuk rencana mi
 ### Pembuatan Langganan
 
 1. Staff memilih client dan paket layanan.
-2. Staff memilih jenis layanan terlebih dahulu (connectivity/hosting/domain/mail), lalu sistem hanya menampilkan paket aktif dari jenis tersebut.
+2. Staff memilih master layanan terlebih dahulu, lalu sistem hanya menampilkan paket aktif dari layanan tersebut. Filter ini memakai `service_id`, sehingga layanan yang memiliki tipe teknis sama tidak tercampur.
 3. Form menampilkan field teknis sesuai tipe:
    - **Connectivity**: router, IP, PPPoE, ONT S/N, Zabbix monitoring, Metro Ethernet
    - **Hosting**: server, domain, username, password (terenkripsi), disk quota
@@ -122,7 +122,7 @@ PPN dan PPh23 rate saat ini hardcoded. Lihat plan audit tagihan untuk rencana mi
 - Saat paket berubah, sistem memperbarui harga paket yang terkunci, periode billing, pajak, `billing_cycle_day`, dan `next_billing_date` dari tanggal pemasangan.
 - Prorata upgrade/downgrade memakai harga dan periode paket lama sebelum perubahan.
 - Perpindahan antar jenis layanan (connectivity, hosting, domain, mail) tidak diizinkan dari form edit karena perlu migrasi data teknis dan, untuk hosting, koordinasi akun HestiaCP.
-- Saat edit, pilihan jenis layanan dikunci dan dropdown paket difilter ke jenis layanan lama.
+- Saat edit, pilihan layanan dikunci dan dropdown paket difilter ke layanan lama.
 
 ### Connectivity-specific
 
@@ -196,3 +196,4 @@ PPN dan PPh23 rate saat ini hardcoded. Lihat plan audit tagihan untuk rencana mi
 - `suspend` dan `activate` permission ada di seeder tapi controller menggunakan `update` permission untuk semua perubahan status.
 - Password hosting dan PPPoE secret tersimpan terenkripsi via Laravel `encrypt()`.
 - Activity log aktif pada model `Subscription` (entity name: `langganan`).
+- Satu kombinasi server HestiaCP dan username hanya dapat ditautkan ke satu `SubscriptionHosting`. Jika username sudah tertaut, aplikasi menampilkan kode layanan pemiliknya; pemindahan akun perlu dilakukan melalui proses migrasi/relink terkontrol, bukan tautkan ulang biasa.
