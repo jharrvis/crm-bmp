@@ -11,6 +11,9 @@ Semua perubahan penting pada project ini dicatat di file ini.
 ### Security
 - Detail user HestiaCP hanya memakai command API read-only. Password database dan credential akun tidak diambil atau ditampilkan.
 
+### Fixed
+- Memperbaiki ParseError pada detail layanan Web Hosting saat ringkasan pemakaian HestiaCP tersedia.
+
 ### Deployment Notes
 - Tidak memerlukan migration atau seeder. Pastikan Access Key HestiaCP memiliki izin read-only `v-list-databases` untuk menampilkan rincian database.
 
