@@ -85,6 +85,7 @@ PPN dan PPh23 rate saat ini hardcoded. Lihat plan audit tagihan untuk rencana mi
 | `subscriptions.delete` | Menghapus langganan |
 | `subscriptions.suspend` | Suspend langganan |
 | `subscriptions.activate` | Mengaktifkan kembali langganan |
+| `servers.manage` | Melihat ringkasan pemakaian HestiaCP pada tab Hosting dan membuka rincian Infrastruktur |
 
 ### Default Role Mapping
 
@@ -131,8 +132,10 @@ PPN dan PPh23 rate saat ini hardcoded. Lihat plan audit tagihan untuk rencana mi
 ### Hosting-specific
 
 - Integrasi dengan HestiaCP API (`HestiaCPService`):
-  - `store`: auto-create user dan web domain di server hosting.
-  - `update`: auto-suspend/unsuspend/change password sesuai status.
+  - Akun baru diprovisikan melalui queue; akun existing hanya dapat ditautkan dalam mode read-only.
+  - Tab Hosting pada detail langganan menampilkan ringkasan disk, bandwidth, database, domain, backup, dan cron dari HestiaCP bagi pengguna dengan permission `servers.manage`.
+  - Rincian domain dan database tetap tersedia melalui halaman Detail User pada Infrastruktur untuk menghindari duplikasi daftar resource besar.
+  - Pemakaian HestiaCP di-cache selama dua menit dan tidak pernah mengirim perubahan ke server remote.
 
 ### Domain-specific
 

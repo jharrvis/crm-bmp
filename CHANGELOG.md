@@ -6,6 +6,7 @@ Semua perubahan penting pada project ini dicatat di file ini.
 
 ### Added
 - Daftar user HestiaCP kini memiliki halaman detail read-only berisi pemakaian disk dan bandwidth, jumlah resource, rincian database beserta ukuran, serta pemakaian per web domain.
+- Detail layanan Web Hosting kini menampilkan ringkasan pemakaian akun HestiaCP dan tautan ke rincian Infrastruktur bagi pengguna berizin.
 
 ### Security
 - Detail user HestiaCP hanya memakai command API read-only. Password database dan credential akun tidak diambil atau ditampilkan.

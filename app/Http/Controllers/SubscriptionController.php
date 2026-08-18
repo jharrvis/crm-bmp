@@ -502,6 +502,8 @@ class SubscriptionController extends Controller
     public function show(Subscription $subscription)
     {
         $mailboxSyncWarning = null;
+        $hostingUsage = null;
+        $hostingUsageWarning = null;
 
         if (! (request()->wantsJson() || request()->ajax()) && auth()->user()?->can('mailboxes.view')) {
             $mailHosting = $subscription->mailHosting()->with('mailServer')->first();
@@ -519,6 +521,31 @@ class SubscriptionController extends Controller
         // Load all relationships
         $subscription->load(['client', 'package.service', 'connectivity.metroEthernet.vendor', 'hosting.hostingServer', 'domain', 'mailHosting.mailServer', 'mailHosting.mailboxes']);
 
+        // Resource usage remains an infrastructure concern. Expose a safe summary
+        // here only to users who are already allowed to manage hosting servers.
+        $hosting = $subscription->hosting;
+        if (! (request()->wantsJson() || request()->ajax())
+            && auth()->user()?->can('servers.manage')
+            && $hosting?->username
+            && $hosting->hostingServer?->is_active
+            && $hosting->hostingServer?->type === 'hestiacp') {
+            try {
+                $cacheKey = "hestiacp:user-detail:{$hosting->hosting_server_id}:".strtolower($hosting->username);
+                $detail = Cache::remember($cacheKey, 120, fn () => $this->webHostResolver
+                    ->resolve($hosting->hostingServer)
+                    ->userDetails($hosting->username));
+
+                if ($detail['success'] ?? false) {
+                    $hostingUsage = $detail['data'];
+                } else {
+                    $hostingUsageWarning = 'Pemakaian akun HestiaCP tidak dapat dimuat saat ini. Detail layanan lokal tetap tersedia.';
+                }
+            } catch (\Throwable $exception) {
+                report($exception);
+                $hostingUsageWarning = 'Pemakaian akun HestiaCP tidak dapat dimuat saat ini. Detail layanan lokal tetap tersedia.';
+            }
+        }
+
         if (request()->wantsJson() || request()->ajax()) {
             return response()->json($subscription);
         }
@@ -530,7 +557,7 @@ class SubscriptionController extends Controller
         $mailServers = HostingServer::where('type', 'zimbra')->get();
         $metroEthernets = MetroEthernet::with('vendor')->latest()->get();
 
-        return view('subscriptions.show', compact('subscription', 'clients', 'packages', 'routers', 'servers', 'metroEthernets', 'mailServers', 'mailboxSyncWarning'));
+        return view('subscriptions.show', compact('subscription', 'clients', 'packages', 'routers', 'servers', 'metroEthernets', 'mailServers', 'mailboxSyncWarning', 'hostingUsage', 'hostingUsageWarning'));
     }
 
     /**

@@ -557,9 +557,16 @@
 
     <!-- Hosting Tab -->
     @if($subscription->hosting)
+        @php
+            $formatHostingMb = fn (?int $value) => $value === null ? 'Tidak tersedia' : number_format($value, 0, ',', '.').' MB';
+            $formatHostingUsage = fn (?int $used, ?int $limit) => $used === null
+                ? 'Tidak tersedia'
+                : number_format($used, 0, ',', '.').' MB'.($limit !== null && $limit > 0 ? ' / '.number_format($limit, 0, ',', '.').' MB' : ' / Tidak dibatasi');
+        @endphp
         <div id="panelHosting" class="tab-panel hidden">
+            <div class="space-y-6">
             <div
-                class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+                class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
                 <h4 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2">
                     <i data-lucide="server" class="w-4 h-4"></i>
                     Detail Hosting
@@ -602,6 +609,47 @@
                         </p>
                     </div>
                 </div>
+            </div>
+
+            @can('servers.manage')
+                @if($hostingUsageWarning)
+                    <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+                        {{ $hostingUsageWarning }}
+                    </div>
+                @endif
+
+                @if($hostingUsage)
+                    @php($hostingUser = $hostingUsage['user'])
+                    <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                        <div class="flex flex-col gap-3 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between dark:border-slate-700">
+                            <div>
+                                <h4 class="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-slate-500"><i data-lucide="activity" class="h-4 w-4"></i>Pemakaian Akun HestiaCP</h4>
+                                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Data live dari HestiaCP, di-cache selama 2 menit.</p>
+                            </div>
+                            <a href="{{ route('servers.users.show', ['server' => $subscription->hosting->hostingServer, 'username' => $hostingUser['username']]) }}" class="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
+                                Lihat Rincian Infrastruktur <i data-lucide="arrow-up-right" class="h-4 w-4"></i>
+                            </a>
+                        </div>
+                        <div class="grid gap-4 p-6 sm:grid-cols-2 xl:grid-cols-4">
+                            <div class="rounded-lg bg-slate-50 p-4 dark:bg-slate-700/40"><p class="text-xs font-bold uppercase tracking-wide text-slate-400">Disk Space</p><p class="mt-2 text-base font-bold text-slate-800 dark:text-white">{{ $formatHostingUsage($hostingUser['disk_used_mb'], $hostingUser['disk_quota_mb']) }}</p></div>
+                            <div class="rounded-lg bg-slate-50 p-4 dark:bg-slate-700/40"><p class="text-xs font-bold uppercase tracking-wide text-slate-400">Bandwidth</p><p class="mt-2 text-base font-bold text-slate-800 dark:text-white">{{ $formatHostingUsage($hostingUser['bandwidth_used_mb'], $hostingUser['bandwidth_quota_mb']) }}</p></div>
+                            <div class="rounded-lg bg-slate-50 p-4 dark:bg-slate-700/40"><p class="text-xs font-bold uppercase tracking-wide text-slate-400">Database</p><p class="mt-2 text-base font-bold text-slate-800 dark:text-white">{{ $hostingUser['databases_count'] ?? 'Tidak tersedia' }}{{ ($hostingUser['databases_limit'] ?? 0) > 0 ? ' / '.$hostingUser['databases_limit'] : '' }}</p></div>
+                            <div class="rounded-lg bg-slate-50 p-4 dark:bg-slate-700/40"><p class="text-xs font-bold uppercase tracking-wide text-slate-400">Web Domain</p><p class="mt-2 text-base font-bold text-slate-800 dark:text-white">{{ $hostingUser['web_domains_count'] ?? 'Tidak tersedia' }}{{ ($hostingUser['web_domains_limit'] ?? 0) > 0 ? ' / '.$hostingUser['web_domains_limit'] : '' }}</p></div>
+                        </div>
+                        <dl class="grid gap-x-6 gap-y-4 border-t border-slate-100 px-6 py-5 text-sm sm:grid-cols-2 xl:grid-cols-4 dark:border-slate-700">
+                            <div><dt class="text-xs font-bold uppercase tracking-wide text-slate-400">Web</dt><dd class="mt-1 font-semibold text-slate-700 dark:text-slate-200">{{ $formatHostingMb($hostingUser['disk_web_mb']) }}</dd></div>
+                            <div><dt class="text-xs font-bold uppercase tracking-wide text-slate-400">Mail</dt><dd class="mt-1 font-semibold text-slate-700 dark:text-slate-200">{{ $formatHostingMb($hostingUser['disk_mail_mb']) }}</dd></div>
+                            <div><dt class="text-xs font-bold uppercase tracking-wide text-slate-400">Database</dt><dd class="mt-1 font-semibold text-slate-700 dark:text-slate-200">{{ $formatHostingMb($hostingUser['disk_database_mb']) }}</dd></div>
+                            <div><dt class="text-xs font-bold uppercase tracking-wide text-slate-400">Backup / Cron</dt><dd class="mt-1 font-semibold text-slate-700 dark:text-slate-200">{{ $hostingUser['backups_count'] ?? '-' }} backup · {{ $hostingUser['cron_jobs_count'] ?? '-' }} cron</dd></div>
+                        </dl>
+                    </section>
+                    @foreach($hostingUsage['warnings'] ?? [] as $hostingUsageDetailWarning)
+                        <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+                            {{ $hostingUsageDetailWarning }}
+                        </div>
+                    @endforeach
+                @endif
+            @endcan
             </div>
         </div>
     @endif
