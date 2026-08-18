@@ -1268,11 +1268,22 @@
                                     </select>
                                 </div>
                                 <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Jenis
+                                        Layanan <span class="text-red-500">*</span></label>
+                                    <select id="service_type" required onchange="handleServiceTypeChange()"
+                                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                        <option value="">-- Pilih Jenis Layanan --</option>
+                                        @foreach($packages->pluck('service.type')->filter()->unique()->sort() as $serviceType)
+                                            <option value="{{ $serviceType }}">{{ ['connectivity' => 'Internet / Konektivitas', 'hosting' => 'Web Hosting', 'domain' => 'Domain', 'mail' => 'Mail Hosting'][$serviceType] ?? ucfirst($serviceType) }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
                                     <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Pilih
                                         Paket Layanan <span class="text-red-500">*</span></label>
-                                    <select id="package_id" name="package_id" required onchange="handlePackageChange()"
+                                    <select id="package_id" name="package_id" required disabled onchange="handlePackageChange()"
                                         class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                                        <option value="">-- Pilih Paket --</option>
+                                        <option value="">-- Pilih jenis layanan terlebih dahulu --</option>
                                         @foreach($packages as $pkg)
                                             <option value="{{ $pkg->id }}" data-type="{{ $pkg->service->type }}"
                                                 data-price="{{ $pkg->price }}">
@@ -1280,7 +1291,7 @@
                                             </option>
                                         @endforeach
                                     </select>
-                                    <p id="package-edit-hint" class="hidden mt-2 text-xs text-slate-500 dark:text-slate-400">Saat edit, paket hanya dapat diganti ke jenis layanan yang sama agar data teknis tetap konsisten.</p>
+                                    <p id="package-edit-hint" class="hidden mt-2 text-xs text-slate-500 dark:text-slate-400">Saat edit, jenis layanan dikunci. Paket hanya dapat diganti ke jenis layanan yang sama agar data teknis tetap konsisten.</p>
                                 </div>
                             </div>
 
@@ -2144,6 +2155,28 @@
                         .replace(/>/g, '&gt;');
                 }
 
+                window.handleServiceTypeChange = function () {
+                    const serviceType = document.getElementById('service_type')?.value || '';
+                    const packageSelect = document.getElementById('package_id');
+
+                    Array.from(packageSelect.options).forEach((option) => {
+                        const belongsToType = option.getAttribute('data-type') === serviceType;
+                        option.hidden = Boolean(option.value && (!serviceType || !belongsToType));
+                        option.disabled = Boolean(option.value && (!serviceType || !belongsToType));
+                    });
+
+                    packageSelect.disabled = !serviceType;
+                    packageSelect.options[0].text = serviceType
+                        ? '-- Pilih Paket --'
+                        : '-- Pilih jenis layanan terlebih dahulu --';
+
+                    if (!serviceType || packageSelect.selectedOptions[0]?.getAttribute('data-type') !== serviceType) {
+                        packageSelect.value = '';
+                    }
+
+                    window.handlePackageChange();
+                };
+
                 window.handlePackageChange = function () {
                     const packageSelect = document.getElementById('package_id');
                     const selectedOption = packageSelect.options[packageSelect.selectedIndex];
@@ -2428,12 +2461,13 @@ const detailsSection = document.getElementById('technical-details');
                 }
 
                 function setPackageEditScope(serviceType = null) {
+                    const serviceTypeSelect = document.getElementById('service_type');
                     const packageSelect = document.getElementById('package_id');
                     const hint = document.getElementById('package-edit-hint');
 
-                    Array.from(packageSelect.options).forEach((option) => {
-                        option.disabled = Boolean(serviceType && option.value && option.getAttribute('data-type') !== serviceType);
-                    });
+                    serviceTypeSelect.value = serviceType || '';
+                    serviceTypeSelect.disabled = Boolean(serviceType);
+                    window.handleServiceTypeChange();
 
                     hint?.classList.toggle('hidden', !serviceType);
                 }

@@ -105,7 +105,7 @@ PPN dan PPh23 rate saat ini hardcoded. Lihat plan audit tagihan untuk rencana mi
 ### Pembuatan Langganan
 
 1. Staff memilih client dan paket layanan.
-2. Sistem mendeteksi tipe layanan dari paket (connectivity/hosting/domain/mail).
+2. Staff memilih jenis layanan terlebih dahulu (connectivity/hosting/domain/mail), lalu sistem hanya menampilkan paket aktif dari jenis tersebut.
 3. Form menampilkan field teknis sesuai tipe:
    - **Connectivity**: router, IP, PPPoE, ONT S/N, Zabbix monitoring, Metro Ethernet
    - **Hosting**: server, domain, username, password (terenkripsi), disk quota
@@ -122,6 +122,7 @@ PPN dan PPh23 rate saat ini hardcoded. Lihat plan audit tagihan untuk rencana mi
 - Saat paket berubah, sistem memperbarui harga paket yang terkunci, periode billing, pajak, `billing_cycle_day`, dan `next_billing_date` dari tanggal pemasangan.
 - Prorata upgrade/downgrade memakai harga dan periode paket lama sebelum perubahan.
 - Perpindahan antar jenis layanan (connectivity, hosting, domain, mail) tidak diizinkan dari form edit karena perlu migrasi data teknis dan, untuk hosting, koordinasi akun HestiaCP.
+- Saat edit, pilihan jenis layanan dikunci dan dropdown paket difilter ke jenis layanan lama.
 
 ### Connectivity-specific
 
