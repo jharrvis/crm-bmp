@@ -2,6 +2,17 @@
 
 Semua perubahan penting pada project ini dicatat di file ini.
 
+## 2026-08-18
+
+### Added
+- Daftar user HestiaCP kini memiliki halaman detail read-only berisi pemakaian disk dan bandwidth, jumlah resource, rincian database beserta ukuran, serta pemakaian per web domain.
+
+### Security
+- Detail user HestiaCP hanya memakai command API read-only. Password database dan credential akun tidak diambil atau ditampilkan.
+
+### Deployment Notes
+- Tidak memerlukan migration atau seeder. Pastikan Access Key HestiaCP memiliki izin read-only `v-list-databases` untuk menampilkan rincian database.
+
 ## 2026-08-13
 
 ### Changed

@@ -165,6 +165,67 @@ class HestiaCPService implements WebHostingServerAdapter
     }
 
     /**
+     * Retrieve an account summary plus web-domain and database metadata.
+     * Failed optional resource calls are returned as warnings, never as remote details.
+     */
+    public function userDetails(string $username): array
+    {
+        $user = $this->findUser($username);
+
+        if (! $user['success'] || $user['data'] === null) {
+            return $user;
+        }
+
+        $warnings = [];
+        $webDomains = [];
+        $databases = [];
+
+        $webResult = $this->request('v-list-web-domains', [$username, 'json']);
+        if ($webResult['success']) {
+            foreach ((array) $webResult['data'] as $domain => $row) {
+                $webDomains[] = [
+                    'domain' => (string) $domain,
+                    'disk_mb' => $this->integerOrNull($row['U_DISK'] ?? null),
+                    'bandwidth_mb' => $this->integerOrNull($row['U_BANDWIDTH'] ?? null),
+                    'ssl' => in_array($row['SSL'] ?? null, ['yes', '1', 1, true], true),
+                    'lets_encrypt' => in_array($row['LETSENCRYPT'] ?? null, ['yes', '1', 1, true], true),
+                    'suspended' => in_array($row['SUSPENDED'] ?? null, ['yes', '1', 1, true], true),
+                ];
+            }
+        } else {
+            $warnings[] = 'Detail domain web tidak tersedia dari HestiaCP.';
+        }
+
+        $databaseResult = $this->request('v-list-databases', [$username, 'json']);
+        if ($databaseResult['success']) {
+            foreach ((array) $databaseResult['data'] as $database => $row) {
+                $databases[] = [
+                    'name' => $row['DATABASE'] ?? (string) $database,
+                    'user' => $row['DBUSER'] ?? null,
+                    'host' => $row['HOST'] ?? null,
+                    'type' => $row['TYPE'] ?? null,
+                    'disk_mb' => $this->integerOrNull($row['U_DISK'] ?? null),
+                    'suspended' => in_array($row['SUSPENDED'] ?? null, ['yes', '1', 1, true], true),
+                ];
+            }
+        } else {
+            $warnings[] = 'Detail database tidak tersedia dari HestiaCP.';
+        }
+
+        return [
+            'success' => true,
+            'data' => [
+                'user' => $user['data'],
+                'web_domains' => $webDomains,
+                'databases' => $databases,
+                'warnings' => $warnings,
+            ],
+            'code' => null,
+            'message' => $warnings === [] ? 'OK' : implode(' ', $warnings),
+        ];
+    }
+
+    /**
      * {@inheritDoc}
      */
     public function listWebDomains(string $username): array
@@ -203,16 +264,36 @@ class HestiaCPService implements WebHostingServerAdapter
     {
         return [
             'username' => $row['USER'] ?? $username,
-            'email' => $row['EMAIL'] ?? null,
+            'email' => $row['EMAIL'] ?? $row['CONTACT'] ?? null,
             'name' => $row['NAME'] ?? null,
             'package' => $row['PACKAGE'] ?? null,
-            'disk' => $row['DISK'] ?? $row['U_DISK'] ?? null,
-            'quota' => $row['USED_QUOTA'] ?? $row['QUOTA'] ?? null,
+            'disk_used_mb' => $this->integerOrNull($row['U_DISK'] ?? $row['DISK'] ?? null),
+            'disk_quota_mb' => $this->integerOrNull($row['DISK_QUOTA'] ?? $row['QUOTA'] ?? null),
+            'disk_web_mb' => $this->integerOrNull($row['U_DISK_WEB'] ?? null),
+            'disk_mail_mb' => $this->integerOrNull($row['U_DISK_MAIL'] ?? null),
+            'disk_database_mb' => $this->integerOrNull($row['U_DISK_DB'] ?? null),
+            'bandwidth_used_mb' => $this->integerOrNull($row['U_BANDWIDTH'] ?? null),
+            'bandwidth_quota_mb' => $this->integerOrNull($row['BANDWIDTH'] ?? null),
+            'web_domains_count' => $this->integerOrNull($row['U_WEB_DOMAINS'] ?? null),
+            'web_domains_limit' => $this->integerOrNull($row['WEB_DOMAINS'] ?? null),
+            'databases_count' => $this->integerOrNull($row['U_DATABASES'] ?? null),
+            'databases_limit' => $this->integerOrNull($row['DATABASES'] ?? null),
+            'mail_domains_count' => $this->integerOrNull($row['U_MAIL_DOMAINS'] ?? null),
+            'mail_accounts_count' => $this->integerOrNull($row['U_MAIL_ACCOUNTS'] ?? null),
+            'backups_count' => $this->integerOrNull($row['U_BACKUPS'] ?? null),
+            'cron_jobs_count' => $this->integerOrNull($row['U_CRON_JOBS'] ?? null),
+            'home' => $row['HOME'] ?? null,
+            'shell' => $row['SHELL'] ?? null,
             'suspended' => array_key_exists('SUSPENDED', $row)
                 ? in_array($row['SUSPENDED'], ['yes', '1', 1, true], true)
                 : (array_key_exists('SUSPENDED_USER', $row) && $row['SUSPENDED_USER'] !== 'no'),
             'created_at' => $row['CREATED'] ?? null,
         ];
+    }
+
+    private function integerOrNull(mixed $value): ?int
+    {
+        return is_numeric($value) ? (int) $value : null;
     }
 
     /**

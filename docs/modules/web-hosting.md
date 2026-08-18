@@ -52,6 +52,7 @@ Modul ini hanya berlaku untuk entitas `HostingServer` dengan `type=hestiacp` dan
 | GET | `/servers/{server}/manage` | `ServerManageController@show` | `servers.manage` |
 | POST | `/servers/{server}/test-connection` | `ServerManageController@testConnection` | `servers.connect` |
 | GET | `/servers/{server}/users` | `ServerManageController@users` | `servers.manage` |
+| GET | `/servers/{server}/users/{username}` | `ServerManageController@userShow` | `servers.manage` |
 | POST | `/servers/{server}/users/link` | `ServerManageController@link` | `servers.provision` |
 | POST | `/servers/{server}/users/suspend` | `ServerManageController@suspend` | `servers.suspend` |
 | POST | `/servers/{server}/users/activate` | `ServerManageController@activate` | `servers.suspend` |
@@ -127,6 +128,19 @@ tidak sengaja pada data hosting yang sudah berjalan.
 kemudian menggabungkan data keterkaitan dari `SubscriptionHosting`. Akun `managed_by_crm=true`
 menampilkan aksi lifecycle; akun yang hanya ditautkan (`managed_by_crm=false`) read-only.
 
+### Detail User (read-only)
+
+Halaman detail user HestiaCP tersedia dari ikon lihat pada daftar user. Halaman ini memakai
+cache 120 detik dan hanya membaca command berikut dari HestiaCP:
+
+- `v-list-user`: identitas akun, paket, quota dan pemakaian disk/bandwidth, serta jumlah resource.
+- `v-list-web-domains`: domain web, pemakaian disk/bandwidth per domain, SSL, dan status domain.
+- `v-list-databases`: nama database, user, host, engine, ukuran, dan status database.
+
+Jika command detail domain atau database tidak tersedia pada Access Key, ringkasan user tetap
+ditampilkan dan UI memberi peringatan tanpa melakukan perubahan apa pun di HestiaCP. Password
+database, credential API, maupun password akun tidak pernah diminta atau ditampilkan.
+
 ### Link User Existing
 
 - Subscription harus berjenis layanan `hosting` dan belum punya `SubscriptionHosting`.
@@ -167,6 +181,7 @@ Interface `app/Services/WebHostingServerAdapter.php`, resolver
 - `testConnection`
 - `listUsers`
 - `findUser`
+- `userDetails`
 - `listWebDomains`
 - `listUserPackages`
 - `createUser`
@@ -189,7 +204,7 @@ dinonaktifkan global.
 Access Key harus dibuat untuk user `admin` atau akun operasional yang memang memiliki
 hak menjalankan command tersebut. Permission minimum untuk fitur CRM saat ini:
 
-- `v-list-users`, `v-list-user`, `v-list-user-packages`, `v-list-web-domains`
+- `v-list-users`, `v-list-user`, `v-list-user-packages`, `v-list-web-domains`, `v-list-databases`
 - `v-add-user`, `v-add-web-domain`
 - `v-suspend-user`, `v-unsuspend-user`, `v-change-user-password`, `v-delete-user`
 

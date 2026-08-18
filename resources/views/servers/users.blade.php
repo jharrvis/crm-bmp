@@ -95,8 +95,9 @@
                                         @endif
                                     </td>
                                     <td class="p-4 pr-6">
-                                        @if ($user['linked'] && $user['lifecycle_available'])
-                                            <div class="flex items-center justify-center gap-2">
+                                        <div class="flex items-center justify-center gap-2">
+                                            <a href="{{ route('servers.users.show', [$server, $user['username']]) }}" class="p-2 text-blue-600 transition-colors hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg" title="Detail user"><i data-lucide="eye" class="w-4 h-4"></i></a>
+                                            @if ($user['linked'] && $user['lifecycle_available'])
                                                 @can('servers.suspend')
                                                     @if ($user['suspended'])
                                                         <button data-username="{{ $user['username'] }}" onclick="window.confirmAction(this.dataset.username, '{{ route('servers.users.activate', $server) }}', 'Aktifkan akun ini?')"
@@ -122,10 +123,8 @@
                                                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                                                     </button>
                                                 @endcan
-                                            </div>
-                                        @else
-                                            <span class="block text-center text-xs text-slate-400">-</span>
-                                        @endif
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @empty

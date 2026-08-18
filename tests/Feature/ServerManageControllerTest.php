@@ -113,6 +113,64 @@ class ServerManageControllerTest extends TestCase
         });
     }
 
+    public function test_user_detail_displays_read_only_hestia_resource_usage(): void
+    {
+        $server = $this->createHestiaServer();
+        $user = $this->setUpUserWithPermission('servers.manage');
+
+        Http::fake(function ($request) {
+            return match ($request->data()['cmd'] ?? null) {
+                'v-list-user' => Http::response(json_encode([
+                    'USER' => 'client01',
+                    'NAME' => 'Client One',
+                    'CONTACT' => 'client@example.test',
+                    'PACKAGE' => 'basic',
+                    'U_DISK' => '120',
+                    'DISK_QUOTA' => '1024',
+                    'U_DISK_WEB' => '90',
+                    'U_DISK_DB' => '30',
+                    'U_BANDWIDTH' => '400',
+                    'BANDWIDTH' => '5000',
+                    'U_WEB_DOMAINS' => '1',
+                    'WEB_DOMAINS' => '5',
+                    'U_DATABASES' => '1',
+                    'DATABASES' => '5',
+                    'SUSPENDED' => 'no',
+                ]), 200),
+                'v-list-web-domains' => Http::response(json_encode([
+                    'example.test' => [
+                        'U_DISK' => '90',
+                        'U_BANDWIDTH' => '400',
+                        'SSL' => 'yes',
+                        'LETSENCRYPT' => 'yes',
+                        'SUSPENDED' => 'no',
+                    ],
+                ]), 200),
+                'v-list-databases' => Http::response(json_encode([
+                    'client01_app' => [
+                        'DATABASE' => 'client01_app',
+                        'DBUSER' => 'client01_app',
+                        'HOST' => 'localhost',
+                        'TYPE' => 'mysql',
+                        'U_DISK' => '30',
+                        'SUSPENDED' => 'no',
+                    ],
+                ]), 200),
+                default => Http::response('Error: unexpected command', 400),
+            };
+        });
+
+        $response = $this->actingAs($user)->get("/servers/{$server->id}/users/client01");
+
+        $response->assertOk()
+            ->assertSee('Client One')
+            ->assertSee('120 MB / 1.024 MB')
+            ->assertSee('client01_app')
+            ->assertSee('example.test');
+
+        Http::assertSentCount(3);
+    }
+
     public function test_seeder_does_not_use_sync_permissions_for_default_roles(): void
     {
         $this->seed(\Database\Seeders\PermissionSeeder::class);

@@ -176,6 +176,49 @@ class ServerManageController extends Controller
     }
 
     /**
+     * Show read-only usage and resources for one HestiaCP account.
+     */
+    public function userShow(HostingServer $server, Request $request, string $username)
+    {
+        $this->authorize('servers.manage');
+        $this->authorizeServer($server);
+
+        abort_unless(preg_match(self::USERNAME_PATTERN, $username), 404);
+
+        $cacheKey = "hestiacp:user-detail:{$server->id}:".strtolower($username);
+        if ($request->boolean('refresh')) {
+            Cache::forget($cacheKey);
+        }
+
+        try {
+            $detail = Cache::remember($cacheKey, 120, function () use ($server, $username) {
+                return $this->resolver->resolve($server)->userDetails($username);
+            });
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            abort(422, 'Data user tidak dapat dimuat dari HestiaCP. Periksa koneksi dan kredensial server.');
+        }
+
+        abort_unless($detail['success'] ?? false, 422, 'Data user tidak dapat dimuat dari HestiaCP.');
+        abort_unless($detail['data']['user'] ?? null, 404, 'User tidak ditemukan di HestiaCP.');
+
+        $hosting = SubscriptionHosting::with(['subscription.client', 'subscription.package'])
+            ->where('hosting_server_id', $server->id)
+            ->where('username', strtolower($username))
+            ->first();
+
+        return view('servers.user-show', [
+            'server' => $server,
+            'user' => $detail['data']['user'],
+            'webDomains' => $detail['data']['web_domains'],
+            'databases' => $detail['data']['databases'],
+            'warnings' => $detail['data']['warnings'],
+            'hosting' => $hosting,
+        ]);
+    }
+
+    /**
      * Link an existing Hestia user to a subscription with hosting service.
      */
     public function link(HostingServer $server, Request $request)

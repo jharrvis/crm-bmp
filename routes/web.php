@@ -31,6 +31,9 @@ Route::middleware('auth')->group(function () {
         Route::get('manage', [\App\Http\Controllers\ServerManageController::class, 'show'])->name('servers.manage');
         Route::post('test-connection', [\App\Http\Controllers\ServerManageController::class, 'testConnection'])->name('servers.test-connection');
         Route::get('users', [\App\Http\Controllers\ServerManageController::class, 'users'])->name('servers.users');
+        Route::get('users/{username}', [\App\Http\Controllers\ServerManageController::class, 'userShow'])
+            ->where('username', '[a-zA-Z0-9_]{1,32}')
+            ->name('servers.users.show');
         Route::post('users/link', [\App\Http\Controllers\ServerManageController::class, 'link'])->name('servers.users.link');
         Route::post('users/suspend', [\App\Http\Controllers\ServerManageController::class, 'suspend'])->name('servers.users.suspend');
         Route::post('users/activate', [\App\Http\Controllers\ServerManageController::class, 'activate'])->name('servers.users.activate');

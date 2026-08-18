@@ -20,6 +20,11 @@ interface WebHostingServerAdapter
     public function findUser(string $username): array;
 
     /**
+     * Return read-only account usage and resource detail for one user.
+     */
+    public function userDetails(string $username): array;
+
+    /**
      * List web domains owned by a user. Returns ['success' => bool, 'data' => array, 'message' => string].
      */
     public function listWebDomains(string $username): array;
