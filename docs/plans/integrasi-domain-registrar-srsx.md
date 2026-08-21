@@ -31,7 +31,7 @@ Referensi:
 3. Aksi berbiaya atau sulit dibatalkan, seperti register, renew, transfer, suspend, cancel, perubahan WHOIS, dan DNS, harus memakai konfirmasi eksplisit, permission terpisah, queue, serta audit log.
 4. API username, API password, EPP code, auth code, dan payload sensitif disimpan terenkripsi. Nilai asli tidak pernah ditulis ke log, activity log, exception, job payload, atau response browser.
 5. Setiap job membawa ID record, bukan credential. Credential dibaca kembali dari database saat job berjalan.
-6. Integrasi hanya menerima base URL HTTPS yang diizinkan dan TLS certificate harus diverifikasi. API SRS-X harus di-whitelist dengan IP publik server CRM untuk masing-masing akun.
+6. Integrasi hanya menerima base URL HTTPS yang diizinkan dan TLS certificate harus diverifikasi. Endpoint resmi global `api.srs-x.com` serta endpoint reseller `srb<angka>.srs-x.com` diterima melalui allowlist ketat; host lain ditolak. API SRS-X harus di-whitelist dengan IP publik server CRM untuk masing-masing akun.
 7. Respons provider dipetakan ke status internal; response mentah hanya disimpan ter-redaksi bila diperlukan untuk troubleshooting.
 
 ## Desain Add-on Provider

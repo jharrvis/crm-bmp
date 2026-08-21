@@ -61,4 +61,24 @@ class RegistrarSecretLeakTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $client->checkAvailability($account, 'example.com');
     }
+
+    public function test_allowlist_allows_srsx_reseller_host(): void
+    {
+        Http::fake([
+            'https://srb168.srs-x.com/*' => Http::response('<?xml version="1.0"?><epp><result><resultCode>1000</resultCode><resultMsg>OK</resultMsg></result></epp>', 200),
+        ]);
+
+        $account = RegistrarAccount::create([
+            'provider' => 'srsx',
+            'name' => 'SRS-X Reseller',
+            'base_url' => 'https://srb168.srs-x.com',
+            'is_active' => true,
+            'api_username_encrypted' => 'u',
+            'api_password_encrypted' => 'p',
+        ]);
+
+        app(SrsxApiClient::class)->checkAvailability($account, 'example.com');
+
+        Http::assertSent(fn ($request) => str_starts_with($request->url(), 'https://srb168.srs-x.com/'));
+    }
 }

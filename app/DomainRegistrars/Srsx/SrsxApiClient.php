@@ -49,10 +49,14 @@ class SrsxApiClient
             return strtolower($p['host'] ?? $item);
         })->filter()->values();
 
-        // Allow exact host atau subdomain dari allowed host (misal r123.srs-x.com untuk srs-x.com)
+        // Allow exact host atau subdomain dari allowed host.
         $isAllowed = $allowedHosts->contains(function ($allowedHost) use ($host) {
             return $host === $allowedHost || str_ends_with($host, '.'.$allowedHost);
         });
+        if (! $isAllowed) {
+            $isAllowed = collect(config('domain-registrars.allowed_host_patterns', []))
+                ->contains(fn (string $pattern) => preg_match($pattern, $host) === 1);
+        }
         if (! $isAllowed) {
             throw new \InvalidArgumentException("Host '{$host}' tidak ada di allowlist registrar. Periksa konfigurasi base_url.");
         }

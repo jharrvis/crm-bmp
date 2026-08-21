@@ -40,4 +40,10 @@ return [
     'allowed_base_urls' => [
         'https://api.srs-x.com',
     ],
+
+    // Endpoint API reseller SRS-X memakai host khusus akun, mis. srb168.srs-x.com.
+    // Pola dibatasi angka agar tidak membuka seluruh subdomain srs-x.com.
+    'allowed_host_patterns' => [
+        '/^srb[0-9]+\\.srs-x\\.com$/',
+    ],
 ];
