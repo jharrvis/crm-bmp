@@ -707,7 +707,9 @@
                         <p class="text-slate-800 dark:text-white font-medium text-lg">{{ $subscription->domain->last_synced_at ? $subscription->domain->last_synced_at->timezone(config('app.timezone'))->format('d M Y H:i') : '-' }}</p>
                     </div>
                 </div>
-                @php($provider = $subscription->domain->provider_metadata ?? [])
+                @php
+                    $provider = $subscription->domain->provider_metadata ?? [];
+                @endphp
                 @if(!empty($provider['nameservers']))
                     <section class="mt-6 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
                         <h5 class="text-xs font-bold uppercase tracking-widest text-slate-500">Nameserver</h5>

@@ -6,6 +6,7 @@ Semua perubahan penting pada project ini dicatat di file ini.
 
 ### Fixed
 - **Sinkronisasi detail domain SRS-X**: field `startdate` dan `enddate` dari endpoint `domain/info` kini dinormalisasi menjadi tanggal registrasi dan expired lokal. Sebelumnya tanggal dapat tetap kosong karena job hanya membaca nama field generik.
+- **Halaman detail langganan**: memperbaiki ParseError Blade pada panel Domain ketika metadata registrar dimuat.
 
 ### Added
 - **Detail registrar domain read-only**: panel Domain dapat menyinkronkan status, ID provider, nameserver, dan contact registrant/admin/billing/tech dari SRS-X. Contact hanya dibaca melalui API, disimpan sebagai metadata lokal, dan tidak ikut tercatat pada Activity Log.
