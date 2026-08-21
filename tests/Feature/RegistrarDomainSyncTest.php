@@ -48,7 +48,7 @@ class RegistrarDomainSyncTest extends TestCase
                 return Http::response('<?xml version="1.0"?><epp><result><resultCode>1000</resultCode><resultMsg>OK</resultMsg></result><resultData><contactid>11</contactid><fname>Jane</fname><lname>Doe</lname><email>jane@example.com</email><company>PT Contoh</company></resultData></epp>', 200);
             }
 
-            return Http::response('<?xml version="1.0"?><epp><result><resultCode>1000</resultCode><resultMsg>OK</resultMsg></result><resultData><domainid>35</domainid><domain>example.com</domain><startdate>2024-01-10</startdate><enddate>2025-01-10</enddate><contact_registrant>11</contact_registrant><contact_admin>11</contact_admin><ns1>ns1.example.com</ns1><ns2>ns2.example.com</ns2><status>active</status></resultData></epp>', 200);
+            return Http::response('<?xml version="1.0"?><epp><result><resultCode>1000</resultCode><resultMsg>OK</resultMsg></result><resultData><domainid>35</domainid><domain>example.com</domain><startdate>2024-01-10</startdate><enddate>2025-01-10</enddate><authcode>SecretEpp1</authcode><contact_registrant>11</contact_registrant><contact_admin>11</contact_admin><ns1>ns1.example.com</ns1><ns2>ns2.example.com</ns2><status>active</status></resultData></epp>', 200);
         });
 
         (new SyncRegistrarDomain($domain->id))->handle(
@@ -64,6 +64,8 @@ class RegistrarDomainSyncTest extends TestCase
         $this->assertSame(['ns1.example.com', 'ns2.example.com'], $domain->provider_metadata['nameservers']);
         $this->assertSame('Jane', $domain->provider_metadata['contacts']['registrant']['fname']);
         $this->assertSame('Jane', $domain->provider_metadata['contacts']['admin']['fname']);
+        $this->assertArrayNotHasKey('authcode', $domain->provider_metadata);
+        $this->assertNull($domain->auth_code_encrypted);
         Http::assertSentCount(2);
     }
 }

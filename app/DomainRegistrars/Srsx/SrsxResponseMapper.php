@@ -119,6 +119,9 @@ class SrsxResponseMapper
         }
 
         $data = $result['data'] ?? [];
+        // domain/info pada sebagian akun SRS-X mengembalikan authcode. Jangan
+        // masukkan EPP/auth code ke metadata biasa atau respons/log apa pun.
+        unset($data['authcode'], $data['auth_code'], $data['epp'], $data['eppcode']);
         $nameservers = collect(['ns1', 'ns2', 'ns3', 'ns4'])
             ->map(fn (string $key) => trim((string) ($data[$key] ?? '')))
             ->filter()
