@@ -49,7 +49,7 @@ class PermissionSeeder extends Seeder
 
             // Domain Registrar (SRS-X add-on)
             'registrar_accounts' => ['view', 'manage', 'test'],
-            'domains' => ['view', 'sync', 'link', 'register', 'renew', 'transfer', 'update_nameservers', 'manage_dns', 'manage_contacts', 'view_epp', 'set_epp'],
+            'domains' => ['view', 'sync', 'link', 'register', 'renew', 'approve_renew', 'transfer', 'update_nameservers', 'manage_dns', 'manage_contacts', 'view_epp', 'set_epp'],
 
             // Pusat Notifikasi Admin
             'notifications' => ['view', 'manage', 'settings'],

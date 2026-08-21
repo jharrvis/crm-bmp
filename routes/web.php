@@ -96,6 +96,9 @@ Route::middleware('auth')->group(function () {
 
         // Domain Registrar — Fase 2: operasi domain terkontrol (nameserver, EPP, DNS managed)
         Route::prefix('subscriptions/{subscription}/domains/{domain}')->name('domain-operations.')->group(function () {
+            // Fase 3a: approval internal saja; tidak ada mutasi provider.
+            Route::post('renewals', [\App\Http\Controllers\SubscriptionDomainRenewalController::class, 'requestRenewal'])->name('renewals.request');
+            Route::post('renewals/{operation}/approve', [\App\Http\Controllers\SubscriptionDomainRenewalController::class, 'approveRenewal'])->name('renewals.approve');
             Route::post('nameservers', [\App\Http\Controllers\SubscriptionDomainOperationController::class, 'updateNameservers'])->name('nameservers');
             Route::post('epp/fetch', [\App\Http\Controllers\SubscriptionDomainOperationController::class, 'fetchEpp'])->name('epp.fetch');
             Route::post('epp/set', [\App\Http\Controllers\SubscriptionDomainOperationController::class, 'setEpp'])->name('epp.set');

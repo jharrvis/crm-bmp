@@ -578,6 +578,8 @@ class SubscriptionController extends Controller
                 'can_update_nameservers' => $manager->canPerform('update_nameservers') && auth()->user()?->can('domains.update_nameservers'),
                 'can_view_epp' => $manager->canPerform('view_epp') && auth()->user()?->can('domains.view_epp'),
                 'can_set_epp' => $manager->canPerform('set_epp') && auth()->user()?->can('domains.set_epp'),
+                'can_request_renew' => auth()->user()?->can('domains.renew'),
+                'can_approve_renew' => auth()->user()?->can('domains.approve_renew'),
                 'can_get_dns' => $manager->canPerform('get_dns') && auth()->user()?->can('domains.manage_dns'),
                 'can_edit_dns' => $manager->canPerform('manage_dns') && auth()->user()?->can('domains.manage_dns'),
             ];

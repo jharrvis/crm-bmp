@@ -23,6 +23,46 @@
         <div class="px-3 py-2 rounded bg-blue-50 text-blue-700 text-xs">Managed DNS SRS-X aktif untuk {{ $d->domain_name }}. DNS hanya dikelola via CRM jika diaktifkan eksplisit.</div>
     @endif
 
+    {{-- Fase 3a: request dan approval internal. Tidak ada mutasi provider. --}}
+    @if(($ops['can_request_renew'] ?? false) || ($ops['can_approve_renew'] ?? false))
+    <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+                <p class="text-sm font-bold">Perpanjangan Domain</p>
+                <p class="text-xs text-slate-500">Permintaan hanya dicatat untuk persetujuan. Tidak membuat tagihan atau mengubah domain di SRS-X.</p>
+            </div>
+            @if($d->expires_at)
+                <span class="text-xs text-slate-500">Berakhir: {{ $d->expires_at->format('d M Y') }}</span>
+            @endif
+        </div>
+
+        @if($ops['can_request_renew'] ?? false)
+        <form method="POST" action="{{ route('domain-operations.renewals.request', [$subscription, $d]) }}" class="mt-3 grid gap-2 md:grid-cols-[120px_1fr_auto]">
+            @csrf
+            <select name="years" class="border rounded-lg p-2 text-sm" required>
+                @foreach(range(1, 10) as $year)
+                    <option value="{{ $year }}">{{ $year }} tahun</option>
+                @endforeach
+            </select>
+            <input name="notes" value="{{ old('notes') }}" placeholder="Catatan permintaan (opsional)" class="border rounded-lg p-2 text-sm">
+            <input name="confirm_domain" placeholder="Ketik ulang: {{ $d->domain_name }}" class="border rounded-lg p-2 text-sm" required>
+            <button class="md:col-span-3 justify-self-start px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">Ajukan Perpanjangan</button>
+        </form>
+        @endif
+
+        @if($ops['can_approve_renew'] ?? false)
+            @foreach($recentOps->where('operation_type', 'renew')->where('status', 'awaiting_approval') as $renewal)
+            <form method="POST" action="{{ route('domain-operations.renewals.approve', [$subscription, $d, $renewal]) }}" class="mt-3 flex flex-wrap items-center gap-2 border-t pt-3 text-xs">
+                @csrf
+                <span>Permintaan #{{ $renewal->id }}: {{ $renewal->request_payload_redacted['years'] ?? 1 }} tahun</span>
+                <input name="confirm_domain" placeholder="Ketik ulang: {{ $d->domain_name }}" class="border rounded p-1.5" required>
+                <button class="px-3 py-1.5 bg-amber-600 text-white rounded">Setujui untuk Review Manual</button>
+            </form>
+            @endforeach
+        @endif
+    </div>
+    @endif
+
     <div class="grid md:grid-cols-2 gap-6">
         {{-- Nameserver --}}
         @if($ops['can_update_nameservers'] ?? false)

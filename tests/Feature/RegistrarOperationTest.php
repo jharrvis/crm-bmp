@@ -609,6 +609,40 @@ public function test_set_epp_dispatch_in_managed_mode(): void
         Queue::assertNotPushed(\App\Jobs\SetDomainEpp::class);
     }
 
+    public function test_renewal_request_and_approval_stay_manual_without_provider_call(): void
+    {
+        Http::fake();
+        $owner = User::factory()->create();
+        $owner->assignRole('Owner');
+        $this->actingAs($owner);
+        $account = $this->makeAccount();
+        $domain = $this->makeLinkedDomain($this->makeSubscription(), $account);
+
+        $this->post(route('domain-operations.renewals.request', [$domain->subscription, $domain]), [
+            'years' => 2,
+            'notes' => 'Tindak lanjut kontrak pelanggan.',
+            'confirm_domain' => 'example.com',
+        ])->assertRedirect();
+
+        $operation = \App\Models\RegistrarOperation::where('subscription_domain_id', $domain->id)
+            ->where('operation_type', 'renew')
+            ->firstOrFail();
+        $this->assertSame('awaiting_approval', $operation->status);
+        $this->assertSame(2, $operation->request_payload_redacted['years']);
+        Http::assertNothingSent();
+
+        $this->post(route('domain-operations.renewals.approve', [$domain->subscription, $domain, $operation]), [
+            'confirm_domain' => 'example.com',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('registrar_operations', [
+            'id' => $operation->id,
+            'status' => 'manual_review',
+            'approved_by' => $owner->id,
+        ]);
+        Http::assertNothingSent();
+    }
+
     // ===== DNS managed =====
 
     public function test_get_dns_requires_managed_dns_enabled(): void

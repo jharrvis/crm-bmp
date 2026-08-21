@@ -221,6 +221,12 @@ Credential hanya dapat diisi/ganti, tidak pernah dibaca ulang di UI. EPP/auth co
 - Renewal tidak lagi via invoice manual. Ganti dengan **notifikasi expiry** (`Pusat Notifikasi Admin` `domain_expiry_30/14/7/3/1`, `domain_overdue`) ke Owner/Admin. Petugas Billing request renew (`domains.renew` request → `registrar_operations` `awaiting_approval`), Owner/Admin approve (permission `domains.renew`).
 - Transfer dan cancel tetap manual-review pada fase awal karena berisiko terhadap kepemilikan dan availability domain.
 
+#### Fase 3a: Request dan Approval Renew Internal
+
+- **Selesai**: `SubscriptionDomainRenewalController` menyediakan request renew (`domains.renew`) dan approval (`domains.approve_renew`). Request memerlukan konfirmasi ketik ulang domain, durasi 1-10 tahun, dan membuat `registrar_operations` berstatus `awaiting_approval`.
+- Approval Owner/Admin mengubah status menjadi `manual_review`, menyimpan `approved_by`, menulis activity log, dan memberi notifikasi ke Owner/Admin saat request dibuat.
+- **Batas tegas**: workflow ini tidak membuat invoice, tidak mengantrekan job, dan tidak memanggil SRS-X. Endpoint renew provider tetap belum diaktifkan sampai kebijakan pembayaran dan UAT mutasi domain non-produksi disetujui.
+
 ### Fase 4: Billing dan Otomasi Terbatas
 
 - Sinkronkan expiry ke subscription dan buat reminder/invoice sesuai kebijakan bisnis.
