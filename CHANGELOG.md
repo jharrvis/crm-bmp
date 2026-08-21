@@ -2,6 +2,14 @@
 
 Semua perubahan penting pada project ini dicatat di file ini.
 
+## 2026-08-22
+
+### Changed
+- Halaman detail pelanggan (`clients.show`): label tab `Layanan Langganan` diganti menjadi `Layanan Pelanggan` agar konsisten dengan istilah `Pelanggan` di modul Clients. Tabel pada tab tersebut kini menampilkan kolom `Domain` — nama domain dari `subscriptions.domain` (`SubscriptionDomain.domain_name`) beserta tanggal expired (`expires_at`) jika ada, fallback `-` bila langganan bukan layanan domain. Controller `ClientController@show` (`app/Http/Controllers/ClientController.php:165`) menambahkan eager load `subscriptions.domain` untuk menghindari N+1.
+
+### Deployment Notes
+- Tidak ada migration/seeder baru. Cukup `php artisan view:clear` / `php artisan config:clear` jika view cache aktif.
+
 ## 2026-08-21
 
 ### Fixed

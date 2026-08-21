@@ -59,7 +59,7 @@
                 </button>
                 <button onclick="switchTab('services')" id="tab-services"
                     class="px-6 py-4 text-sm font-bold border-b-2 text-slate-500 border-transparent hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors">
-                    Layanan Langganan
+                    Layanan Pelanggan
                 </button>
                 @can('invoices.view')
                 <button onclick="switchTab('invoices')" id="tab-invoices"
@@ -342,6 +342,7 @@
                                     <tr class="text-xs font-bold text-slate-500 uppercase tracking-wider">
                                         <th class="p-4">Kode Layanan</th>
                                         <th class="p-4">Paket / Layanan</th>
+                                        <th class="p-4">Domain</th>
                                         <th class="p-4">Tgl. Pasang</th>
                                         <th class="p-4">Biaya</th>
                                         <th class="p-4">Status</th>
@@ -359,6 +360,19 @@
                                                     {{ $sub->package->name ?? 'Unknown Package' }}</div>
                                                 <div class="text-xs text-slate-500">{{ $sub->package->service->name ?? '-' }}
                                                 </div>
+                                            </td>
+                                            <td class="p-4">
+                                                @if($sub->domain?->domain_name)
+                                                    <div class="flex items-center gap-1.5">
+                                                        <i data-lucide="globe" class="w-3.5 h-3.5 text-slate-400 shrink-0"></i>
+                                                        <span class="font-mono text-sm font-semibold text-slate-700 dark:text-slate-200">{{ $sub->domain->domain_name }}</span>
+                                                    </div>
+                                                    @if($sub->domain->expires_at)
+                                                        <div class="text-[11px] text-slate-400">Exp: {{ $sub->domain->expires_at->format('d M Y') }}</div>
+                                                    @endif
+                                                @else
+                                                    <span class="text-sm text-slate-400">-</span>
+                                                @endif
                                             </td>
                                             <td class="p-4 text-sm text-slate-600 dark:text-slate-300">
                                                 {{ $sub->installed_at ? $sub->installed_at->format('d M Y') : '-' }}

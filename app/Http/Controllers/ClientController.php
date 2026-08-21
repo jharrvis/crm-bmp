@@ -162,7 +162,7 @@ class ClientController extends Controller
             return response()->json($client->load('branch', 'contacts', 'province', 'regency', 'district', 'village'));
         }
 
-        $client->load(['branch', 'contacts', 'province', 'regency', 'district', 'village', 'subscriptions.package.service', 'portalAccount.sessions']);
+        $client->load(['branch', 'contacts', 'province', 'regency', 'district', 'village', 'subscriptions.package.service', 'subscriptions.domain', 'portalAccount.sessions']);
 
         $invoices = $client->invoices()->latest()->get();
         $packages = \App\Models\Package::where('is_active', true)->get(); // For "Add Service" modal if needed here
