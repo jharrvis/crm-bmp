@@ -4,6 +4,12 @@ Semua perubahan penting pada project ini dicatat di file ini.
 
 ## 2026-08-21
 
+### Fixed
+- **Sinkronisasi detail domain SRS-X**: field `startdate` dan `enddate` dari endpoint `domain/info` kini dinormalisasi menjadi tanggal registrasi dan expired lokal. Sebelumnya tanggal dapat tetap kosong karena job hanya membaca nama field generik.
+
+### Added
+- **Detail registrar domain read-only**: panel Domain dapat menyinkronkan status, ID provider, nameserver, dan contact registrant/admin/billing/tech dari SRS-X. Contact hanya dibaca melalui API, disimpan sebagai metadata lokal, dan tidak ikut tercatat pada Activity Log.
+
 ### Security (Audit Fase 2 — EPP / DNS retry)
 - **P0 EPP code tidak lagi di payload queue**: `SetDomainEpp` kini hanya membawa `int $operationId`; nilai EPP disimpan terenkripsi di `registrar_operations.request_secret_encrypted` (migration `2026_08_20_000009`), dibaca + di-dekripsi saat job berjalan, lalu dihapus setelah sukses. Serialisasi job tidak mengandung secret (diuji). Kolom masuk `$hidden` + `activitylogExcludeAttributes` model `RegistrarOperation`.
 - **P0 Retry DNS tidak kehilangan data record**: `EditDomainDnsRecord` menyimpan payload lengkap (`dnsid`, `record`, `type`, `destination`, `ttl`, `priority`) ke `request_payload_redacted`; retry `manage_dns` mengambil ulang payload lengkap dari operasi asli — record tidak berubah datanya.

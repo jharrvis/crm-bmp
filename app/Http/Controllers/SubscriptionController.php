@@ -576,6 +576,7 @@ class SubscriptionController extends Controller
                 'mode' => $manager->effectiveMode(),
                 'enabled' => $manager->isEnabled(),
                 'can_update_nameservers' => $manager->canPerform('update_nameservers') && auth()->user()?->can('domains.update_nameservers'),
+                'can_sync' => $manager->canPerform('sync') && auth()->user()?->can('domains.sync'),
                 'can_view_epp' => $manager->canPerform('view_epp') && auth()->user()?->can('domains.view_epp'),
                 'can_set_epp' => $manager->canPerform('set_epp') && auth()->user()?->can('domains.set_epp'),
                 'can_request_renew' => auth()->user()?->can('domains.renew'),

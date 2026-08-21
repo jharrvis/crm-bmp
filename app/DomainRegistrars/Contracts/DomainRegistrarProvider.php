@@ -24,6 +24,14 @@ interface DomainRegistrarProvider
     public function getDomain(RegistrarAccount $account, string $domain): array;
 
     /**
+     * Ambil detail contact registrar/WHOIS berdasarkan ID contact dari info domain.
+     * Operasi ini read-only dan tidak boleh mengubah data contact provider.
+     *
+     * @return array{success: bool, data?: array, message: string, code?: string}
+     */
+    public function getContact(RegistrarAccount $account, string $contactId): array;
+
+    /**
      * @return array{success: bool, data?: array, message: string, code?: string, next_cursor?: string}
      */
     public function listDomains(RegistrarAccount $account, array $filter = []): array;

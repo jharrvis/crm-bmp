@@ -136,6 +136,12 @@ class SrsxApiClient
         return $this->mapper->mapDomainInfo($result);
     }
 
+    public function getContact(RegistrarAccount $account, string $contactId): array
+    {
+        $result = $this->srsxPost($account, 'api/contact/info', ['contactid' => $contactId]);
+        return $this->mapper->mapContactInfo($result);
+    }
+
     // ===== Fase 2: operasi terkontrol =====
 
     public function updateNameservers(RegistrarAccount $account, string $domain, array $nameservers): array

@@ -43,6 +43,11 @@ class SrsxDomainRegistrarProvider implements DomainRegistrarProvider
         return $this->client->getDomain($account, $domain);
     }
 
+    public function getContact(RegistrarAccount $account, string $contactId): array
+    {
+        return $this->client->getContact($account, $contactId);
+    }
+
     public function listDomains(RegistrarAccount $account, array $filter = []): array
     {
         return $this->client->listDomains($account, $filter);

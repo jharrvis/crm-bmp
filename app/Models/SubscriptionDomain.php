@@ -52,6 +52,8 @@ class SubscriptionDomain extends Model
 
     protected array $activitylogExcludeAttributes = [
         'auth_code_encrypted',
+        // Metadata provider dapat berisi PII contact registrar/WHOIS.
+        'provider_metadata',
     ];
 
     protected string $activitylogEntityName = 'domain';

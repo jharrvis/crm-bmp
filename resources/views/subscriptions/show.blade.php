@@ -658,10 +658,21 @@
         <div id="panelDomain" class="tab-panel hidden">
             <div
                 class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm p-6">
-                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2">
-                    <i data-lucide="globe" class="w-4 h-4"></i>
-                    Detail Domain
-                </h4>
+                <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+                    <h4 class="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-slate-500">
+                        <i data-lucide="globe" class="w-4 h-4"></i>
+                        Detail Domain
+                    </h4>
+                    @if($subscription->domain->registrar_account_id && ($domainOps['can_sync'] ?? false))
+                        <form method="POST" action="{{ route('domain-operations.sync', [$subscription, $subscription->domain]) }}">
+                            @csrf
+                            <button class="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+                                <i data-lucide="refresh-cw" class="h-4 w-4"></i>
+                                Sinkronkan dari SRS-X
+                            </button>
+                        </form>
+                    @endif
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
                         <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Nama Domain</p>
@@ -676,12 +687,58 @@
                         </p>
                     </div>
                     <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                        <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Tanggal Registrasi</p>
+                        <p class="text-slate-800 dark:text-white font-medium text-lg">
+                            {{ $subscription->domain->registered_at ? $subscription->domain->registered_at->format('d M Y') : '-' }}
+                        </p>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
                         <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Tanggal Expired</p>
                         <p class="text-slate-800 dark:text-white font-medium text-lg">
                             {{ $subscription->domain->expires_at ? $subscription->domain->expires_at->format('d M Y') : '-' }}
                         </p>
                     </div>
+                    <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                        <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Status Provider</p>
+                        <p class="text-slate-800 dark:text-white font-medium text-lg">{{ $subscription->domain->provider_status ?: '-' }}</p>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                        <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Sinkronisasi Terakhir</p>
+                        <p class="text-slate-800 dark:text-white font-medium text-lg">{{ $subscription->domain->last_synced_at ? $subscription->domain->last_synced_at->timezone(config('app.timezone'))->format('d M Y H:i') : '-' }}</p>
+                    </div>
                 </div>
+                @php($provider = $subscription->domain->provider_metadata ?? [])
+                @if(!empty($provider['nameservers']))
+                    <section class="mt-6 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+                        <h5 class="text-xs font-bold uppercase tracking-widest text-slate-500">Nameserver</h5>
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            @foreach($provider['nameservers'] as $nameserver)
+                                <code class="rounded bg-slate-100 px-2 py-1 text-xs text-slate-700 dark:bg-slate-700 dark:text-slate-200">{{ $nameserver }}</code>
+                            @endforeach
+                        </div>
+                    </section>
+                @endif
+                @if(!empty($provider['contacts']))
+                    <section class="mt-6 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+                        <h5 class="text-xs font-bold uppercase tracking-widest text-slate-500">Contact Registrar / WHOIS</h5>
+                        <p class="mt-1 text-xs text-slate-500">Data dibaca dari SRS-X saat sinkronisasi terakhir.</p>
+                        <div class="mt-4 grid gap-4 md:grid-cols-2">
+                            @foreach($provider['contacts'] as $role => $contact)
+                                <div class="rounded-lg bg-slate-50 p-3 text-sm dark:bg-slate-700/50">
+                                    <p class="text-xs font-bold uppercase tracking-wide text-slate-400">{{ ucfirst($role) }}</p>
+                                    <p class="mt-2 font-semibold text-slate-800 dark:text-white">{{ trim(($contact['fname'] ?? '').' '.($contact['lname'] ?? '')) ?: ($contact['company'] ?? '-') }}</p>
+                                    @if(!empty($contact['company']))<p class="text-slate-600 dark:text-slate-300">{{ $contact['company'] }}</p>@endif
+                                    @if(!empty($contact['email']))<p class="mt-1 break-all text-slate-600 dark:text-slate-300">{{ $contact['email'] }}</p>@endif
+                                    @if(!empty($contact['phonenumber']))<p class="text-slate-600 dark:text-slate-300">{{ $contact['phonenumber'] }}</p>@endif
+                                    @if(!empty($contact['address1']) || !empty($contact['city']))<p class="mt-1 text-slate-600 dark:text-slate-300">{{ collect([$contact['address1'] ?? null, $contact['address2'] ?? null, $contact['city'] ?? null, $contact['state'] ?? null, $contact['postcode'] ?? null, $contact['country'] ?? null])->filter()->implode(', ') }}</p>@endif
+                                </div>
+                            @endforeach
+                        </div>
+                    </section>
+                @endif
+                @if(!empty($provider['contact_sync_warnings']))
+                    <p class="mt-4 text-xs text-amber-700 dark:text-amber-300">Sebagian detail contact belum dapat dibaca dari SRS-X. Sinkronisasi domain tetap berhasil.</p>
+                @endif
                 @if($subscription->domain->registrar_account_id)
                     @include('subscriptions.partials.domain-actions')
                 @endif

@@ -142,6 +142,8 @@ PPN dan PPh23 rate saat ini hardcoded. Lihat plan audit tagihan untuk rencana mi
 
 - Detail domain disimpan pada `domain`; tidak lagi field panel hosting.
 - Auth code bersifat opsional dan disimpan terenkripsi. Saat edit, auth code lama tidak ditampilkan dan hanya berubah bila nilai baru diisi.
+- Domain yang ditautkan ke akun registrar dapat disinkronkan secara read-only dari SRS-X. Sinkronisasi mengisi tanggal registrasi/expired, status provider, ID provider, nameserver, dan detail contact yang dirujuk provider.
+- Detail contact registrar/WHOIS disimpan pada metadata domain untuk kebutuhan operasional, tetapi dikecualikan dari Activity Log karena mengandung data pribadi. Sinkronisasi tidak membuat, mengubah, atau menghapus contact/domain di SRS-X.
 
 ### Mail-specific
 

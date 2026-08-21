@@ -117,7 +117,50 @@ class SrsxResponseMapper
         if (! ($result['success'] ?? false)) {
             return $result;
         }
-        return $result;
+
+        $data = $result['data'] ?? [];
+        $nameservers = collect(['ns1', 'ns2', 'ns3', 'ns4'])
+            ->map(fn (string $key) => trim((string) ($data[$key] ?? '')))
+            ->filter()
+            ->values()
+            ->all();
+        $contactIds = [];
+        foreach (['registrant', 'admin', 'billing', 'tech'] as $role) {
+            $contactId = trim((string) ($data['contact_'.$role] ?? ''));
+            if ($contactId !== '') {
+                $contactIds[$role] = $contactId;
+            }
+        }
+
+        // Nama field SRS-X berbeda dari field lokal. Normalisasi di adapter agar
+        // job tidak perlu mengetahui detail XML provider.
+        return [
+            'success' => true,
+            'message' => $result['message'] ?? 'Detail domain berhasil diambil.',
+            'code' => $code,
+            'data' => array_merge($data, [
+                'provider_domain_id' => $data['domainid'] ?? null,
+                'registered_at' => $data['startdate'] ?? null,
+                'expires_at' => $data['enddate'] ?? null,
+                'nameservers' => $nameservers,
+                'contact_ids' => $contactIds,
+            ]),
+        ];
+    }
+
+    /** @return array{success: bool, data?: array, message: string, code?: string} */
+    public function mapContactInfo(array $result): array
+    {
+        if (! ($result['success'] ?? false)) {
+            return $result;
+        }
+
+        return [
+            'success' => true,
+            'message' => $result['message'] ?? 'Detail contact berhasil diambil.',
+            'code' => $result['code'] ?? '1000',
+            'data' => $result['data'] ?? [],
+        ];
     }
 
     public function mapRegister(array $result): array

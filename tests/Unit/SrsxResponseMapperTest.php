@@ -106,6 +106,31 @@ class SrsxResponseMapperTest extends TestCase
         $this->assertSame('example.com', $mapped['data']['domain']);
     }
 
+    public function test_map_domain_info_normalizes_dates_nameservers_and_contacts(): void
+    {
+        $mapper = new SrsxResponseMapper;
+        $xml = '<?xml version="1.0" encoding="UTF-8"?><epp><result><resultCode>1000</resultCode><resultMsg>OK</resultMsg></result><resultData><domainid>35</domainid><domain>example.com</domain><startdate>2024-01-10</startdate><enddate>2025-01-10</enddate><contact_registrant>11</contact_registrant><contact_admin>12</contact_admin><ns1>ns1.example.com</ns1><ns2>ns2.example.com</ns2><status>active</status></resultData></epp>';
+
+        $mapped = $mapper->mapDomainInfo($mapper->mapXml($xml));
+
+        $this->assertSame('35', $mapped['data']['provider_domain_id']);
+        $this->assertSame('2024-01-10', $mapped['data']['registered_at']);
+        $this->assertSame('2025-01-10', $mapped['data']['expires_at']);
+        $this->assertSame(['ns1.example.com', 'ns2.example.com'], $mapped['data']['nameservers']);
+        $this->assertSame(['registrant' => '11', 'admin' => '12'], $mapped['data']['contact_ids']);
+    }
+
+    public function test_map_contact_info_returns_provider_contact_data(): void
+    {
+        $mapper = new SrsxResponseMapper;
+        $xml = '<?xml version="1.0" encoding="UTF-8"?><epp><result><resultCode>1000</resultCode><resultMsg>OK</resultMsg></result><resultData><contactid>11</contactid><fname>Jane</fname><email>jane@example.com</email></resultData></epp>';
+
+        $mapped = $mapper->mapContactInfo($mapper->mapXml($xml));
+
+        $this->assertTrue($mapped['success']);
+        $this->assertSame('Jane', $mapped['data']['fname']);
+    }
+
     public function test_map_epp_success_returns_epp(): void
     {
         $mapper = new SrsxResponseMapper;

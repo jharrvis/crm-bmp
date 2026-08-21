@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\DomainRegistrars\DomainRegistrarManager;
 use App\Jobs\EditDomainDnsRecord;
 use App\Jobs\SetDomainEpp;
+use App\Jobs\SyncRegistrarDomain;
 use App\Jobs\UpdateDomainNameservers;
 use App\Models\RegistrarOperation;
 use App\Models\Subscription;
@@ -23,6 +24,7 @@ class SubscriptionDomainOperationController extends Controller
         $this->middleware('permission:domains.view_epp')->only(['fetchEpp']);
         $this->middleware('permission:domains.set_epp')->only(['setEpp']);
         $this->middleware('permission:domains.manage_dns')->only(['getDns', 'editDns', 'toggleManagedDns']);
+        $this->middleware('permission:domains.sync')->only(['sync']);
     }
 
     private function resolve(Subscription $subscription, SubscriptionDomain $domain): SubscriptionDomain
@@ -38,6 +40,22 @@ class SubscriptionDomainOperationController extends Controller
         if ($confirmed !== strtolower($domain->domain_name)) {
             abort(422, 'Konfirmasi gagal: ketik ulang nama domain persis seperti ditampilkan.');
         }
+    }
+
+    /** Sinkronisasi metadata provider read-only untuk satu domain. */
+    public function sync(Subscription $subscription, SubscriptionDomain $domain, DomainRegistrarManager $manager)
+    {
+        $domain = $this->resolve($subscription, $domain);
+        abort_unless($manager->isEnabled(), 403, 'Integrasi registrar dinonaktifkan.');
+        abort_unless($manager->canPerform('sync'), 403, 'Sinkronisasi tidak diizinkan pada mode '.$manager->effectiveMode().'.');
+
+        SyncRegistrarDomain::dispatch($domain->id)->afterCommit();
+
+        activity('registrar_accounts')->performedOn($domain)->causedBy(auth()->user())
+            ->withProperties(['domain' => $domain->domain_name, 'registrar_account_id' => $domain->registrar_account_id])
+            ->log("Sinkronisasi detail domain {$domain->domain_name} masuk antrean");
+
+        return back()->with('success', "Sinkronisasi detail {$domain->domain_name} masuk antrean. Tanggal, nameserver, dan contact akan diperbarui tanpa mengubah data di SRS-X.");
     }
 
     public function updateNameservers(Request $request, Subscription $subscription, SubscriptionDomain $domain, DomainRegistrarManager $manager)

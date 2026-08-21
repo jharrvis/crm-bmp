@@ -96,17 +96,47 @@ class SyncRegistrarDomain implements ShouldQueue
             }
 
             $data = $result['data'] ?? [];
-            // Expect provider returns expiry, status, nameservers etc.
-            $expiresAt = $data['expires_at'] ?? $data['expiry'] ?? null;
+            $contacts = [];
+            $contactWarnings = [];
+            $contactsById = [];
+
+            // SRS-X domain/info hanya mengembalikan ID contact. Detail contact
+            // diambil read-only dan satu ID hanya dipanggil satu kali per sync.
+            foreach (($data['contact_ids'] ?? []) as $role => $contactId) {
+                if (isset($contactsById[$contactId])) {
+                    $contacts[$role] = $contactsById[$contactId];
+                    continue;
+                }
+
+                $contactResult = $provider->getContact($account, (string) $contactId);
+                if ($contactResult['success'] ?? false) {
+                    $contactsById[$contactId] = $contactResult['data'] ?? [];
+                    $contacts[$role] = $contactsById[$contactId];
+                    continue;
+                }
+
+                // Contact yang gagal dibaca tidak boleh membuat metadata/tanggal
+                // domain gagal tersimpan. Warning hanya disimpan lokal, tanpa PII.
+                $contactWarnings[$role] = $contactResult['message'] ?? 'Detail contact tidak dapat diambil.';
+            }
+            $data['contacts'] = $contacts;
+            $data['contact_sync_warnings'] = $contactWarnings;
+
+            // SRS-X memakai startdate/enddate. Fallback lama dipertahankan untuk
+            // provider lain yang sudah memakai nama field generik.
+            $registeredAt = $data['registered_at'] ?? $data['startdate'] ?? null;
+            $expiresAt = $data['expires_at'] ?? $data['enddate'] ?? $data['expiry'] ?? null;
             $status = $data['status'] ?? $data['provider_status'] ?? null;
 
             $domain->update([
                 'provider_status' => $status,
+                'provider_domain_id' => $data['provider_domain_id'] ?? $data['domainid'] ?? $domain->provider_domain_id,
                 'provider_metadata' => $data,
                 'sync_status' => 'synced',
                 'sync_error_summary' => null,
                 'last_synced_at' => now(),
                 'not_found_at' => null,
+                'registered_at' => $registeredAt ? \Carbon\Carbon::parse($registeredAt)->toDateString() : $domain->registered_at,
                 'expires_at' => $expiresAt ? \Carbon\Carbon::parse($expiresAt)->toDateString() : $domain->expires_at,
             ]);
             $op->update(['status' => 'completed', 'completed_at' => now(), 'response_payload_redacted' => ['status' => $status]]);
