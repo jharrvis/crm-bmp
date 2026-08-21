@@ -848,13 +848,6 @@
                 let selectedZabbixInterfaces = [];
                 let activeSubscriptionFormTab = 'general';
 
-                const escapeHtml = (value) => String(value ?? '')
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#039;');
-
                 const isDomainSubscription = (row) => row?.package?.service?.type === 'domain';
 
                 const formatDomainExpiry = (expiresAt, type) => {

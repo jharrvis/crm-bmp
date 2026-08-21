@@ -7,6 +7,7 @@ Semua perubahan penting pada project ini dicatat di file ini.
 ### Fixed
 - **Sinkronisasi detail domain SRS-X**: field `startdate` dan `enddate` dari endpoint `domain/info` kini dinormalisasi menjadi tanggal registrasi dan expired lokal. Sebelumnya tanggal dapat tetap kosong karena job hanya membaca nama field generik.
 - **Halaman detail langganan**: memperbaiki ParseError Blade pada panel Domain ketika metadata registrar dimuat.
+- **Daftar layanan**: memperbaiki error JavaScript deklarasi `escapeHtml` ganda yang menghentikan inisialisasi DataTable dan membuat seluruh data layanan tidak tampil.
 
 ### Security
 - **Metadata registrar SRS-X**: `authcode`/EPP dari respons `domain/info` kini dibuang sebelum disimpan. Migration `2026_08_21_000010` membersihkan metadata domain lama dan `2026_08_21_000011` menghapus key secret yang mungkin tercatat pada Activity Log oleh worker versi lama.
