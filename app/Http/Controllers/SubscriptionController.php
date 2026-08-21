@@ -48,7 +48,7 @@ class SubscriptionController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Subscription::with(['client', 'package.service'])->latest();
+        $query = Subscription::with(['client', 'package.service', 'domain'])->latest();
 
         if ($request->has('service_id') && $request->service_id) {
             $query->whereHas('package', function ($q) use ($request) {

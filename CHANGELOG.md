@@ -9,10 +9,13 @@ Semua perubahan penting pada project ini dicatat di file ini.
 - **Halaman detail langganan**: memperbaiki ParseError Blade pada panel Domain ketika metadata registrar dimuat.
 
 ### Security
-- **Metadata registrar SRS-X**: `authcode`/EPP dari respons `domain/info` kini dibuang sebelum disimpan. Migration `2026_08_21_000010` juga membersihkan nilai secret yang mungkin sudah tersimpan pada metadata domain lama.
+- **Metadata registrar SRS-X**: `authcode`/EPP dari respons `domain/info` kini dibuang sebelum disimpan. Migration `2026_08_21_000010` membersihkan metadata domain lama dan `2026_08_21_000011` menghapus key secret yang mungkin tercatat pada Activity Log oleh worker versi lama.
 
 ### Added
 - **Detail registrar domain read-only**: panel Domain dapat menyinkronkan status, ID provider, nameserver, dan contact registrant/admin/billing/tech dari SRS-X. Contact hanya dibaca melalui API, disimpan sebagai metadata lokal, dan tidak ikut tercatat pada Activity Log.
+
+### Changed
+- **Daftar layanan domain**: nama domain kini menjadi informasi utama, diikuti nama dan ID pelanggan. Kolom tanggal menampilkan expired serta sisa hari; tanggal pemasangan tidak ditampilkan untuk layanan domain.
 
 ### Security (Audit Fase 2 — EPP / DNS retry)
 - **P0 EPP code tidak lagi di payload queue**: `SetDomainEpp` kini hanya membawa `int $operationId`; nilai EPP disimpan terenkripsi di `registrar_operations.request_secret_encrypted` (migration `2026_08_20_000009`), dibaca + di-dekripsi saat job berjalan, lalu dihapus setelah sukses. Serialisasi job tidak mengandung secret (diuji). Kolom masuk `$hidden` + `activitylogExcludeAttributes` model `RegistrarOperation`.

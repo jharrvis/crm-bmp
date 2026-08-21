@@ -24,9 +24,9 @@
                         <tr
                             class="text-slate-400 text-xs font-bold uppercase tracking-wider border-b border-slate-100 dark:border-slate-700">
                             <th class="p-4 pl-6">ID Layanan</th>
-                            <th class="p-4">Pelanggan</th>
+                            <th class="p-4">Pelanggan / Domain</th>
                             <th class="p-4">Paket & Layanan</th>
-                            <th class="p-4">Tgl Pasang</th>
+                            <th class="p-4">Tanggal Layanan</th>
                             <th class="p-4">Status</th>
                             <th class="p-4 pr-6 text-center">Aksi</th>
                         </tr>
@@ -848,6 +848,46 @@
                 let selectedZabbixInterfaces = [];
                 let activeSubscriptionFormTab = 'general';
 
+                const escapeHtml = (value) => String(value ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+
+                const isDomainSubscription = (row) => row?.package?.service?.type === 'domain';
+
+                const formatDomainExpiry = (expiresAt, type) => {
+                    if (!expiresAt) {
+                        return type === 'sort' || type === 'type' ? '' : `
+                            <div class="font-medium text-slate-500 dark:text-slate-400">Belum disinkronkan</div>
+                            <div class="text-xs text-slate-400">Tanggal expired belum tersedia</div>`;
+                    }
+
+                    const dateOnly = String(expiresAt).slice(0, 10);
+                    const expiryDate = new Date(`${dateOnly}T00:00:00`);
+                    if (Number.isNaN(expiryDate.getTime())) {
+                        return type === 'sort' || type === 'type' ? '' : '-';
+                    }
+                    if (type === 'sort' || type === 'type') return dateOnly;
+
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const remainingDays = Math.ceil((expiryDate - today) / 86400000);
+                    const formatted = expiryDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+                    const remainingLabel = remainingDays < 0
+                        ? `Terlambat ${Math.abs(remainingDays)} hari`
+                        : remainingDays === 0 ? 'Berakhir hari ini' : `Sisa ${remainingDays} hari`;
+                    const remainingClass = remainingDays < 0
+                        ? 'text-red-600 dark:text-red-400'
+                        : remainingDays <= 30 ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-emerald-600 dark:text-emerald-400';
+
+                    return `
+                        <div class="font-medium text-slate-700 dark:text-slate-200">${formatted}</div>
+                        <div class="text-xs font-semibold ${remainingClass}">${remainingLabel}</div>`;
+                };
+
                 const zabbixRoutes = {
                     groups: '{{ route('zabbix-monitors.groups') }}',
                     hosts: '{{ route('zabbix-monitors.hosts') }}',
@@ -888,10 +928,22 @@
                             {
                                 data: 'client',
                                 className: 'p-4',
-                                render: (data) => data ? `
-                                                                                                    <div class="font-bold text-slate-800 dark:text-white">${data.name}</div>
-                                                                                                    <div class="text-xs text-slate-500 font-mono">${data.client_code}</div>
-                                                                                                ` : '-'
+                                render: (data, type, row) => {
+                                    if (isDomainSubscription(row)) {
+                                        const domain = row.domain?.domain_name;
+                                        if (type === 'sort' || type === 'type') return domain || data?.name || '';
+
+                                        return `
+                                            <div class="font-mono text-base font-bold text-slate-800 dark:text-white">${escapeHtml(domain || 'Domain belum diisi')}</div>
+                                            <div class="mt-1 text-xs text-slate-500">${escapeHtml(data?.name || 'Pelanggan tidak tersedia')}</div>
+                                            <div class="text-xs font-mono text-slate-400">${escapeHtml(data?.client_code || '-')}</div>`;
+                                    }
+
+                                    return data ? `
+                                        <div class="font-bold text-slate-800 dark:text-white">${escapeHtml(data.name)}</div>
+                                        <div class="text-xs text-slate-500 font-mono">${escapeHtml(data.client_code)}</div>
+                                    ` : '-';
+                                }
                             },
                             {
                                 data: 'package',
@@ -906,7 +958,9 @@
                             {
                                 data: 'installed_at',
                                 className: 'p-4',
-                                render: (data) => data ? new Date(data).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'
+                                render: (data, type, row) => isDomainSubscription(row)
+                                    ? formatDomainExpiry(row.domain?.expires_at, type)
+                                    : (data ? new Date(data).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-')
                             },
                             {
                                 data: 'status',
