@@ -124,26 +124,71 @@
             <i data-lucide="sun" id="light-icon" class="w-5 h-5 block dark:hidden"></i>
         </button>
 
-        <div class="relative">
-            <button onclick="toggleDropdown('notification-menu')"
+        <div class="relative" id="admin-notif-wrapper">
+            <button onclick="toggleDropdown('notification-menu'); loadAdminNotifications();"
                 class="p-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl relative transition-colors">
                 <i data-lucide="bell" class="w-5 h-5"></i>
-                <span
-                    class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-800"></span>
+                <span id="admin-notif-badge"
+                    class="hidden absolute top-1.5 right-1.5 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-white dark:border-slate-800 flex items-center justify-center px-1">0</span>
             </button>
 
             <div id="notification-menu"
-                class="hidden absolute right-0 mt-3 w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl overflow-hidden glass-card z-50">
-                <div
-                    class="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-                    <h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm">Notifikasi</h3>
-                    <span
-                        class="text-[10px] bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 font-bold px-2 py-0.5 rounded-full">3
-                        Baru</span>
+                class="hidden absolute right-0 mt-3 w-96 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl overflow-hidden glass-card z-50 max-h-[420px] flex flex-col">
+                <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                    <h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm">Pusat Notifikasi</h3>
+                    <div class="flex items-center gap-2">
+                        <span id="admin-notif-count" class="text-[10px] bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 font-bold px-2 py-0.5 rounded-full">0 Baru</span>
+                        <a href="{{ route('notifications.index') }}" class="text-xs text-blue-600 hover:underline">Lihat semua</a>
+                    </div>
                 </div>
-                <div class="p-4 text-center text-sm text-slate-400">Belum ada notifikasi baru</div>
+                <div id="admin-notif-list" class="overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700 flex-1">
+                    <div class="p-6 text-center text-sm text-slate-400">Memuat...</div>
+                </div>
+                <div class="p-2 border-t border-slate-100 dark:border-slate-700 flex gap-2">
+                    <button onclick="markAllNotificationsRead()" class="flex-1 text-xs py-2 bg-slate-100 hover:bg-slate-200 rounded-lg">Tandai semua dibaca</button>
+                    <a href="{{ route('notifications.index') }}" class="flex-1 text-xs py-2 text-center border rounded-lg hover:bg-slate-50">Buka pusat notifikasi</a>
+                </div>
             </div>
         </div>
+        <script>
+        async function loadAdminNotifications() {
+            try {
+                const res = await fetch('{{ route('notifications.index') }}', {headers:{'Accept':'application/json'}, credentials:'same-origin'});
+                if (!res.ok) return;
+                const data = await res.json();
+                const items = (data.data || []).slice(0,5);
+                const list = document.getElementById('admin-notif-list');
+                if (!items.length) { list.innerHTML = '<div class="p-6 text-center text-sm text-slate-400">Belum ada notifikasi</div>'; return; }
+                function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
+                list.innerHTML = items.map(n => `
+                    <div class="p-3 hover:bg-slate-50 ${n.read_at ? '' : 'bg-blue-50/50'}">
+                        <div class="flex justify-between gap-2">
+                            <span class="text-[10px] font-mono px-1.5 py-0.5 bg-slate-100 rounded">${escapeHtml(n.type)}</span>
+                            <span class="text-[10px] text-slate-400">${escapeHtml(new Date(n.created_at).toLocaleDateString('id-ID'))}</span>
+                        </div>
+                        <div class="font-semibold text-sm mt-1">${escapeHtml(n.title)}</div>
+                        <div class="text-xs text-slate-500 line-clamp-2">${escapeHtml(n.message)}</div>
+                    </div>
+                `).join('');
+            } catch(e) { console.error(e); }
+        }
+        async function refreshAdminNotifCount() {
+            try {
+                const res = await fetch('{{ route('notifications.count') }}', {credentials:'same-origin'});
+                const data = await res.json();
+                const c = data.count || 0;
+                const badge = document.getElementById('admin-notif-badge');
+                const label = document.getElementById('admin-notif-count');
+                if (badge) { badge.textContent = c > 99 ? '99+' : c; badge.classList.toggle('hidden', c===0); badge.classList.toggle('flex', c>0); }
+                if (label) label.textContent = c + ' Baru';
+            } catch(e) {}
+        }
+        async function markAllNotificationsRead() {
+            await fetch('{{ route('notifications.read-all') }}', {method:'POST', headers:{'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content || '', 'Accept':'application/json'}, credentials:'same-origin'});
+            refreshAdminNotifCount(); loadAdminNotifications();
+        }
+        document.addEventListener('DOMContentLoaded', refreshAdminNotifCount);
+        </script>
 
         <div class="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden md:block"></div>
 

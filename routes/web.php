@@ -47,6 +47,24 @@ Route::middleware('auth')->group(function () {
     Route::get('zabbix-monitors/chart-data', [\App\Http\Controllers\ZabbixMonitorController::class, 'chartData'])->name('zabbix-monitors.chart-data');
     Route::resource('ip-transits', \App\Http\Controllers\IpTransitController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
 
+    // Domain Registrar SRS-X (Fase 1 read-only)
+    Route::resource('registrar-accounts', \App\Http\Controllers\RegistrarAccountController::class)->except(['create', 'edit']);
+    Route::post('registrar-accounts/{registrarAccount}/test-connection', [\App\Http\Controllers\RegistrarAccountController::class, 'testConnection'])->name('registrar-accounts.test-connection');
+    Route::post('registrar-accounts/{registrarAccount}/sync', [\App\Http\Controllers\RegistrarAccountController::class, 'sync'])->name('registrar-accounts.sync');
+    Route::post('registrar-accounts/{registrarAccount}/import-manual', [\App\Http\Controllers\RegistrarAccountController::class, 'manualImport'])->name('registrar-accounts.import-manual');
+    Route::get('registrar-accounts/{registrarAccount}/operations/{operation}', [\App\Http\Controllers\RegistrarAccountController::class, 'showOperation'])->name('registrar-accounts.operations.show');
+    Route::post('registrar-accounts/{registrarAccount}/operations/{operation}/link', [\App\Http\Controllers\RegistrarAccountController::class, 'linkOperationDomain'])->name('registrar-accounts.operations.link');
+    Route::get('registrar-accounts/{registrarAccount}/domains', [\App\Http\Controllers\RegistrarAccountController::class, 'domains'])->name('registrar-accounts.domains');
+    Route::get('registrar-accounts/{registrarAccount}/check', [\App\Http\Controllers\RegistrarAccountController::class, 'checkDomain'])->name('registrar-accounts.check');
+
+    // Pusat Notifikasi Admin
+    Route::get('notifications', [\App\Http\Controllers\AdminNotificationController::class, 'index'])->name('notifications.index');
+    Route::get('notifications/count', [\App\Http\Controllers\AdminNotificationController::class, 'count'])->name('notifications.count');
+    Route::get('notifications/{notification}', [\App\Http\Controllers\AdminNotificationController::class, 'show'])->name('notifications.show');
+    Route::post('notifications/{notification}/read', [\App\Http\Controllers\AdminNotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('notifications/read-all', [\App\Http\Controllers\AdminNotificationController::class, 'markAllRead'])->name('notifications.read-all');
+    Route::post('notifications/{notification}/dismiss', [\App\Http\Controllers\AdminNotificationController::class, 'dismiss'])->name('notifications.dismiss');
+
     // Master Data: Products & Services (Owner, Admin, & Employee)
     Route::middleware(['role:Owner|Admin|Employee|Billing|NOC|CS|Sales|Finance'])->group(function () {
         Route::resource('services', \App\Http\Controllers\ServiceController::class);
@@ -75,6 +93,17 @@ Route::middleware('auth')->group(function () {
         Route::get('zabbix-monitors/groups', [\App\Http\Controllers\ZabbixMonitorController::class, 'groups'])->name('zabbix-monitors.groups');
         Route::get('zabbix-monitors/hosts', [\App\Http\Controllers\ZabbixMonitorController::class, 'hosts'])->name('zabbix-monitors.hosts');
         Route::get('zabbix-monitors/graphs', [\App\Http\Controllers\ZabbixMonitorController::class, 'graphs'])->name('zabbix-monitors.graphs');
+
+        // Domain Registrar — Fase 2: operasi domain terkontrol (nameserver, EPP, DNS managed)
+        Route::prefix('subscriptions/{subscription}/domains/{domain}')->name('domain-operations.')->group(function () {
+            Route::post('nameservers', [\App\Http\Controllers\SubscriptionDomainOperationController::class, 'updateNameservers'])->name('nameservers');
+            Route::post('epp/fetch', [\App\Http\Controllers\SubscriptionDomainOperationController::class, 'fetchEpp'])->name('epp.fetch');
+            Route::post('epp/set', [\App\Http\Controllers\SubscriptionDomainOperationController::class, 'setEpp'])->name('epp.set');
+            Route::post('dns/info', [\App\Http\Controllers\SubscriptionDomainOperationController::class, 'getDns'])->name('dns.info');
+            Route::post('dns/edit', [\App\Http\Controllers\SubscriptionDomainOperationController::class, 'editDns'])->name('dns.edit');
+            Route::post('dns/toggle', [\App\Http\Controllers\SubscriptionDomainOperationController::class, 'toggleManagedDns'])->name('dns.toggle');
+            Route::post('operations/{operation}/retry', [\App\Http\Controllers\SubscriptionDomainOperationController::class, 'retryOperation'])->name('operations.retry');
+        });
 
         // Network Topology Editor
         Route::prefix('subscriptions/{subscription}/topology')->name('subscriptions.topology.')->group(function () {

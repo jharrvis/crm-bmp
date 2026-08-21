@@ -470,6 +470,7 @@ Minimal cek:
 - [ ] migration/seeder/deploy note ditulis jika perlu
 - [ ] syntax check / test minimum sudah dilakukan jika memungkinkan
 - [ ] permission/role diperiksa jika menyentuh menu atau akses
+- [ ] knowledge graph diperbarui (`graphify update` jika ada perubahan kode/dokumen)
 
 ### 16.1 Kapan Harus Commit
 
@@ -563,6 +564,10 @@ Daftar skill:
 - `crm-activitylog-auditor`
   - untuk mengecek apakah aksi penting sudah tercatat di Activity Log dan field sensitif tidak ikut terlog
   - gunakan saat model atau controller baru ditambah
+- `graphify`
+  - untuk memetakan struktur codebase sebagai knowledge graph sebelum refactor atau penambahan modul
+  - gunakan saat butuh trace dampak lintas modul (contoh: `graphify query "SubscriptionDomain"`), atau setelah perubahan kode untuk update graph
+  - tersedia di `opencode` via `/graphify` dan CLI `graphify query/path/explain`
 
 Skill di atas tidak menggantikan penilaian engineer, tetapi menjadi checklist operasional tambahan agar perubahan tidak lepas dari standar repo.
 
@@ -642,7 +647,7 @@ Jangan:
 - hardcode value yang bisa berubah (tax rate, API URL, due days)
 - membuat controller yang melebihi 500 baris tanpa mempertimbangkan extract ke service
 
-## 20. Prioritas Dokumentasi ke Depan
+## 21. Prioritas Dokumentasi ke Depan
 
 Urutan yang disarankan:
 
@@ -659,15 +664,39 @@ Urutan yang disarankan:
 6. Buat dokumentasi integrasi client portal dan infrastruktur.
 7. Implementasi modul yang masih placeholder (Payments, Financial Reports, Work Orders).
 
-## 21. Ringkasan Operasional
+## 22. Standar Knowledge Graph (Graphify)
+
+Project ini memakai `graphify` sebagai knowledge graph codebase (`graphify-out/graph.json`, `graph.html`, `GRAPH_REPORT.md`). Graph dipakai untuk trace dampak lintas modul sebelum refactor dan untuk menjawab pertanyaan arsitektur tanpa grep manual.
+
+Aturan wajib:
+
+1. **Sebelum mengubah kode yang menyentuh >1 modul** — jalankan `graphify query "<topik>"` untuk peta dependensi. Contoh: `graphify query "SubscriptionDomain"`, `graphify path "SubscriptionDomain" "HostingServer"`, `graphify explain "HestiaCPService"`.
+2. **Setelah setiap perubahan kode/dokumen/markdown** — jalankan `graphify update` (incremental, tanpa API key, ~30-60 detik). Jangan commit/push sebelum graph fresh. Cek freshness via `Graph Freshness` di `graphify-out/GRAPH_REPORT.md` (commit hash harus sama dengan `git rev-parse HEAD`).
+3. **Skill penulisan kode wajib menjaga graph tetap up-to-date:**
+   - Setiap agent/skill yang menulis atau mengubah file `.php`, `.ts`, `.tsx`, `.md`, atau `docs/**` harus mengakhiri tugas dengan `graphify update` (atau `graphify --update` via CLI).
+   - Jika `GEMINI_API_KEY` tersedia, update juga mencakup semantic extraction untuk docs/papers; jika tidak, AST update tetap wajib (sudah mencakup 95% graph).
+   - Jika graph gagal (`warning: produced zero nodes` atau `ERROR: Graph is empty`), jangan abaikan — laporkan file penyebab dan retry.
+4. **Jangan commit `graphify-out/`** — folder ini ada di `.gitignore` (artefak lokal). Yang di-commit adalah kode sumber; graph diregenerate di setiap mesin via `graphify update` atau `graphify .` (full build).
+5. **Instalasi:** `graphify` terinstall sebagai opencode skill (`C:\Users\ThinkPad\.config\opencode\skills\graphify\SKILL.md`) dan plugin reminder (`D:\laragon\www\crm\.opencode\plugins\graphify.js`). Cara pakai di opencode:
+   - `/graphify` — full build
+   - `/graphify --update` — incremental
+   - `graphify query "<pertanyaan>"` / `graphify path "A" "B"` / `graphify explain "X"` — eksplorasi graph
+   - Buka `graphify-out/graph.html` di browser untuk visual interaktif.
+
+Checklist tambahan sebelum commit (melengkapi §16):
+
+- [ ] `graphify update` sudah dijalankan dan `GRAPH_REPORT.md` menunjukkan commit terbaru
+
+## 23. Ringkasan Operasional
 
 Aturan sederhananya:
 
 - ubah kode secara hati-hati
-- selalu tahu modul yang terdampak
+- selalu tahu modul yang terdampak (cek via `graphify query` dulu)
 - selalu update dokumentasi yang relevan
 - selalu update changelog untuk perubahan yang user rasakan
 - selalu tulis langkah deploy jika production perlu aksi manual
+- selalu perbarui knowledge graph (`graphify update`) setelah ubah kode/dokumen
 - gunakan skill operasional untuk validasi sebelum commit
 - jangan hardcode, gunakan config
 - jangan skip testing untuk logic kritis

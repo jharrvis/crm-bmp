@@ -73,6 +73,57 @@ class SystemSettingSeeder extends Seeder
                 'type' => 'string',
                 'description' => 'Channel reminder: email, whatsapp, both',
             ],
+            // Domain Registrar — integrations (non-secret, mode & timeout di config, ambang notifikasi di sini)
+            [
+                'group' => 'notifications',
+                'key' => 'notifications.domain_reminder_days',
+                'value' => '[30,14,7,3,1]',
+                'type' => 'json',
+                'description' => 'Hari sebelum expiry domain untuk notifikasi admin',
+            ],
+            [
+                'group' => 'notifications',
+                'key' => 'notifications.domain_channel',
+                'value' => 'database',
+                'type' => 'string',
+                'description' => 'Channel notifikasi domain: database, email, both',
+            ],
+            [
+                'group' => 'notifications',
+                'key' => 'notifications.hosting_ssl_reminder_days',
+                'value' => '[14,7,3,1]',
+                'type' => 'json',
+                'description' => 'Hari sebelum expiry SSL hosting untuk notifikasi',
+            ],
+            [
+                'group' => 'notifications',
+                'key' => 'notifications.retention_days',
+                'value' => '90',
+                'type' => 'integer',
+                'description' => 'Retensi notifikasi admin (hari), auto-prune setelahnya',
+            ],
+            // Domain Registrar — mode & operasional (P2-9)
+            [
+                'group' => 'domain_registrar',
+                'key' => 'domain_registrar.mode',
+                'value' => 'read_only',
+                'type' => 'string',
+                'description' => 'Mode operasi registrar: disabled, read_only, managed',
+            ],
+            [
+                'group' => 'domain_registrar',
+                'key' => 'domain_registrar.sync_interval_hours',
+                'value' => '24',
+                'type' => 'integer',
+                'description' => 'Interval sinkronisasi per akun (jam)',
+            ],
+            [
+                'group' => 'domain_registrar',
+                'key' => 'domain_registrar.timeout',
+                'value' => '30',
+                'type' => 'integer',
+                'description' => 'Timeout API registrar (detik)',
+            ],
         ];
 
         foreach ($settings as $setting) {

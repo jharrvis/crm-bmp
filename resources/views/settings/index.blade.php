@@ -2,6 +2,8 @@
     @php
         $groupLabels = [
             'billing' => 'Billing / Tagihan',
+            'notifications' => 'Notifikasi',
+            'domain_registrar' => 'Integrasi Registrar (Domain)',
         ];
 
         $fieldLabels = [
@@ -14,12 +16,22 @@
             'billing.reminder_days_before' => 'Reminder Sebelum Jatuh Tempo',
             'billing.reminder_days_after' => 'Reminder Setelah Overdue',
             'billing.reminder_channel' => 'Channel Reminder',
+            'notifications.domain_reminder_days' => 'Reminder Expiry Domain',
+            'notifications.domain_channel' => 'Channel Notifikasi Domain',
+            'notifications.hosting_ssl_reminder_days' => 'Reminder Expiry SSL',
+            'notifications.retention_days' => 'Retensi Notifikasi',
+            'domain_registrar.mode' => 'Mode Operasi Registrar',
+            'domain_registrar.sync_interval_hours' => 'Interval Sync',
+            'domain_registrar.timeout' => 'Timeout API',
         ];
 
         $fieldSuffixes = [
             'billing.ppn_rate' => '%',
             'billing.pph23_rate' => '%',
             'billing.default_due_days' => 'hari',
+            'notifications.retention_days' => 'hari',
+            'domain_registrar.sync_interval_hours' => 'jam',
+            'domain_registrar.timeout' => 'detik',
         ];
 
         $fieldHelps = [
@@ -32,6 +44,13 @@
             'billing.reminder_days_before' => 'Daftar hari sebelum jatuh tempo untuk kirim reminder. Format JSON array, contoh: [7,3,1]',
             'billing.reminder_days_after' => 'Daftar hari setelah overdue untuk kirim reminder. Format JSON array, contoh: [1,7,14]',
             'billing.reminder_channel' => 'Channel pengiriman reminder: email, whatsapp, atau both.',
+            'notifications.domain_reminder_days' => 'Hari sebelum expiry domain untuk notifikasi (JSON array, contoh: [30,14,7,3,1])',
+            'notifications.domain_channel' => 'Channel notifikasi domain: database, email, both',
+            'notifications.hosting_ssl_reminder_days' => 'Hari sebelum expiry SSL untuk notifikasi (JSON array)',
+            'notifications.retention_days' => 'Notifikasi lebih lama dari ini akan di-prune otomatis (02:00 daily).',
+            'domain_registrar.mode' => 'Mode: disabled (mati), read_only (hanya sync/check), managed (boleh mutasi). Kill-switch utama tetap DOMAIN_REGISTRAR_ENABLED.',
+            'domain_registrar.sync_interval_hours' => 'Jarak antar sync per akun (jam). Scheduler hourly cek mode, harian 07:00 expiry.',
+            'domain_registrar.timeout' => 'Timeout HTTP ke SRS-X (detik). ENV DOMAIN_REGISTRAR_TIMEOUT sebagai fallback.',
         ];
     @endphp
 

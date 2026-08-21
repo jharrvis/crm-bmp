@@ -27,6 +27,19 @@ class SystemSettingController extends Controller
             'settings.*' => 'nullable|string',
         ]);
 
+        // P2: Validasi ketat untuk pengaturan registrar
+        $strictRules = [
+            'domain_registrar.mode' => ['in:disabled,read_only,managed'],
+            'domain_registrar.sync_interval_hours' => ['integer', 'min:1', 'max:720'],
+            'domain_registrar.timeout' => ['integer', 'min:1', 'max:120'],
+        ];
+        foreach ($strictRules as $key => $rules) {
+            if ($request->has("settings.{$key}")) {
+                $val = $request->input("settings.{$key}");
+                validator(['value' => $val], ['value' => $rules], [], ['value' => $key])->validate();
+            }
+        }
+
         foreach ($request->input('settings', []) as $key => $value) {
             $setting = SystemSetting::where('key', $key)->first();
 

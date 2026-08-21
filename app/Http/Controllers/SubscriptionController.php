@@ -71,8 +71,9 @@ class SubscriptionController extends Controller
         $mailServers = HostingServer::where('is_active', true)->where('type', 'zimbra')->get();
         // Fetch Metro Ethernets with Vendor for selection
         $metroEthernets = MetroEthernet::with('vendor')->latest()->get();
+        $registrarAccounts = \App\Models\RegistrarAccount::where('is_active', true)->get();
 
-        return view('subscriptions.index', compact('subscriptions', 'clients', 'packages', 'routers', 'servers', 'metroEthernets', 'mailServers'));
+        return view('subscriptions.index', compact('subscriptions', 'clients', 'packages', 'routers', 'servers', 'metroEthernets', 'mailServers', 'registrarAccounts'));
     }
 
     /**
@@ -246,14 +247,37 @@ class SubscriptionController extends Controller
                 'password' => $hostingAccountMode === 'new' ? 'required|string|min:8|max:255' : 'nullable',
             ]);
         } elseif ($serviceType === 'domain') {
+            $request->mergeIfMissing(['domain_account_mode' => 'new']);
+            $domainAccountMode = $request->input('domain_account_mode', 'new');
+
             $request->validate([
-                'domain_name' => 'required|string|max:255',
+                'domain_account_mode' => ['required', Rule::in(['new', 'existing'])],
+                'registrar_account_id' => [
+                    $domainAccountMode === 'existing' ? 'required' : 'nullable',
+                    Rule::exists('registrar_accounts', 'id')->where(fn ($q) => $q->where('is_active', true)),
+                ],
+                'domain_name' => ['required', 'string', 'max:253', 'regex:/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i'],
                 'registrar' => 'nullable|string|max:255',
                 'registered_at' => 'nullable|date',
                 'expires_at' => 'nullable|date|after_or_equal:registered_at',
                 'auth_code' => 'nullable|string|max:255',
                 'domain_notes' => 'nullable|string',
             ]);
+
+            // TLD soft warning (gTLD vs ccTLD) — not blocking, just flash warning via validation message
+            if ($domainAccountMode === 'existing' && $request->filled('registrar_account_id') && config('domain-registrars.enabled')) {
+                $account = \App\Models\RegistrarAccount::find($request->registrar_account_id);
+                if ($account) {
+                    $allowed = $account->allowedTlds();
+                    if (! empty($allowed)) {
+                        $lowerDomain = strtolower($request->domain_name);
+                        $matched = collect($allowed)->contains(fn ($tld) => str_ends_with($lowerDomain, strtolower($tld)));
+                        if (! $matched) {
+                            session()->flash('warning', "TLD domain {$request->domain_name} tidak termasuk daftar akun {$account->name} (".implode(', ', $allowed)."). Periksa kembali pilihan akun gTLD/ccTLD.");
+                        }
+                    }
+                }
+            }
         } elseif ($serviceType === 'mail') {
             $request->validate([
                 'mail_server_id' => ['required', Rule::exists('hosting_servers', 'id')->where(fn ($query) => $query->where('type', 'zimbra')->where('is_active', true))],
@@ -400,15 +424,42 @@ class SubscriptionController extends Controller
                         ->log('Menautkan akun HestiaCP existing ke layanan hosting');
                 }
             } elseif ($serviceType === 'domain') {
-                SubscriptionDomain::create([
+                $domainAccountMode = $request->input('domain_account_mode', 'new');
+                $normalizedDomain = strtolower(trim($request->domain_name));
+
+                // Unique per-account check (like ensureHostingUsernameIsAvailable)
+                if ($request->filled('registrar_account_id')) {
+                    $conflict = \App\Models\SubscriptionDomain::whereRaw('LOWER(domain_name) = ?', [$normalizedDomain])
+                        ->where('registrar_account_id', $request->registrar_account_id)
+                        ->exists();
+                    if ($conflict) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'domain_name' => 'Domain tersebut sudah tertaut pada akun registrar ini.',
+                        ]);
+                    }
+                }
+
+                $domain = SubscriptionDomain::create([
                     'subscription_id' => $subscription->id,
-                    'domain_name' => $request->domain_name,
+                    'domain_name' => $normalizedDomain,
                     'registrar' => $request->registrar,
                     'auth_code_encrypted' => $request->auth_code ? encrypt($request->auth_code) : null,
                     'registered_at' => $request->registered_at,
                     'expires_at' => $request->expires_at,
                     'notes' => $request->domain_notes,
+                    'registrar_account_id' => $request->registrar_account_id,
+                    'domain_account_mode' => $domainAccountMode,
+                    'managed_by_crm' => false, // Fase 1 read-only untuk kedua mode
+                    'sync_status' => $request->filled('registrar_account_id') ? 'pending' : null,
                 ]);
+
+                if ($domain->registrar_account_id && config('domain-registrars.enabled')) {
+                    // Queue sync to verify existence and fetch metadata (read-only)
+                    \App\Jobs\SyncRegistrarDomain::dispatch($domain->id)->afterCommit();
+                    activity('subscriptions')->performedOn($subscription)->causedBy(auth()->user())
+                        ->withProperties(['domain' => $normalizedDomain, 'registrar_account_id' => $domain->registrar_account_id, 'mode' => $domainAccountMode])
+                        ->log($domainAccountMode === 'existing' ? 'Menautkan domain existing dari registrar' : 'Mencatat domain baru (mode new, belum registrasi ke provider)');
+                }
             } elseif ($serviceType === 'mail') {
                 $server = HostingServer::findOrFail($request->mail_server_id);
                 $mailHosting = SubscriptionMailHosting::create([
@@ -515,7 +566,25 @@ class SubscriptionController extends Controller
         }
 
         // Load all relationships
-        $subscription->load(['client', 'package.service', 'connectivity.metroEthernet.vendor', 'hosting.hostingServer', 'domain', 'mailHosting.mailServer', 'mailHosting.mailboxes']);
+        $subscription->load(['client', 'package.service', 'connectivity.metroEthernet.vendor', 'hosting.hostingServer', 'domain.registrarAccount', 'domain.registrarOperations', 'mailHosting.mailServer', 'mailHosting.mailboxes']);
+
+        // Fase 2 — capability flags untuk operasi domain (dibaca controller saat eksekusi; UI hanya menampilkan tombol)
+        $domainOps = [];
+        if ($subscription->domain?->registrar_account_id) {
+            $manager = app(\App\DomainRegistrars\DomainRegistrarManager::class);
+            $domainOps = [
+                'mode' => $manager->effectiveMode(),
+                'enabled' => $manager->isEnabled(),
+                'can_update_nameservers' => $manager->canPerform('update_nameservers') && auth()->user()?->can('domains.update_nameservers'),
+                'can_view_epp' => $manager->canPerform('view_epp') && auth()->user()?->can('domains.view_epp'),
+                'can_set_epp' => $manager->canPerform('set_epp') && auth()->user()?->can('domains.set_epp'),
+                'can_get_dns' => $manager->canPerform('get_dns') && auth()->user()?->can('domains.manage_dns'),
+                'can_edit_dns' => $manager->canPerform('manage_dns') && auth()->user()?->can('domains.manage_dns'),
+            ];
+            if (auth()->user()?->can('domains.manage_dns')) {
+                $domainOps['can_toggle_dns'] = $manager->canPerform('manage_dns');
+            }
+        }
 
         // Resource usage remains an infrastructure concern. Expose a safe summary
         // here only to users who are already allowed to manage hosting servers.
@@ -552,8 +621,9 @@ class SubscriptionController extends Controller
         $servers = HostingServer::all();
         $mailServers = HostingServer::where('type', 'zimbra')->get();
         $metroEthernets = MetroEthernet::with('vendor')->latest()->get();
+        $registrarAccounts = \App\Models\RegistrarAccount::where('is_active', true)->get();
 
-        return view('subscriptions.show', compact('subscription', 'clients', 'packages', 'routers', 'servers', 'metroEthernets', 'mailServers', 'mailboxSyncWarning', 'hostingUsage', 'hostingUsageWarning'));
+        return view('subscriptions.show', compact('subscription', 'clients', 'packages', 'routers', 'servers', 'metroEthernets', 'mailServers', 'mailboxSyncWarning', 'hostingUsage', 'hostingUsageWarning', 'registrarAccounts', 'domainOps'));
     }
 
     /**
@@ -794,8 +864,13 @@ class SubscriptionController extends Controller
                         ->log('Menautkan akun HestiaCP existing ke layanan hosting');
                 }
             } elseif ($serviceType === 'domain') {
+                $request->mergeIfMissing(['domain_account_mode' => $subscription->domain?->domain_account_mode ?? 'new']);
+                $domainAccountMode = $request->input('domain_account_mode', 'new');
+
                 $request->validate([
-                    'domain_name' => 'required|string|max:255',
+                    'domain_account_mode' => ['required', Rule::in(['new', 'existing'])],
+                    'registrar_account_id' => ['nullable', Rule::exists('registrar_accounts', 'id')->where(fn ($q) => $q->where('is_active', true))],
+                    'domain_name' => ['required', 'string', 'max:253', 'regex:/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i'],
                     'registrar' => 'nullable|string|max:255',
                     'registered_at' => 'nullable|date',
                     'expires_at' => 'nullable|date|after_or_equal:registered_at',
@@ -803,19 +878,57 @@ class SubscriptionController extends Controller
                     'domain_notes' => 'nullable|string',
                 ]);
 
-                $subscription->domain()->updateOrCreate(
+                $existingDomain = $subscription->domain;
+                $normalizedDomain = strtolower(trim($request->domain_name));
+
+                // Guard: jangan ubah registrar_account_id langsung jika sudah tertaut (harus via relink khusus)
+                if ($existingDomain && $existingDomain->registrar_account_id) {
+                    if ((int) $request->registrar_account_id !== (int) $existingDomain->registrar_account_id) {
+                        throw ValidationException::withMessages([
+                            'registrar_account_id' => 'Akun registrar tidak dapat diubah dari form layanan. Gunakan proses relink/migrasi domain.',
+                        ]);
+                    }
+                    if ($normalizedDomain !== strtolower($existingDomain->domain_name)) {
+                        throw ValidationException::withMessages([
+                            'domain_name' => 'Nama domain tidak dapat diubah setelah tertaut. Gunakan proses relink/migrasi.',
+                        ]);
+                    }
+                }
+
+                // TLD warning
+                if ($request->filled('registrar_account_id') && config('domain-registrars.enabled')) {
+                    $account = \App\Models\RegistrarAccount::find($request->registrar_account_id);
+                    if ($account) {
+                        $allowed = $account->allowedTlds();
+                        if (! empty($allowed)) {
+                            $matched = collect($allowed)->contains(fn ($tld) => str_ends_with($normalizedDomain, strtolower($tld)));
+                            if (! $matched) {
+                                session()->flash('warning', "TLD {$normalizedDomain} tidak termasuk daftar akun {$account->name} (".implode(', ', $allowed).").");
+                            }
+                        }
+                    }
+                }
+
+                $domain = $subscription->domain()->updateOrCreate(
                     ['subscription_id' => $subscription->id],
                     [
-                        'domain_name' => $request->domain_name,
+                        'domain_name' => $normalizedDomain,
                         'registrar' => $request->registrar,
                         'auth_code_encrypted' => $request->filled('auth_code')
                             ? encrypt($request->auth_code)
-                            : $subscription->domain?->auth_code_encrypted,
+                            : $existingDomain?->auth_code_encrypted,
                         'registered_at' => $request->registered_at,
                         'expires_at' => $request->expires_at,
                         'notes' => $request->domain_notes,
+                        'registrar_account_id' => $existingDomain?->registrar_account_id ?? $request->registrar_account_id,
+                        'domain_account_mode' => $existingDomain?->domain_account_mode ?? $domainAccountMode,
+                        'managed_by_crm' => $existingDomain?->managed_by_crm ?? false,
                     ]
                 );
+
+                if ($domain->registrar_account_id) {
+                    \App\Jobs\SyncRegistrarDomain::dispatch($domain->id)->afterCommit();
+                }
             } elseif ($serviceType === 'mail') {
                 $request->validate([
                     'mail_server_id' => ['required', Rule::exists('hosting_servers', 'id')->where(fn ($query) => $query->where('type', 'zimbra')->where('is_active', true))],

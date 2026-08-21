@@ -122,9 +122,9 @@ class RoleController extends Controller
         $moduleGroups = [
             'Master Data' => ['branches', 'divisions', 'employees'],
             'Infrastruktur' => ['routers', 'servers', 'vendors', 'metro_ethernets', 'ip_transits', 'zabbix_monitors', 'services', 'packages', 'towers', 'odps'],
-            'Bisnis' => ['clients', 'subscriptions', 'invoices', 'payments', 'financial_reports', 'mailboxes'],
+            'Bisnis' => ['clients', 'subscriptions', 'invoices', 'payments', 'financial_reports', 'mailboxes', 'domains'],
             'Support' => ['tickets', 'work_orders'],
-            'Sistem' => ['system_updates', 'documentation', 'logs', 'roles', 'settings'],
+            'Sistem' => ['system_updates', 'documentation', 'logs', 'roles', 'settings', 'registrar_accounts', 'notifications'],
         ];
 
         return view('roles.edit', compact('role', 'permissions', 'rolePermissions', 'moduleGroups'));

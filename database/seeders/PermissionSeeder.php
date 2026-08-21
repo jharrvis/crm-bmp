@@ -47,6 +47,13 @@ class PermissionSeeder extends Seeder
             'tickets' => ['view', 'create', 'update', 'delete', 'assign', 'close'],
             'work_orders' => ['view', 'create', 'update', 'delete', 'assign', 'complete'],
 
+            // Domain Registrar (SRS-X add-on)
+            'registrar_accounts' => ['view', 'manage', 'test'],
+            'domains' => ['view', 'sync', 'link', 'register', 'renew', 'transfer', 'update_nameservers', 'manage_dns', 'manage_contacts', 'view_epp', 'set_epp'],
+
+            // Pusat Notifikasi Admin
+            'notifications' => ['view', 'manage', 'settings'],
+
             // Settings
             'system_updates' => ['view'],
             'documentation' => ['view'],
@@ -153,6 +160,11 @@ class PermissionSeeder extends Seeder
             'tickets.view',
             'tickets.create',
             'tickets.update',
+            // Domain registrar — Billing hanya view + request renew (tanpa EPP/mutasi)
+            'domains.view',
+            'domains.renew',
+            'notifications.view',
+            'notifications.manage',
         ]);
 
         $nocRole = Role::findByName('NOC');
@@ -164,7 +176,7 @@ class PermissionSeeder extends Seeder
             'subscriptions.activate',
             'routers.view',
             'routers.connect',
-'servers.view',
+            'servers.view',
             'servers.connect',
             'servers.manage',
             'servers.suspend',
@@ -186,6 +198,12 @@ class PermissionSeeder extends Seeder
             'work_orders.update',
             'work_orders.assign',
             'work_orders.complete',
+            // Domain — NOC view + nameserver/DNS bila ditugaskan
+            'domains.view',
+            'domains.update_nameservers',
+            'domains.manage_dns',
+            'notifications.view',
+            'notifications.manage',
         ]);
 
         $csRole = Role::findByName('CS');

@@ -9,15 +9,22 @@ class RegistrationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_registration_screen_can_be_rendered(): void
+    public function test_registration_is_disabled_when_config_off(): void
     {
-        $response = $this->get('/register');
+        if (config('auth.registration_enabled')) {
+            $this->markTestSkipped('Registrasi diaktifkan di environment ini.');
+        }
 
-        $response->assertStatus(200);
+        // Route /register hanya diregistrasikan jika AUTH_REGISTRATION_ENABLED=true
+        $this->get('/register')->assertNotFound();
     }
 
-    public function test_new_users_can_register(): void
+    public function test_new_users_cannot_register_when_disabled(): void
     {
+        if (config('auth.registration_enabled')) {
+            $this->markTestSkipped('Registrasi diaktifkan di environment ini.');
+        }
+
         $response = $this->post('/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
@@ -25,7 +32,7 @@ class RegistrationTest extends TestCase
             'password_confirmation' => 'password',
         ]);
 
-        $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertNotFound();
+        $this->assertGuest();
     }
 }

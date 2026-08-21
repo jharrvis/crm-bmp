@@ -512,11 +512,31 @@
                             </div>
 
                             <div id="fields-domain" class="hidden space-y-4">
+                                <div class="flex gap-6">
+                                    <label class="flex items-center gap-2 text-sm font-bold"><input type="radio" name="domain_account_mode" value="existing" checked onchange="toggleDomainMode()"> Tautkan domain existing (SRS-X)</label>
+                                    <label class="flex items-center gap-2 text-sm font-bold"><input type="radio" name="domain_account_mode" value="new" onchange="toggleDomainMode()"> Registrasi baru (catat manual Fase 1)</label>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Akun Registrar <span class="text-xs text-slate-400">(wajib untuk tautkan)</span></label>
+                                    <select name="registrar_account_id" id="registrar_account_id" class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50">
+                                        <option value="">-- Pilih Akun Registrar --</option>
+                                        @if(isset($registrarAccounts))
+                                            @foreach($registrarAccounts as $ra)
+                                                <option value="{{ $ra->id }}" data-tlds="{{ implode(',', $ra->allowedTlds()) }}">{{ $ra->name }} ({{ $ra->provider }}) — TLD: {{ implode(', ', $ra->allowedTlds() ?: ['-']) }}</option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                    <p id="tld-warning" class="text-xs text-amber-600 mt-1 hidden"></p>
+                                    @if(!config('domain-registrars.enabled'))
+                                        <p class="text-xs text-amber-600 mt-1">Integrasi registrar dinonaktifkan — domain akan disimpan manual (read-only).</p>
+                                    @endif
+                                </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nama Domain <span class="text-red-500">*</span></label>
                                         <input type="text" name="domain_name" id="domain_name" placeholder="example.com"
                                             class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                        <p class="text-xs text-slate-400 mt-1">Untuk mode tautkan, domain harus ada di akun SRS-X terpilih.</p>
                                     </div>
                                     <div>
                                         <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Registrar <span class="text-xs text-slate-400 font-normal">(opsional)</span></label>

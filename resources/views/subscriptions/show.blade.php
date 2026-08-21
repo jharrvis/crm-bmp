@@ -682,6 +682,9 @@
                         </p>
                     </div>
                 </div>
+                @if($subscription->domain->registrar_account_id)
+                    @include('subscriptions.partials.domain-actions')
+                @endif
             </div>
         </div>
     @endif
@@ -1674,6 +1677,22 @@
                             </div>
 
                             <div id="fields-domain" class="hidden space-y-4">
+                                <div class="flex gap-6">
+                                    <label class="flex items-center gap-2 text-sm font-bold"><input type="radio" name="domain_account_mode" value="existing" checked onchange="toggleDomainMode()"> Tautkan domain existing</label>
+                                    <label class="flex items-center gap-2 text-sm font-bold"><input type="radio" name="domain_account_mode" value="new" onchange="toggleDomainMode()"> Registrasi baru</label>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Akun Registrar</label>
+                                    <select name="registrar_account_id" id="registrar_account_id" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 bg-slate-50">
+                                        <option value="">-- Pilih Akun Registrar --</option>
+                                        @if(isset($registrarAccounts))
+                                            @foreach($registrarAccounts as $ra)
+                                                <option value="{{ $ra->id }}" data-tlds="{{ implode(',', $ra->allowedTlds()) }}">{{ $ra->name }} — TLD: {{ implode(', ', $ra->allowedTlds() ?: ['-']) }}</option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                    <p id="tld-warning" class="text-xs text-amber-600 mt-1 hidden"></p>
+                                </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nama Domain <span class="text-red-500">*</span></label>
