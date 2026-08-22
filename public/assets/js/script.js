@@ -575,6 +575,43 @@ function renderQuickViewList(items) {
     `;
 }
 
+function renderSearchQuickViewSubscriptions(subscriptions) {
+    if (!subscriptions || subscriptions.length === 0) {
+        return '<div class="text-sm text-slate-400 dark:text-slate-500">Belum ada layanan.</div>';
+    }
+
+    return `
+        <div class="space-y-3">
+            ${subscriptions.map((sub) => {
+                const pkg = sub.package || {};
+                const svc = pkg.service || {};
+                const domain = sub.domain || {};
+                const statusClass = sub.status === 'active' 
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
+                    : (sub.status === 'suspended' 
+                        ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400'
+                        : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400');
+                
+                const lines = [];
+                if (pkg.name) lines.push(pkg.name);
+                if (svc.name) lines.push(svc.name);
+                if (domain.domain_name) lines.push(domain.domain_name);
+                if (domain.expires_at) lines.push(`Exp: ${new Date(domain.expires_at).toLocaleDateString('id-ID')}`);
+                
+                return `
+                    <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-800/60 flex items-center justify-between gap-3">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-semibold text-slate-800 dark:text-white truncate">${escapeHtml(sub.subscription_code)}</div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">${escapeHtml(lines.join(' | '))}</div>
+                        </div>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${statusClass}">${escapeHtml(sub.status || '-')}</span>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
 function buildSearchQuickViewContent(item, data) {
     const branchName = data.branch?.name || '-';
     const vendorName = data.vendor?.name || '-';
@@ -583,7 +620,7 @@ function buildSearchQuickViewContent(item, data) {
     const roles = Array.isArray(data.roles) ? data.roles.map((role) => role.name).filter(Boolean) : [];
 
     const sections = {
-        client: {
+client: {
             subtitle: [data.client_code, data.city, branchName].filter(Boolean).join(' | '),
             body: `
                 <div class="grid gap-3 md:grid-cols-3">
@@ -607,6 +644,10 @@ function buildSearchQuickViewContent(item, data) {
                         title: contact.name,
                         subtitle: [contact.phone, contact.whatsapp, contact.email, contact.position].filter(Boolean).join(' | '),
                     })))}</div>
+                </div>
+                <div class="mt-5">
+                    <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Layanan Pelanggan</div>
+                    <div class="mt-2">${renderSearchQuickViewSubscriptions(data.subscriptions || [])}</div>
                 </div>
             `,
         },

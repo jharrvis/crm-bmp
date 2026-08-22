@@ -179,6 +179,7 @@ class GlobalSearchController extends Controller
                 'icon' => 'users',
                 'columns' => ['id', 'name', 'client_code', 'city', 'status'],
                 'query' => fn (string $query) => Client::query()
+                    ->with(['subscriptions.package.service'])
                     ->where(function ($builder) use ($query) {
                         $builder->where('name', 'like', "%{$query}%")
                             ->orWhere('client_code', 'like', "%{$query}%")
