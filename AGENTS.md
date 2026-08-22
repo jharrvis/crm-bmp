@@ -28,6 +28,26 @@ Jika dokumentasi dan kode tidak sinkron:
 - anggap kode adalah kondisi aktual
 - perbarui dokumentasi pada pekerjaan yang sama
 
+## 2.1 Active Implementation Workflow
+
+Untuk implementasi Dashboard, Pusat Notifikasi Admin, dan Operational Map, gunakan workflow berikut sebagai panduan urutan kerja, dependency, paralelisme, checkpoint, dan batas commit:
+
+- `docs/plans/implementation-workflow-dashboard-notification-map.md`
+
+Workflow tersebut wajib dibaca bersama source plan modul:
+
+- `docs/plans/pusat-notifikasi-admin.md`
+- `docs/plans/dashboard-customizable.md`
+- `docs/plans/operational-map-network-coverage.md`
+
+Aturan ringkas:
+
+1. Selesaikan Fase 0 berupa audit kondisi aktual dan kontrak bersama sebelum implementasi paralel.
+2. Track Notification Core, Dashboard Foundation, dan Operational Map MVP boleh berjalan paralel setelah dependency disepakati.
+3. Network Coverage lanjutan menunggu data geografis infrastruktur yang tervalidasi.
+4. Jangan menggabungkan migration, permission, route, dan asset global dari beberapa track tanpa checkpoint integrasi.
+5. Kriteria selesai, testing, dokumentasi, dan `graphify update` mengikuti workflow tersebut.
+
 ## 3. Artefak Dokumentasi yang Wajib Dijaga
 
 ### 3.1 Dokumen global

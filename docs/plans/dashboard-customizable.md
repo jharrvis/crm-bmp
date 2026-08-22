@@ -1,8 +1,10 @@
-# Plan: Dashboard Utama — Data Real + Widget Customizable
+# Plan: Dashboard Operasional — Data Real, Widget Customizable, dan Notification-aware
 
 ## 1. Tujuan
 
 Mengubah dashboard utama dari hardcode demo menjadi dashboard operasional real yang informatif, interaktif, dan customizable per pengguna — tanpa mengganggu IP restrict dan tanpa membatasi API `client-portal/*`.
+
+Dashboard bukan sumber event notifikasi. Event operasional dibuat oleh modul, job, atau event listener melalui pusat notifikasi global, lalu dashboard menampilkan agregasi dan attention queue sesuai permission pengguna.
 
 Sumber kebenaran: `AGENTS.md` §4-§6, §10-§11, §22 (graphify), §16 checklist.
 
@@ -10,6 +12,7 @@ Sumber kebenaran: `AGENTS.md` §4-§6, §10-§11, §22 (graphify), §16 checklis
 
 - Route `routes/web.php:12` masih closure `fn()=>view('dashboard')` tanpa controller/data. `resources/views/dashboard.blade.php:1-218` hardcoded: `4,284 Pelanggan`, `99.9% SLA 23d 12h`, `12 Tiket`, `842.5M Revenue`, chart demo `120,190,300,500,200,300` / `12,5,3`, tabel `for $i<3` fake. Tidak ada `DashboardController`/`DashboardService`.
 - `User` belum punya preferensi (`dashboard_preferences` tidak ada). `SystemSetting` hanya global (billing/notifications/domain_registrar). Butuh storage per-user.
+- Fondasi pusat notifikasi sudah tersedia: `AdminNotification`, `AdminNotificationService`, `AdminNotificationController`, migration `admin_notifications`, header bell, halaman inbox, permission `notifications.*`, serta job domain/SSL/registrar. Dashboard harus mengonsumsi fondasi ini, bukan membuat pipeline notifikasi kedua.
 - UI stack: `x-app-layout`, Tailwind `rounded-[2rem]`, `lucide`, `chart.js`, Alpine di `header.blade.php`, `public/assets/js/script.js: initCharts()` dark-aware.
 - Permission: semua gate via `@can('module.view')` di `layouts/sidebar.blade.php`; dashboard harus ikut pola yang sama, bukan `@role()` (AGENTS.md §19.2).
 - Layout sudah IP-restricted `['auth','verified','ip.restrict']` — dashboard otomatis ikut; API tidak.
@@ -67,6 +70,19 @@ Sumber kebenaran: `AGENTS.md` §4-§6, §10-§11, §22 (graphify), §16 checklis
 | **Notifikasi Belum Dibaca** | `AdminNotification::unread()->forUser(Auth::user())->count()` | `notifications.view` | Selalu tampil |
 | **System Updates Pending** | `SystemUpdate` count | `system_updates.view` | Opsional |
 
+### F. Notification-aware — P0/P1
+
+| Widget | Sumber | Permission | Interaksi |
+|--------|--------|------------|-----------|
+| **Notifikasi Belum Dibaca** | `AdminNotification` unread aktif | `notifications.view` | Buka pusat notifikasi |
+| **Action Required** | `AdminNotification` dengan `action_required=true`, belum resolved/dismissed | `notifications.view` | Filter berdasarkan severity dan kategori |
+| **Operational Health** | Notification registry + health summaries | Permission sumber | Buka item registrar/server/Zabbix |
+| **Financial Attention** | Notification registry kategori billing | `invoices.view`/`payments.view`/`financial_reports.view` | Buka invoice atau pembayaran |
+
+Widget domain expiry, SSL expiry, invoice overdue, ticket priority, dan registrar health harus memakai query/service yang sama dengan producer notifikasinya agar angka widget dan inbox tidak berbeda.
+
+Widget lanjutan `operational_map` direncanakan dalam `docs/plans/operational-map-network-coverage.md`. Dashboard hanya menampilkan ringkasan mapped/unmapped dan cabang dominan; halaman penuh menangani marker, filter, clustering, layer, dan popup.
+
 Semua card reuse style `bg-white dark:bg-slate-800 p-6 md:p-8 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-sm` + badge map di `header.blade.php: getBadgeClass()`.
 
 ## 5. Customizable — Desain
@@ -107,7 +123,13 @@ Contoh:
 'zabbix_health' => ['title'=>'Kesehatan Zabbix','permission'=>'zabbix_monitors.view','route'=>'zabbix-monitors.index','group'=>'Infrastruktur','w'=>6],
 ```
 
-### 5.4 Alur Persist
+### 5.4 Kontrak dengan Notification Registry
+
+Pusat notifikasi memiliki registry terpisah `NotificationTypeRegistry` yang mendefinisikan `category`, `severity`, `action_required`, permission, action label, dan apakah tipe tersebut tampil di dashboard. `DashboardWidgetRegistry` hanya membaca agregasi dari registry tersebut.
+
+URL atau action tidak boleh dipercaya dari payload user. Resolver server-side harus memeriksa permission dan sumber entity sebelum membuat CTA.
+
+### 5.5 Alur Persist
 
 - Load: `DashboardController@index` → `$prefs = Auth::user()->dashboard_preferences ?? Registry::defaultForRole($user)` → pass ke Blade `x-data="dashboardCustom(@js($prefs), @js($registry))"`.
 - Save show/hide & urutan: Alpine `SortableJS` drag → `PUT /dashboard/preferences` (`auth,verified,ip.restrict`) валидасы `layout.*.id exists:registry`, `visible boolean`, `period in [7d,30d,1y]` → `Auth::user()->update(['dashboard_preferences'=>$validated])`. Fallback `localStorage dashboard:layout:{userId}` jika fetch gagal.
@@ -116,7 +138,7 @@ Contoh:
 
 ### Backend
 
-- `app/Services/DashboardStatsService.php` — metode `clientsStats(period)`, `subscriptionStats()`, `invoiceStats(period)`, `ticketStats()`, `revenueStats()`, `zabbixQuick(period)`, `recentActivity()`, `domainExpiry()`. Semua `Cache::remember("dashboard:stats:{userId}:{period}", 300, fn)` + `withCount`/`sum` (reuse pola `FinancialReportController`). Extract jika >50 baris (AGENTS.md §11.2).
+- `app/Services/DashboardStatsService.php` — metode `clientsStats(period)`, `subscriptionStats()`, `invoiceStats(period)`, `ticketStats()`, `revenueStats()`, `zabbixQuick(period)`, `recentActivity()`, `domainExpiry()`, `notificationAttention()`. Semua `Cache::remember("dashboard:stats:{userId}:{period}", 300, fn)` + `withCount`/`sum` (reuse pola `FinancialReportController`). Extract jika >50 baris (AGENTS.md §11.2).
 - `app/Http/Controllers/DashboardController.php` — `__construct` tanpa `permission:dashboard.view` (semua auth boleh lihat sesuai widgetnya). `index()` load prefs+stats, `updatePreferences(Request)` валидасы + update user. Log `activity('dashboard')->log('update_preferences')` jika relevan.
 - `routes/web.php` — ganti closure:
   ```php
@@ -138,6 +160,13 @@ Contoh:
 - Lib: `SortableJS` CDN (15KB, tanpa build) untuk drag urutan; tidak pakai GridStack (resize tidak dibutuhkan). Dark mode aware: `gridColor #334155` sudah ada di `script.js: initCharts()`.
 - `public/assets/js/script.js` — tambah `dashboardCustom()` Alpine, tidak duplikasi `initCharts` (reuse).
 
+### Integrasi Pusat Notifikasi
+
+- Dashboard menampilkan `unread`, `action_required`, `severity`, `category`, dan `resolved` secara agregat.
+- Klik widget membuka halaman pusat notifikasi dengan filter `category`, `severity`, atau `action_required`.
+- Tombol action tetap menjalankan route modul sumber; setelah berhasil, modul sumber menandai notifikasi sebagai resolved, bukan sekadar read.
+- Notifikasi informatif tetap dapat tampil di inbox, tetapi widget dashboard memprioritaskan notifikasi actionable/high/critical.
+
 ### Keamanan & Performance
 
 - `@can` di Blade + `Gate` di controller stats (jangan expose data tanpa permission).
@@ -146,10 +175,11 @@ Contoh:
 
 ## 7. Tahapan Implementasi
 
-### Fase 1 — Fondasi (Estimasi 1 hari)
+### Fase 1 — Fondasi Dashboard (Estimasi 1 hari)
 
 - Migrasi `add_dashboard_preferences_to_users_table`, cast di `User`.
 - `DashboardWidgetRegistry` + `DashboardStatsService` (real queries, cache 5m) + `FinancialReportController` reuse untuk aging/revenue.
+- Definisikan adapter query bersama untuk widget yang sumbernya juga menghasilkan notifikasi.
 - `DashboardController@index` + `updatePreferences`, routes, `AppLayout` breadcrumb, hapus header periode global.
 - Test: `php artisan migrate`, `php artisan test`, `graphify update`.
 
@@ -168,9 +198,9 @@ Contoh:
 - Default layout per role (Owner full, Billing/Finance keuangan, NOC infra, CS klien+tiket, Sales klien+paket).
 - Docs `docs/modules/dashboard.md` + update `CHANGELOG.md` + `graphify update`.
 
-### Fase 4 — Widget P1/P2 + Polish (opsional, 1 hari)
+### Fase 4 — Widget P1/P2 + Integrasi Notifikasi (opsional, 1–2 hari)
 
-- Zabbix ringkas, Domain expiry <30h, Revenue, Paket terlaris, Notifikasi, Router/Server.
+- Zabbix ringkas, Domain expiry <30h, Revenue, Paket terlaris, Action Required, Financial Attention, Router/Server.
 - Download PNG chart, skeleton `hidden` tetap, dark mode polish.
 - UAT dengan data real cabang.
 
@@ -178,6 +208,7 @@ Contoh:
 
 - Unit: `DashboardStatsService` count/sum, cache hit.
 - Feature: `@can` gate (tanpa `clients.view` → widget tidak render), `updatePreferences` persist, default per role, empty state, periode per widget.
+- Integrasi: widget notifikasi hanya menampilkan record sesuai audience/permission; item resolved tidak masuk Action Required; CTA yang berhasil mengubah sumber menghasilkan state resolved.
 - Manual: login sebagai Owner → lihat semua; NOC → Zabbix muncul; Billing → revenue muncul; tanpa data → semua `Belum ada data`.
 - Rollout: `php artisan migrate`, `php artisan config:clear`, `php artisan view:clear`. Tidak perlu seeder (registry default di code).
 
@@ -186,12 +217,15 @@ Contoh:
 - Migration `add_dashboard_preferences_to_users_table` (re-run aman, nullable).
 - Tidak butuh env baru; `ALLOWED_IPS_CIDR` tetap.
 - Queue worker tidak wajib (stats sync, bukan job).
+- Queue worker tetap wajib untuk producer notifikasi yang dijalankan melalui job scheduler; dashboard hanya membaca hasilnya.
 - `CHANGELOG.md` kategori `Added` + `Changed` + `Deployment Notes`.
 
 ## 10. Keputusan Terbuka (Jika Perlu)
 
 - Apakah header “Halo, {{name}}! Status Stabil” tetap atau diganti ringkasan notifikasi?
 - Butuh export PDF dashboard ringkas (reuse `InvoicePdfService`)? Tidak untuk MVP.
+- Apakah widget `Action Required` menjadi widget default untuk semua role yang memiliki `notifications.view`? Rekomendasi: ya, dengan isi tersaring permission.
+- Apakah dashboard memakai polling ringan atau refresh manual untuk unread count? Rekomendasi: polling count saja, bukan reload semua statistik.
 
 ## 11. Referensi
 

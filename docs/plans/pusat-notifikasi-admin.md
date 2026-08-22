@@ -1,8 +1,8 @@
-# Rencana Pusat Notifikasi Admin
+# Rencana Pusat Notifikasi Admin Global dan Actionable
 
 ## Tujuan
 
-Membangun pusat notifikasi internal CRM untuk menampilkan peristiwa penting yang membutuhkan perhatian admin/operator, menggantikan invoice renew domain manual dengan notifikasi actionable. Sistem harus terintegrasi dengan modul domain registrar SRS-X namun tetap umum agar dapat dipakai untuk expiry hosting, invoice overdue, system updates, dan operasional lain.
+Membangun pusat notifikasi internal CRM yang global untuk semua modul, menampilkan peristiwa informatif maupun pekerjaan yang membutuhkan tindakan admin/operator. Sistem terintegrasi dengan domain registrar SRS-X, tetapi kontraknya harus dapat dipakai untuk expiry hosting, invoice overdue, payment verification, ticket SLA, infrastruktur, system updates, approval, dan modul baru lainnya.
 
 Modul ini melengkapi `docs/plans/integrasi-domain-registrar-srsx.md` — bukan duplikat. Domain plan tetap fokus pada provider add-on; plan ini fokus pada pipeline notifikasi admin.
 
@@ -12,10 +12,22 @@ Referensi existing:
 - `InvoiceReminder` + `SendInvoiceReminders` (`app/Jobs/SendInvoiceReminders.php:24`) sebagai template dedupe dan scheduler
 - `SystemSetting` (`app/Models/SystemSetting.php:17`) untuk ambang hari
 
+## Status Implementasi Saat Ini
+
+Fondasi MVP sudah tersedia di kode:
+
+- `AdminNotification` dan migration `admin_notifications`
+- `AdminNotificationService` dengan audience Owner/Admin dan dedupe domain
+- `AdminNotificationController`, header bell, halaman inbox/detail
+- permission `notifications.view` dan `notifications.manage`
+- scheduler/job domain expiry, SSL expiry, registrar health, serta prune
+
+Plan ini tidak lagi merencanakan fondasi tersebut dari nol. Prioritas berikutnya adalah generalisasi kontrak, action lifecycle, audience resolver, dan integrasi dashboard.
+
 ## Prinsip
 
 1. Notifikasi admin != Activity Log. `activity_log` (Spatie) adalah audit trail read-only (`config/activitylog.php:8`), tidak boleh dipakai untuk reminder. Notifikasi adalah inbox actionable dengan `read_at`, `dismissed_at`, TTL, dan CTA.
-2. Setiap notifikasi harus informatif (apa, kapan, dampak) dan actionable (tombol ke halaman terkait dengan permission check). Jangan membuat notifikasi tanpa target aksi.
+2. Notifikasi memiliki mode `informative` atau `actionable`. Notifikasi informative minimal memiliki aksi `Lihat detail` atau `Tutup`; notifikasi actionable memiliki CTA ke modul sumber dengan permission check.
 3. Semua notifikasi dihasilkan via queue/scheduler, idempotent (cek `type+payload` + hari), dan tidak mengandung secret (domain, expiry, registrar account name — boleh; EPP/auth code, API password — jangan).
 4. Pengiriman default `database` (bell + halaman). `email` opsional via `SystemSetting` dan queue, bukan sync `Mail::send` seperti `TicketNotificationService.php:14`.
 
@@ -24,11 +36,35 @@ Referensi existing:
 ### `admin_notifications`
 
 - `id`, `user_id` nullable FK (null = broadcast ke role), `target_role` nullable (misal `Owner|Admin|Billing`);
-- `type` string (misal `domain_expiry_30`, `domain_expiry_7`, `domain_overdue`, `domain_sync_failed`, `domain_conflict`, `registrar_offline`, `hosting_ssl_expiry`, `invoice_overdue`, `system_update_available`, `ticket_unassigned`);
+- `source_type` nullable dan `source_id` nullable untuk identitas entity generik (`Invoice`, `SubscriptionDomain`, `Ticket`, dan seterusnya);
+- `type` string stabil (misal `domain_expiry`, `domain_overdue`, `registrar_offline`, `hosting_ssl_expiry`, `invoice_overdue`, `system_update_available`, `ticket_unassigned`); variasi hari disimpan sebagai payload/metadata, bukan tipe baru;
+- `category` string (`domain`, `billing`, `ticket`, `infrastructure`, `system`, `approval`);
+- `severity` string (`info`, `warning`, `high`, `critical`);
+- `action_required` boolean default false;
+- `action_key` nullable, resolver server-side untuk menentukan CTA dan route berdasarkan permission;
 - `title`, `message`, `payload` JSON nullable (berisi `subscription_id`, `subscription_domain_id`, `registrar_account_id`, `domain_name`, `expires_at`, `days_left`, `error_summary` ter-redaksi);
-- `read_at`, `dismissed_at`, `expires_at` nullable;
+- `read_at`, `dismissed_at`, `resolved_at`, `resolved_by`, `snoozed_until`, `expires_at` nullable;
 - `created_at` indexed, `read_at` indexed;
 - index `(user_id, read_at)`, `(type, created_at)`, `(expires_at)`.
+
+`read_at` berarti pengguna sudah melihat notifikasi, bukan pekerjaan selesai. `resolved_at` hanya boleh diisi setelah action modul sumber berhasil. `dismissed_at` menutup notifikasi tanpa menyatakan masalah selesai.
+
+### Notification Type Registry
+
+`app/Services/Admin/NotificationTypeRegistry.php` menjadi single source of truth untuk setiap tipe:
+
+```php
+'invoice_overdue' => [
+    'category' => 'billing',
+    'severity' => 'high',
+    'action_required' => true,
+    'permission' => 'invoices.view',
+    'action_label' => 'Lihat Tagihan',
+    'dashboard' => true,
+],
+```
+
+Registry menentukan metadata, audience resolver, CTA, TTL, channel, dan apakah tipe boleh masuk widget dashboard. Payload tidak boleh menentukan URL secara bebas.
 
 ### `SystemSetting` group `notifications`
 
@@ -61,19 +97,30 @@ Seeds via `SystemSettingSeeder` (`database/seeders/SystemSettingSeeder.php:56`),
 
 Setiap tipe membuat **satu notifikasi per hari per payload** (dedupe `where type+payload->domain_name+days_left whereDate created_at = today` seperti `InvoiceReminder.php:77` `exists where invoice_id+reminder_type+days_offset`).
 
+Untuk tipe generik, gunakan `dedupe_key` yang dibentuk dari `type + source_type + source_id + state`. Dedupe harian hanya dipakai untuk reminder berulang seperti expiry. Incident seperti `registrar_offline` sebaiknya membuat satu incident aktif dan hanya membuat reminder ulang berdasarkan kebijakan escalation.
+
+## Audience dan Routing
+
+Audience tidak boleh hanya hardcode Owner/Admin. Resolver harus mendukung user tertentu, role, permission, branch/division, assigned user atau queue, serta broadcast global. Semua penerima tetap diverifikasi ulang saat membaca atau melakukan action.
+
+Contoh: payment verification ke Billing/Finance, ticket NOC ke queue NOC, domain registrar ke Owner/Admin, dan ticket cabang tertentu ke user pada cabang tersebut.
+
 ## Desain Layanan
 
 ```
 app/Notifications/Admin/
   AdminNotification.php (model)
   AdminNotificationService.php (create broadcast, markRead, prune)
+  NotificationTypeRegistry.php (metadata, audience, CTA, severity)
 app/Jobs/
   CheckDomainExpiry.php (daily 07:00)
   CheckHostingSslExpiry.php (daily 07:15)
   CheckRegistrarHealth.php (hourly, ringan)
 ```
 
-- `AdminNotificationService::notifyAdmins(type, title, message, payload, targetRole)` — resolve `User::role(targetRole)` atau `User::permission(domains.view)` → `insert` per user atau satu broadcast `user_id=null,target_role=Admin`.
+- `AdminNotificationService::notify(type, source, context)` — resolve registry, audience, dedupe key, metadata, dan payload ter-redaksi; insert per-user agar `read_at` dan `resolved_at` bersifat personal.
+- `AdminNotificationService::markResolved(notification, user)` hanya dipanggil setelah action sumber berhasil. `markRead` tidak otomatis menyelesaikan pekerjaan.
+- `AdminNotificationService::notifyAdmins(...)` dan `notifyRoles(...)` tetap dipertahankan sebagai compatibility wrapper selama migrasi ke API generik.
 - Job `CheckDomainExpiry` membaca `SubscriptionDomain::whereNotNull(expires_at)`, hitung `diffInDays`, `in_array(diff, reminder_days)`, cek dedupe, panggil service. Timeout 300s, `tries=1`, lock `Cache::lock('notifications:domain-expiry', 600)`.
 - Semua job bawa ID, bukan secret; secret tidak di-payload notifikasi.
 
@@ -94,6 +141,13 @@ Mapping:
 - **Header bell** `header.blade.php:127` — ganti dummy jadi Alpine fetch `GET /notifications/count` (badge) + dropdown `max-h-[420px]` grup by type, unread bg `#eff6ff` (seperti `client-portal-next/app/notifications/page.tsx:50`), tombol `Tandai semua dibaca`.
 - **Halaman `Notifikasi`** `resources/views/notifications/index.blade.php` — filter `type` + `unread`, paginate, CTA per notifikasi (cek `@can('domains.view')` dll), auto-prune badge.
 - **Halaman `Pengaturan > Notifikasi`** — reuse `settings/index.blade.php:14` `groupLabels['notifications']` untuk edit `domain_reminder_days` JSON dan `domain_channel`.
+
+### Action UI
+
+- Renderer CTA membaca `action_key` dari registry, bukan URL mentah dari payload.
+- Tombol hanya ditampilkan jika user memiliki permission registry dan source entity masih valid.
+- Halaman detail tidak menampilkan payload JSON mentah kepada user; gunakan renderer per kategori dan redaksi field sensitif.
+- Inbox menyediakan filter `category`, `severity`, `action_required`, `unread`, `unresolved`, dan `source_module`.
 
 ## Penanganan Dua Akun SRS-X (TLD)
 
@@ -132,12 +186,12 @@ flowchart LR
 
 ## Tahapan Implementasi
 
-### Fase 1: Fondasi Pusat Notifikasi (tanpa domain SRS-X dulu)
-- Migration `admin_notifications` + `SystemSetting` seeds `notifications.*`
-- Model `AdminNotification` + `AdminNotificationService` + permission `notifications.*`
-- Header bell dynamic + halaman `notifications.index` + `settings` group
-- Scheduler `CheckDomainExpiry` untuk `expires_at` manual existing (tanpa provider sync) + `CheckHostingSslExpiry`
-- Activity log tidak dipakai; test deduplication
+### Fase 1: Stabilisasi Notification Core
+- Dokumentasikan fondasi yang sudah ada, lalu tambah `category`, `severity`, `action_required`, source entity, lifecycle resolved/snoozed, dan registry.
+- Pertahankan migration/permission additive; jangan menghapus data lama atau memakai `syncPermissions`.
+- Header bell dan halaman inbox menggunakan filter serta action renderer registry.
+- Migrasikan dedupe domain/SSL ke `dedupe_key` tanpa mengubah perilaku reminder yang sudah berjalan.
+- Activity log tidak dipakai sebagai inbox; tambahkan test authorization, deduplication, redaction, dan resolve lifecycle.
 
 **Kriteria selesai:** Bell menampilkan expiry domain manual & SSL, mark read berfungsi, tidak ada secret di payload.
 
@@ -150,6 +204,12 @@ flowchart LR
 - Notifikasi `domain_renew_requested` ke approver (Owner/Admin) dengan ringkasan biaya (tanpa saldo SRS-X sebagai sumber akuntansi — `integrasi-domain-registrar-srsx.md:207`)
 - Prunejob `retention_days=90` via daily `notifications:prune`
 
+### Fase 4: Integrasi Dashboard dan Modul Baru
+- Dashboard widget `Notification Inbox`, `Action Required`, `Operational Health`, dan `Financial Attention` membaca service/query yang sama.
+- Tambahkan producer notifikasi untuk payment verification, ticket assignment/SLA, system update, Zabbix/server health, dan approval workflow.
+- Setiap producer mendaftarkan `NotificationTypeRegistry`, audience resolver, source entity, dedupe policy, CTA, dan test.
+- Tambahkan polling unread count ringan; jangan reload seluruh statistik dashboard.
+
 ## Testing dan Rollout
 
 1. Unit test service dedupe (same domain+days → tidak duplikat hari sama, boleh hari beda).
@@ -157,15 +217,19 @@ flowchart LR
 3. Feature test expiry: buat `SubscriptionDomain` `expires_at = today+7` → jalankan job → `admin_notifications` ter-create dengan payload `days_left=7`.
 4. Test TLD warning: pilih Akun A untuk `example.co.id` → validation warning.
 5. UAT: bandingkan notifikasi expiry dengan `show.blade.php:681` `expires_at` dan panel SRS-X.
+6. Integrasi: notifikasi tidak terlihat jika user tidak memiliki permission sumber; action sukses mengisi `resolved_at`; widget dashboard tidak menampilkan item resolved/dismissed pada queue aktif.
 
 ## Keputusan yang Dibutuhkan
 
 1. Apakah `domain_reminder_days` `[30,14,7,3,1]` sudah pas atau perlu `60` untuk ccTLD yang proses renew lebih lama?
 2. Channel default `database` saja atau `both` (email ke Owner/Admin)? Rekom `database` dulu (Fase 1), `both` opsional Fase 2.
 3. Broadcast ke semua Owner/Admin atau hanya ke penanggung jawab domain (misal per cabang)?
+4. Apakah `Action Required` menjadi widget default semua role dengan `notifications.view`? Rekomendasi: ya, tersaring oleh audience dan permission.
+5. Apakah reminder escalation memakai email/digest setelah notification core stabil? Rekomendasi: database dulu, email/digest fase lanjutan.
 
 ## Dampak Deployment
 
 - Migration `admin_notifications` + seeds `notifications.*`, `permission:cache-reset` (additive, tanpa `syncPermissions`).
 - Tidak butuh env baru; `notifications.retention_days` di DB.
 - Queue worker harus aktif (`php artisan queue:work`) agar job expiry berjalan.
+- Dashboard tidak membutuhkan queue sendiri; queue diperlukan oleh producer notifikasi dan scheduler.
