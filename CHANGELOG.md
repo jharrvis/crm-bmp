@@ -4,11 +4,15 @@ Semua perubahan penting pada project ini dicatat di file ini.
 
 ## 2026-08-22
 
+### Added
+- **IP Restriction middleware** (`app/Http/Middleware/RestrictIp.php`): membatasi akses web routes (dashboard, admin panel) berdasarkan CIDR ranges yang dikonfigurasi via env `ALLOWED_IPS_CIDR`. Default: `114.30.0.0/16`. API routes (`client-portal/*`) **tidak** dibatasi — tetap aksesibel dari mana saja. Middleware mendukung notasi CIDR (IPv4) dan single IP. Daftarkan via alias `ip.restrict` di `bootstrap/app.php`. Konfigurasi di `config/app.php` key `allowed_ips_cidr`.
+
 ### Changed
 - Halaman detail pelanggan (`clients.show`): label tab `Layanan Langganan` diganti menjadi `Layanan Pelanggan` agar konsisten dengan istilah `Pelanggan` di modul Clients. Tabel pada tab tersebut kini menampilkan kolom `Domain` — nama domain dari `subscriptions.domain` (`SubscriptionDomain.domain_name`) beserta tanggal expired (`expires_at`) jika ada, fallback `-` bila langganan bukan layanan domain. Controller `ClientController@show` (`app/Http/Controllers/ClientController.php:165`) menambahkan eager load `subscriptions.domain` untuk menghindari N+1.
 
 ### Deployment Notes
-- Tidak ada migration/seeder baru. Cukup `php artisan view:clear` / `php artisan config:clear` jika view cache aktif.
+- **IP Restriction**: Tambah `ALLOWED_IPS_CIDR=114.30.0.0/16` (atau CIDR lain) ke `.env`. Kosongkan untuk disable. `php artisan config:clear` setelah update.
+- Tidak ada migration/seeder baru untuk fitur lain. Cukup `php artisan view:clear` / `php artisan config:clear` jika view cache aktif.
 
 ## 2026-08-21
 

@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'client_portal.auth' => \App\Http\Middleware\AuthenticateClientPortalToken::class,
+            'ip.restrict' => \App\Http\Middleware\RestrictIp::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

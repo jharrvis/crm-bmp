@@ -123,4 +123,17 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | IP Restriction
+    |--------------------------------------------------------------------------
+    |
+    | Allowed CIDR ranges for web routes (dashboard, admin panel).
+    | API routes (client-portal) are NOT restricted by this middleware.
+    | Set via ALLOWED_IPS_CIDR env var (comma-separated).
+    | Example: "114.30.0.0/16,10.0.0.0/8"
+    |
+    */
+    'allowed_ips_cidr' => array_filter(array_map('trim', explode(',', (string) env('ALLOWED_IPS_CIDR', '')))),
+
 ];

@@ -13,7 +13,7 @@ class ExampleTest extends TestCase
     {
         $response = $this->get('/');
 
-        // / mengarahkan ke dashboard (auth redirect untuk guest saat sampai di dashboard)
-        $response->assertRedirect(route('dashboard'));
+        // Guest user hitting / gets redirected to login (auth middleware on group)
+        $response->assertRedirect(route('login'));
     }
 }
