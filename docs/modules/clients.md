@@ -99,6 +99,7 @@ Portal account management dibatasi via route-level `role:Owner|Admin` middleware
 
 - Index: DataTables server-side dengan filter cabang dan status. UI modal-based untuk create/edit.
 - Show: Detail client dengan tab informasi, kontak, langganan, tagihan, tiket, portal.
+- Global Search Quick View: endpoint JSON detail client mengikutsertakan `subscriptions.package.service` dan `subscriptions.domain`. Modal menampilkan Ringkasan, Kontak, dan Layanan pada tab terpisah agar informasi penting tetap ringkas.
 
 ## Integrasi Modul Lain
 

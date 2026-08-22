@@ -159,7 +159,16 @@ class ClientController extends Controller
     public function show(Request $request, Client $client)
     {
         if ($request->wantsJson() || $request->ajax()) {
-            return response()->json($client->load('branch', 'contacts', 'province', 'regency', 'district', 'village'));
+            return response()->json($client->load([
+                'branch',
+                'contacts',
+                'province',
+                'regency',
+                'district',
+                'village',
+                'subscriptions.package.service',
+                'subscriptions.domain',
+            ]));
         }
 
         $client->load(['branch', 'contacts', 'province', 'regency', 'district', 'village', 'subscriptions.package.service', 'subscriptions.domain', 'portalAccount.sessions']);

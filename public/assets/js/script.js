@@ -581,7 +581,7 @@ function renderSearchQuickViewSubscriptions(subscriptions) {
     }
 
     return `
-        <div class="space-y-3">
+        <div class="grid gap-2 sm:grid-cols-2">
             ${subscriptions.map((sub) => {
                 const pkg = sub.package || {};
                 const svc = pkg.service || {};
@@ -599,12 +599,12 @@ function renderSearchQuickViewSubscriptions(subscriptions) {
                 if (domain.expires_at) lines.push(`Exp: ${new Date(domain.expires_at).toLocaleDateString('id-ID')}`);
                 
                 return `
-                    <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-800/60 flex items-center justify-between gap-3">
+                    <div class="rounded-xl border border-slate-200 bg-white px-3 py-2.5 dark:border-slate-700 dark:bg-slate-800/60 flex items-center justify-between gap-2">
                         <div class="flex-1 min-w-0">
-                            <div class="text-sm font-semibold text-slate-800 dark:text-white truncate">${escapeHtml(sub.subscription_code)}</div>
+                            <div class="text-xs font-semibold text-slate-800 dark:text-white truncate">${escapeHtml(sub.subscription_code)}</div>
                             <div class="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">${escapeHtml(lines.join(' | '))}</div>
                         </div>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${statusClass}">${escapeHtml(sub.status || '-')}</span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium shrink-0 ${statusClass}">${escapeHtml(sub.status || '-')}</span>
                     </div>
                 `;
             }).join('')}
@@ -623,31 +623,31 @@ function buildSearchQuickViewContent(item, data) {
 client: {
             subtitle: [data.client_code, data.city, branchName].filter(Boolean).join(' | '),
             body: `
-                <div class="grid gap-3 md:grid-cols-3">
-                    ${renderQuickViewField('Status', data.status)}
-                    ${renderQuickViewField('Cabang', branchName)}
-                    ${renderQuickViewField('Tipe', data.type)}
+                <div class="mb-4 flex gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-900/60">
+                    <button type="button" data-search-quick-view-tab="summary" onclick="switchSearchQuickViewTab('summary')" class="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm">Ringkasan</button>
+                    <button type="button" data-search-quick-view-tab="contacts" onclick="switchSearchQuickViewTab('contacts')" class="flex-1 rounded-lg px-3 py-2 text-xs font-semibold text-slate-500 dark:text-slate-300">Kontak (${contacts.length})</button>
+                    <button type="button" data-search-quick-view-tab="services" onclick="switchSearchQuickViewTab('services')" class="flex-1 rounded-lg px-3 py-2 text-xs font-semibold text-slate-500 dark:text-slate-300">Layanan (${(data.subscriptions || []).length})</button>
                 </div>
-                <div class="mt-5 grid gap-3 md:grid-cols-2">
-                    ${renderQuickViewField('Client Code', data.client_code, true)}
-                    ${renderQuickViewField('Nomor Kontak Utama', primaryContact?.phone || primaryContact?.whatsapp, true)}
-                    ${renderQuickViewField('Nama Kontak Utama', primaryContact?.name)}
-                    ${renderQuickViewField('WhatsApp', primaryContact?.whatsapp, true)}
+                <div data-search-quick-view-panel="summary">
+                    <div class="grid gap-3 md:grid-cols-3">
+                        ${renderQuickViewField('Status', data.status)}
+                        ${renderQuickViewField('Cabang', branchName)}
+                        ${renderQuickViewField('Tipe', data.type)}
+                    </div>
+                    <div class="mt-3 grid gap-3 md:grid-cols-2">
+                        ${renderQuickViewField('Client Code', data.client_code, true)}
+                        ${renderQuickViewField('Kontak Utama', primaryContact?.phone || primaryContact?.whatsapp, true)}
+                    </div>
+                    <div class="mt-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300">${escapeHtml(data.address || '-')}</div>
                 </div>
-                <div class="mt-5">
-                    <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Alamat</div>
-                    <div class="mt-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300">${escapeHtml(data.address || '-')}</div>
-                </div>
-                <div class="mt-5">
-                    <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Kontak Lain</div>
-                    <div class="mt-2">${renderQuickViewList(contacts.map((contact) => ({
+                <div data-search-quick-view-panel="contacts" class="hidden">
+                    ${renderQuickViewList(contacts.map((contact) => ({
                         title: contact.name,
                         subtitle: [contact.phone, contact.whatsapp, contact.email, contact.position].filter(Boolean).join(' | '),
-                    })))}</div>
+                    })))}
                 </div>
-                <div class="mt-5">
-                    <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Layanan Pelanggan</div>
-                    <div class="mt-2">${renderSearchQuickViewSubscriptions(data.subscriptions || [])}</div>
+                <div data-search-quick-view-panel="services" class="hidden">
+                    ${renderSearchQuickViewSubscriptions(data.subscriptions || [])}
                 </div>
             `,
         },
@@ -803,6 +803,21 @@ client: {
     };
 }
 
+function switchSearchQuickViewTab(tab) {
+    document.querySelectorAll('[data-search-quick-view-tab]').forEach((button) => {
+        const active = button.dataset.searchQuickViewTab === tab;
+        button.classList.toggle('bg-blue-600', active);
+        button.classList.toggle('text-white', active);
+        button.classList.toggle('shadow-sm', active);
+        button.classList.toggle('text-slate-500', !active);
+        button.classList.toggle('dark:text-slate-300', !active);
+    });
+
+    document.querySelectorAll('[data-search-quick-view-panel]').forEach((panel) => {
+        panel.classList.toggle('hidden', panel.dataset.searchQuickViewPanel !== tab);
+    });
+}
+
 function formatSearchQuickViewCurrency(value) {
     const numericValue = Number(value || 0);
     return `Rp ${numericValue.toLocaleString('id-ID')}`;
@@ -884,6 +899,7 @@ async function openGlobalSearchQuickView(item) {
 
 window.copySearchQuickViewValue = copySearchQuickViewValue;
 window.openGlobalSearchQuickView = openGlobalSearchQuickView;
+window.switchSearchQuickViewTab = switchSearchQuickViewTab;
 
 document.addEventListener('click', function (event) {
     const backdrop = document.getElementById('confirmBackdrop');
