@@ -1,7 +1,7 @@
 # Fase 0 Audit — Workflow Dashboard, Notification, Operational Map
 
 > Output Fase 0 sesuai `implementation-workflow-dashboard-notification-map.md` §4.
-> Commit graph: `b705cac`, graph: 2805 nodes / 5213 edges / 348 communities — fresh (rebuilt 2026-08-23 pasca-audit).
+> Commit graph: `a159741`, graph: 2778 nodes / 5207 edges / 348 communities — fresh (rebuilt 2026-08-23 pasca-audit).
 > Tanggal audit: 2026-08-23 — **Finalisasi 2026-08-23: audience, dedupe_key, map response contract, graph freshness PASS**
 
 ## 0. Status Akhir Fase 0
@@ -15,7 +15,7 @@
 | Parallel work planning | PASS |
 | Registry contract | **PASS** — draft promosi ke kontrak final (§8 final) |
 | Map response contract | **PASS** — schema final (§6.1) |
-| Graph freshness | **PASS** — `b705cac` (2805 nodes) |
+| Graph freshness | **PASS** — `a159741` (2778 nodes) |
 | Runtime implementation | BELUM DIMULAI (sesuai rencana — Fase 0 hanya audit) |
 
 **Rekomendasi sebelum Track A/B/C — 5 poin — STATUS:**
@@ -25,7 +25,7 @@
 | 1 | Finalkan audience `notifications.view` | **SELESAI** — §2 final |
 | 2 | Finalkan schema response Map | **SELESAI** — §6.1 final |
 | 3 | Finalkan aturan `dedupe_key` | **SELESAI** — §6 final |
-| 4 | Jalankan `graphify update` setelah commit audit | **SELESAI** — `b705cac` |
+| 4 | Jalankan `graphify update` setelah commit audit | **SELESAI** — `a159741` |
 | 5 | Tutup Fase 0, mulai 3 track paralel dengan checkpoint | **SIAP** — commit ini menutup Fase 0 |
 
 ### Keputusan Final Fase 0 (Tambahan)
@@ -111,7 +111,7 @@ Fase 0: Kontrak & Audit (SAAT INI)
 | notifications | view/manage/settings — **sudah ada** |
 | system_updates, documentation, logs, settings | view/update |
 
-**Role mapping aktual:**
+**Role mapping aktual sebelum Track A:**
 
 | Role | Notifications | Maps |
 |------|--------------|------|
@@ -123,9 +123,11 @@ Fase 0: Kontrak & Audit (SAAT INI)
 | Semua role | — | **maps.view belum ada** |
 
 **Gap Fase 0:**
-- `maps.view` (MVP) **wajib ditambahkan** additively tanpa `syncPermissions`. Kandidat: `maps.view` saja untuk MVP (bukan `network_maps.view` sampai layer infra).
-- `dashboard.view` **tidak perlu** — semua `auth` boleh lihat dashboard, widget difilter `@can`.
-- CS/Sales/Finance sengaja tidak punya `notifications.*` saat ini; header bell hidden. Keputusan Fase 1: tetap seperti ini atau berikan `notifications.view` ke semua (rekomendasi: berikan `view` ke semua yang punya `clients.view` agar inbox terlihat, `manage` tetap Owner/Admin/Billing/NOC).
+
+Catatan pada tabel dan bullet lama di bawah ini menggambarkan kondisi sebelum Track A. Keputusan final Fase 0 adalah: CS/Sales/Finance/Employee mendapat `notifications.view` (view-only) melalui `PermissionSeeder` pada Track A; `notifications.manage` tetap untuk Owner/Admin/Billing/NOC. Permission `maps.view` ditambahkan secara additive pada Track C. `dashboard.view` tidak diperlukan.
+- `maps.view` (MVP) ditambahkan secara additive tanpa `syncPermissions`; gunakan permission ini untuk Track C.
+- `dashboard.view` **tidak perlu** — semua `auth` boleh melihat dashboard, widget difilter dengan `@can`.
+- Target Track A: berikan `notifications.view` kepada CS/Sales/Finance/Employee melalui `PermissionSeeder`; `notifications.manage` tetap untuk Owner/Admin/Billing/NOC.
 
 ## 3. Daftar Migration
 
@@ -142,8 +144,10 @@ Fase 0: Kontrak & Audit (SAAT INI)
 | Migration | Kolom |
 |-----------|-------|
 | `2026_08_23_000001_add_dashboard_preferences_to_users_table.php` | `users.dashboard_preferences json nullable` |
-| `2026_08_23_000002_add_notification_lifecycle_to_admin_notifications_table.php` | `category, severity, action_required bool default false, action_key nullable, source_type nullable, source_id nullable, dedupe_key nullable unique? + index, resolved_at nullable, resolved_by nullable FK users, snoozed_until nullable` + index `(source_type,source_id)`, `(dedupe_key)`, `(action_required, resolved_at)` |
+| `2026_08_23_000002_add_notification_lifecycle_to_admin_notifications_table.php` | `category, severity, action_required bool default false, action_key nullable, source_type nullable, source_id nullable, dedupe_key nullable, resolved_at nullable, resolved_by nullable FK users, snoozed_until nullable` + index `(source_type,source_id)`, `(dedupe_key)`, `(action_required, resolved_at)` |
 | `map_assets` / `coverage_polygons` | **TUNDA** — MVP pakai existing `clients`/`branches` saja |
+
+`dedupe_key` tidak memakai unique constraint global. Deduplikasi dilakukan dengan kombinasi `dedupe_key`, time window, `resolved_at IS NULL`, serta lock/cache agar event berulang tidak membuat notifikasi aktif berulang.
 
 ## 4. Daftar Pekerjaan Paralel (Boleh)
 
@@ -224,12 +228,14 @@ Fase 0: Kontrak & Audit (SAAT INI)
 
 ## 7. Isu / Konflik Terdeteksi
 
+Catatan resolusi Fase 0: `CHANGELOG.md` sudah diperbarui pada commit audit workflow. Poin historis yang menyebut changelog belum diperbarui tidak lagi menjadi blocker.
+
 1. **Dashboard route closure** `routes/web.php:12` harus diganti sebelum Track B — single owner.
 2. **`admin_notifications` payload raw** di `index/show` — bocor PII jika tidak redaksi; fix di Track A.
 3. **Dedupe overdue spam** — `domain_overdue` buat 1 per hari per user; harus incident single aktif + escalation, bukan spam.
 4. **Migration duplikat** `2026_02_13_040625` / `040630` metro_ethernet — cek sebelum `migrate:fresh` di CI.
 5. **`User` cast vs `Up` migration** — 3 Track sentuh `User`/`AdminNotification`/`PermissionSeeder` → checkpoint.
-6. **`CHANGELOG.md` belum mencatat workflow** — update di Fase 0 commit.
+6. **`CHANGELOG.md` sudah mencatat workflow** — tidak ada tindakan tambahan untuk Fase 0.
 
 ## 8. Kontrak Registry (Draft Final — disepakati di Fase 0)
 
