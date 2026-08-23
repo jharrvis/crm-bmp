@@ -103,7 +103,12 @@ class DashboardStatsService
                 $start = now()->subDays(30)->startOfDay();
                 $end = now()->endOfDay();
                 $prevStart = now()->subDays(60)->startOfDay();
-                $prevEnd = now()->subDays(30)->endOfDay();
+                $prevEnd = now()->subDays(30)->subDay()->endOfDay();
+            } elseif ($period === '1y') {
+                $start = now()->subYear()->startOfDay();
+                $end = now()->endOfDay();
+                $prevStart = now()->subYears(2)->startOfDay();
+                $prevEnd = now()->subYear()->subDay()->endOfDay();
             } else { // 1M default (bulan ini)
                 $start = now()->startOfMonth();
                 $end = now()->endOfMonth();

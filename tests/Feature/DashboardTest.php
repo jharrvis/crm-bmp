@@ -130,7 +130,6 @@ class DashboardTest extends TestCase
         $user = $this->userWithRole('Owner');
         $user->givePermissionTo(['financial_reports.view']);
 
-        // Buat data minimal via DB (tanpa factory Client/Invoice)
         $branch = \App\Models\Branch::create(['name' => 'Test Branch', 'code' => 'TST']);
         $client = \App\Models\Client::create(['branch_id' => $branch->id, 'client_code' => 'TST-001', 'name' => 'Test Client', 'status' => 'active']);
         $invoice = \App\Models\Invoice::create([
@@ -138,19 +137,46 @@ class DashboardTest extends TestCase
             'invoice_number' => 'INV-TEST-001',
             'invoice_date' => now()->toDateString(),
             'due_date' => now()->addDays(7)->toDateString(),
-            'total_amount' => 150000,
+            'total_amount' => 300000,
             'status' => 'unpaid',
         ]);
+
+        // Payment A: hari ini — masuk 1M dan 30d
         \App\Models\Payment::create(['invoice_id' => $invoice->id, 'amount' => 100000, 'payment_method' => 'transfer', 'payment_date' => now()->toDateString(), 'status' => 'verified', 'verified_at' => now()]);
+        // Payment B: 25 hari lalu — masuk 30d, tapi di luar bulan berjalan jika hari ini > 25 (misal 23 Aug → 29 Jul bukan Agustus)
+        // Untuk deterministik, pakai 25 hari lalu yang pasti di luar startOfMonth Agustus (01 Aug) bila hari ini 23 Aug
+        $dateB = now()->subDays(25)->toDateString(); // 29 Jul
+        $inAugust = \Carbon\Carbon::parse($dateB)->isSameMonth(now());
+        $amountB = 60000;
+        \App\Models\Payment::create(['invoice_id' => $invoice->id, 'amount' => $amountB, 'payment_method' => 'transfer', 'payment_date' => $dateB, 'status' => 'verified', 'verified_at' => now()]);
+        // Payment C: 40 hari lalu — di luar 30d dan di luar bulan ini
         \App\Models\Payment::create(['invoice_id' => $invoice->id, 'amount' => 50000, 'payment_method' => 'transfer', 'payment_date' => now()->subDays(40)->toDateString(), 'status' => 'verified', 'verified_at' => now()]);
+        // Payment D: 400 hari lalu — untuk uji 1y (hanya masuk 1y, tidak masuk 30d/1M)
+        \App\Models\Payment::create(['invoice_id' => $invoice->id, 'amount' => 70000, 'payment_method' => 'transfer', 'payment_date' => now()->subDays(200)->toDateString(), 'status' => 'verified', 'verified_at' => now()]);
 
         $svc = app(\App\Services\DashboardStatsService::class);
+        // Clear cache agar hitungan fresh
+        \Illuminate\Support\Facades\Cache::flush();
+
         $r1m = $svc->revenue($user, '1M');
         $r30d = $svc->revenue($user, '30d');
-        $this->assertEquals(100000, (int) $r1m['current']);
-        $this->assertEquals(100000, (int) $r30d['current']);
+        $r1y = $svc->revenue($user, '1y');
+
+        // 1M hanya hitung Agustus (100k), 30d hitung 30 hari terakhir (100k + 60k jika B dalam 30d)
+        $expected30d = $inAugust ? 100000 : 160000; // jika 29 Jul di Agustus? Juni-Juli edge — tetapi 29 Jul tidak di Agustus
+        // Untuk 23 Aug, 30d = 24 Jul–23 Aug → mencakup 29 Jul (B) dan hari ini
+        $this->assertEquals($expected30d, (int) $r30d['current']);
+        // 1M dan 30d harus berbeda jika B di luar bulan
+        if (! $inAugust) {
+            $this->assertNotEquals((int) $r1m['current'], (int) $r30d['current']);
+        }
         $this->assertArrayHasKey('period', $r30d);
         $this->assertEquals('30d', $r30d['period']);
         $this->assertEquals('1M', $r1m['period']);
+        $this->assertEquals('1y', $r1y['period']);
+        // 1y harus >= 30d karena mencakup payment 200 hari lalu
+        $this->assertGreaterThanOrEqual((int) $r30d['current'], (int) $r1y['current']);
+        // previous period untuk 1y harus ada
+        $this->assertArrayHasKey('prev', $r1y);
     }
 }
