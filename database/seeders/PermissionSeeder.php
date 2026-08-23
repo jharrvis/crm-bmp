@@ -220,6 +220,7 @@ class PermissionSeeder extends Seeder
             'tickets.view',
             'tickets.create',
             'tickets.update',
+            'notifications.view',
         ]);
 
         $salesRole = Role::findByName('Sales');
@@ -235,6 +236,7 @@ class PermissionSeeder extends Seeder
             'documentation.view',
             'tickets.view',
             'tickets.create',
+            'notifications.view',
         ]);
 
         $financeRole = Role::findByName('Finance');
@@ -254,7 +256,11 @@ class PermissionSeeder extends Seeder
             'financial_reports.view',
             'system_updates.view',
             'documentation.view',
+            'notifications.view',
         ]);
+
+        // Employee legacy juga perlu view untuk inbox (tanpa manage)
+        $employeeRole->givePermissionTo(['notifications.view']);
 
         // Client Portal memakai tabel dan token terpisah, bukan role staff Spatie.
     }

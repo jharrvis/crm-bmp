@@ -63,6 +63,8 @@ Route::middleware(['auth', 'verified', 'ip.restrict'])->group(function () {
     Route::post('notifications/{notification}/read', [\App\Http\Controllers\AdminNotificationController::class, 'markRead'])->name('notifications.read');
     Route::post('notifications/read-all', [\App\Http\Controllers\AdminNotificationController::class, 'markAllRead'])->name('notifications.read-all');
     Route::post('notifications/{notification}/dismiss', [\App\Http\Controllers\AdminNotificationController::class, 'dismiss'])->name('notifications.dismiss');
+    Route::post('notifications/{notification}/resolve', [\App\Http\Controllers\AdminNotificationController::class, 'resolve'])->name('notifications.resolve');
+    Route::post('notifications/{notification}/snooze', [\App\Http\Controllers\AdminNotificationController::class, 'snooze'])->name('notifications.snooze');
 
     // Master Data: Products & Services (Owner, Admin, & Employee)
     Route::middleware(['role:Owner|Admin|Employee|Billing|NOC|CS|Sales|Finance'])->group(function () {

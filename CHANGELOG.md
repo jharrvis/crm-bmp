@@ -6,12 +6,15 @@ Semua perubahan penting pada project ini dicatat di file ini.
 
 ### Added
 - **Workflow implementasi Dashboard–Notification–Map**: dokumen orkestrasi `docs/plans/implementation-workflow-dashboard-notification-map.md` + audit Fase 0 `docs/plans/workflow-fase0-audit.md` + cheatsheet `docs/commit-push-cheatsheet.md`. Mengatur dependency Track A (Notification Core), Track B (Dashboard Foundation), Track C (Operational Map MVP), fase integrasi, dan network coverage; serta kontrak `NotificationTypeRegistry` vs `DashboardWidgetRegistry` dan keputusan dedupe/audience/lifecycle.
+- **Track A — Notification Registry & Lifecycle** (`app/Services/Admin/NotificationTypeRegistry.php`): 13 tipe generik (`domain_expiry/overdue/sync_failed/conflict/registrar_offline`, `hosting_ssl_expiry/provision_failed`, `invoice_overdue`, `payment_verification`, `ticket_unassigned/high_priority`, `system_update_available`, `approval_requested`) dengan `category/severity/action_required/permission/action_key/dashboard/ttl/dedupe/audience`. Resolver CTA server-side `resolveAction()` (cek `user->can(permission)` + route). `dedupeKey()` = `SHA1(type:source_type:source_id:state)` (daily vs incident).
+- **Track A — Notification lifecycle & audience** (`database/migrations/2026_08_23_000001_add_notification_lifecycle_to_admin_notifications_table.php`): kolom `category/severity/action_required/action_key/source_type/source_id/dedupe_key/resolved_at/resolved_by/snoozed_until` + 5 index. Model `AdminNotification` (`app/Models/AdminNotification.php:32`): `unread` & `actionRequired` scopes (snoozed), `isResolved/isSnoozed`, `resolvedBy`. Service `AdminNotificationService` (`app/Services/Admin/AdminNotificationService.php:9`): API generik `notify()`/`notifyForSource()`, redaksi payload, `dedupe_key` daily/incident, `markResolved/markRead/snooze`, `unreadCount/actionRequiredCount` cache, wrapper `notifyAdmins` per-user. Controller `AdminNotificationController` (`app/Http/Controllers/AdminNotificationController.php:11`): filter `category/severity/source_type/filter=unread/action_required/unresolved`, enrich `resolved_action` server-side, endpoint `POST notifications/{id}/resolve` + `snooze`. Views `notifications/index.blade.php`/`show.blade.php`: badge category/severity, redaksi safe keys, CTA `resolved_action`, tombol `Tandai selesai`/`Tunda 24j`. Permission `notifications.view` diberikan ke `CS/Sales/Finance/Employee` (additive) di `PermissionSeeder`.
 
 ### Changed
-- **Fase 0 audit**: tidak ada perubahan kode runtime; hanya dokumentasi dependency map, permission matrix (gap `maps.view`), daftar migration (dashboard_preferences + notification lifecycle), file touch list, dan kontrak registry.
+- **Fase 0 audit → finalisasi**: `docs/plans/workflow-fase0-audit.md` §0 — audience final, map response contract, dedupe_key final, graph `b705cac` 2805 nodes.
 
 ### Deployment Notes
-- Tidak ada migration/deploy baru pada fase ini. Selanjutnya akan ada `add_dashboard_preferences_to_users_table` dan `add_notification_lifecycle_to_admin_notifications_table`.
+- Wajib: `php artisan migrate` untuk `2026_08_23_000001_add_notification_lifecycle_to_admin_notifications_table.php` (+ auto-seed `PermissionSeeder` add `notifications.view` ke CS/Sales/Finance/Employee — aman re-run).
+- Opsional: `php artisan config:clear` setelah ubah `notifications.*` TTL jika perlu.
 
 ## 2026-08-22
 

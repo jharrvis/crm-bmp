@@ -11,7 +11,7 @@ class AdminNotificationController extends Controller
     public function __construct()
     {
         $this->middleware('permission:notifications.view')->only(['index', 'count', 'show']);
-        $this->middleware('permission:notifications.manage')->only(['markRead', 'markAllRead', 'dismiss']);
+        $this->middleware('permission:notifications.manage')->only(['markRead', 'markAllRead', 'dismiss', 'resolve', 'snooze']);
     }
 
     public function index(Request $request)
@@ -22,18 +22,48 @@ class AdminNotificationController extends Controller
         if ($request->filled('type')) {
             $query->where('type', $request->string('type'));
         }
+        if ($request->filled('category')) {
+            $query->where('category', $request->string('category'));
+        }
+        if ($request->filled('severity')) {
+            $query->where('severity', $request->string('severity'));
+        }
+        if ($request->filled('source_type')) {
+            $query->where('source_type', $request->string('source_type'));
+        }
         if ($request->string('filter') === 'unread') {
-            $query->whereNull('read_at');
+            $query->whereNull('read_at')->whereNull('resolved_at')->where(function ($q) {
+                $q->whereNull('snoozed_until')->orWhere('snoozed_until', '<=', now());
+            });
+        }
+        if ($request->string('filter') === 'action_required') {
+            $query->where('action_required', true)->whereNull('resolved_at')->whereNull('dismissed_at')->where(function ($q) {
+                $q->whereNull('snoozed_until')->orWhere('snoozed_until', '<=', now());
+            });
+        }
+        if ($request->string('filter') === 'unresolved') {
+            $query->whereNull('resolved_at');
         }
 
         $notifications = $query->paginate(20)->withQueryString();
 
         if ($request->wantsJson()) {
+            // Enrich with resolved CTA server-side — jangan percaya URL dari payload
+            $items = collect($notifications->items())->map(function (AdminNotification $n) use ($user) {
+                $action = null;
+                if ($n->action_key) {
+                    $action = \App\Services\Admin\NotificationTypeRegistry::resolveAction($n->action_key, $n->payload ?? [], $user);
+                }
+                $arr = $n->toArray();
+                $arr['resolved_action'] = $action; // null jika permission tidak ada atau source invalid
+                return $arr;
+            });
             return response()->json([
-                'data' => $notifications->items(),
+                'data' => $items,
                 'meta' => [
                     'total' => $notifications->total(),
-                    'unread' => AdminNotification::forUser($user)->whereNull('read_at')->whereNull('dismissed_at')->count(),
+                    'unread' => app(\App\Services\Admin\AdminNotificationService::class)->unreadCountForUser($user),
+                    'action_required' => app(\App\Services\Admin\AdminNotificationService::class)->actionRequiredCountForUser($user),
                 ],
             ]);
         }
@@ -44,9 +74,12 @@ class AdminNotificationController extends Controller
     public function count(Request $request)
     {
         $user = $request->user();
-        $count = AdminNotification::forUser($user)->whereNull('read_at')->whereNull('dismissed_at')->count();
+        $service = app(\App\Services\Admin\AdminNotificationService::class);
 
-        return response()->json(['count' => $count]);
+        return response()->json([
+            'count' => $service->unreadCountForUser($user),
+            'action_required' => $service->actionRequiredCountForUser($user),
+        ]);
     }
 
     public function markRead(Request $request, AdminNotification $notification, AdminNotificationService $service)
@@ -91,16 +124,54 @@ class AdminNotificationController extends Controller
         return back()->with('success', 'Notifikasi dihapus.');
     }
 
+    public function resolve(Request $request, AdminNotification $notification, AdminNotificationService $service)
+    {
+        $user = $request->user();
+        $visible = AdminNotification::forUser($user)->whereKey($notification->id)->exists();
+        abort_unless($visible, 403);
+
+        $service->markResolved($notification, $user);
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return back()->with('success', 'Notifikasi ditandai selesai.');
+    }
+
+    public function snooze(Request $request, AdminNotification $notification, AdminNotificationService $service)
+    {
+        $request->validate(['hours' => 'nullable|integer|min:1|max:168']);
+        $user = $request->user();
+        $visible = AdminNotification::forUser($user)->whereKey($notification->id)->exists();
+        abort_unless($visible, 403);
+
+        $service->snooze($notification, (int) ($request->input('hours', 24)));
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return back()->with('success', 'Notifikasi ditunda.');
+    }
+
     public function show(Request $request, AdminNotification $notification)
     {
         $user = $request->user();
         $visible = AdminNotification::forUser($user)->whereKey($notification->id)->exists();
         abort_unless($visible, 404);
 
-        if ($request->wantsJson()) {
-            return response()->json($notification);
+        $resolvedAction = null;
+        if ($notification->action_key) {
+            $resolvedAction = \App\Services\Admin\NotificationTypeRegistry::resolveAction($notification->action_key, $notification->payload ?? [], $user);
         }
 
-        return view('notifications.show', compact('notification'));
+        if ($request->wantsJson()) {
+            $data = $notification->toArray();
+            $data['resolved_action'] = $resolvedAction;
+            return response()->json($data);
+        }
+
+        return view('notifications.show', compact('notification', 'resolvedAction'));
     }
 }
