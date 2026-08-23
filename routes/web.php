@@ -9,9 +9,9 @@ Route::middleware(['auth', 'verified', 'ip.restrict'])->group(function () {
         return redirect()->route('dashboard');
     });
 
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/stats', [\App\Http\Controllers\DashboardController::class, 'stats'])->name('dashboard.stats');
+    Route::put('/dashboard/preferences', [\App\Http\Controllers\DashboardController::class, 'updatePreferences'])->name('dashboard.preferences');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
