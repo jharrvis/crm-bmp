@@ -2,6 +2,17 @@
 
 Semua perubahan penting pada project ini dicatat di file ini.
 
+## 2026-08-23
+
+### Added
+- **Workflow implementasi Dashboard–Notification–Map**: dokumen orkestrasi `docs/plans/implementation-workflow-dashboard-notification-map.md` + audit Fase 0 `docs/plans/workflow-fase0-audit.md` + cheatsheet `docs/commit-push-cheatsheet.md`. Mengatur dependency Track A (Notification Core), Track B (Dashboard Foundation), Track C (Operational Map MVP), fase integrasi, dan network coverage; serta kontrak `NotificationTypeRegistry` vs `DashboardWidgetRegistry` dan keputusan dedupe/audience/lifecycle.
+
+### Changed
+- **Fase 0 audit**: tidak ada perubahan kode runtime; hanya dokumentasi dependency map, permission matrix (gap `maps.view`), daftar migration (dashboard_preferences + notification lifecycle), file touch list, dan kontrak registry.
+
+### Deployment Notes
+- Tidak ada migration/deploy baru pada fase ini. Selanjutnya akan ada `add_dashboard_preferences_to_users_table` dan `add_notification_lifecycle_to_admin_notifications_table`.
+
 ## 2026-08-22
 
 ### Added
