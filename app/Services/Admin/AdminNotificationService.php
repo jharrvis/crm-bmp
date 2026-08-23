@@ -50,41 +50,71 @@ class AdminNotificationService
             $dedupeKey = NotificationTypeRegistry::dedupeKey($type, null, null, $payload['domain_name'].':'.$payload['days_left']);
         }
 
-        // P1 dedupe: Cache::lock untuk cegah race condition dua queue job bersamaan
+        // P1 dedupe: Cache::lock untuk cegah race condition — block 5 detik, create hanya di dalam lock
         $lockKey = 'admin_notifications:dedupe:'.($dedupeKey ?? sha1($type.':'.($payload['domain_name'] ?? '').':'.($payload['days_left'] ?? ''))).':'.($userId ?? $targetRole ?? 'global');
         $lock = Cache::lock($lockKey, 10);
-        try {
-            // Coba acquire lock; jika gagal (job lain sedang buat), kembalikan existing jika ada
-            $acquired = $lock->get();
-            if (! $acquired) {
-                // Tunggu sebentar lalu cek existing
-                usleep(100000);
-            }
 
-            // Dedupe check (di dalam lock)
+        try {
+            return $lock->block(5, function () use ($type, $title, $message, $payload, $userId, $targetRole, $category, $severity, $actionRequired, $actionKey, $sourceType, $sourceId, $dedupeKey, $dedupeMode, $expiresAt) {
+                // Dedupe check — hanya di dalam lock
+                if ($dedupeKey !== null) {
+                    $query = AdminNotification::where('dedupe_key', $dedupeKey);
+                    if ($dedupeMode === 'incident') {
+                        $query->whereNull('resolved_at');
+                    } else {
+                        $query->whereDate('created_at', now()->startOfDay());
+                    }
+                    if ($userId !== null) {
+                        $query->where('user_id', $userId);
+                    } elseif ($targetRole !== null) {
+                        $query->where('target_role', $targetRole);
+                    }
+                    if ($query->exists()) {
+                        return $query->latest('id')->first();
+                    }
+                } elseif (isset($payload['domain_name']) && isset($payload['days_left'])) {
+                    $today = now()->startOfDay();
+                    $domain = $payload['domain_name'];
+                    $days = $payload['days_left'];
+                    $q = AdminNotification::where('type', $type)->whereDate('created_at', $today)
+                        ->whereJsonContains('payload->domain_name', $domain)
+                        ->whereJsonContains('payload->days_left', $days);
+                    if ($userId !== null) {
+                        $q->where('user_id', $userId);
+                    } elseif ($targetRole !== null) {
+                        $q->where('target_role', $targetRole);
+                    }
+                    if ($q->exists()) {
+                        return $q->latest('id')->first();
+                    }
+                }
+
+                return AdminNotification::create([
+                    'user_id' => $userId,
+                    'target_role' => $targetRole,
+                    'type' => $type,
+                    'category' => $category,
+                    'severity' => $severity,
+                    'action_required' => $actionRequired,
+                    'action_key' => $actionKey,
+                    'source_type' => $sourceType,
+                    'source_id' => $sourceId,
+                    'dedupe_key' => $dedupeKey,
+                    'title' => $title,
+                    'message' => $message,
+                    'payload' => $payload,
+                    'expires_at' => $expiresAt,
+                ]);
+            });
+        } catch (\Illuminate\Contracts\Cache\LockTimeoutException $e) {
+            // Gagal dapat lock dalam 5 detik — cek existing dedupe, jangan buat duplikat
             if ($dedupeKey !== null) {
-                $query = AdminNotification::where('dedupe_key', $dedupeKey);
+                $q = AdminNotification::where('dedupe_key', $dedupeKey);
                 if ($dedupeMode === 'incident') {
-                    $query->whereNull('resolved_at');
-                } else { // daily atau fallback
-                    $query->whereDate('created_at', now()->startOfDay());
+                    $q->whereNull('resolved_at');
+                } else {
+                    $q->whereDate('created_at', now()->startOfDay());
                 }
-                if ($userId !== null) {
-                    $query->where('user_id', $userId);
-                } elseif ($targetRole !== null) {
-                    $query->where('target_role', $targetRole);
-                }
-                if ($query->exists()) {
-                    return $query->latest('id')->first();
-                }
-            } elseif (isset($payload['domain_name']) && isset($payload['days_left'])) {
-                // Legacy dedupe tanpa dedupe_key (backward compat sebelum migrasi)
-                $today = now()->startOfDay();
-                $domain = $payload['domain_name'];
-                $days = $payload['days_left'];
-                $q = AdminNotification::where('type', $type)->whereDate('created_at', $today)
-                    ->whereJsonContains('payload->domain_name', $domain)
-                    ->whereJsonContains('payload->days_left', $days);
                 if ($userId !== null) {
                     $q->where('user_id', $userId);
                 } elseif ($targetRole !== null) {
@@ -94,25 +124,8 @@ class AdminNotificationService
                     return $q->latest('id')->first();
                 }
             }
-
-            return AdminNotification::create([
-                'user_id' => $userId,
-                'target_role' => $targetRole,
-                'type' => $type,
-                'category' => $category,
-                'severity' => $severity,
-                'action_required' => $actionRequired,
-                'action_key' => $actionKey,
-                'source_type' => $sourceType,
-                'source_id' => $sourceId,
-                'dedupe_key' => $dedupeKey,
-                'title' => $title,
-                'message' => $message,
-                'payload' => $payload,
-                'expires_at' => $expiresAt,
-            ]);
-        } finally {
-            optional($lock)->release();
+            // Re-throw agar job retry, bukan silent duplicate
+            throw $e;
         }
     }
 
