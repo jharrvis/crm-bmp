@@ -235,6 +235,7 @@
         || auth()->user()->can('metro_ethernets.view')
         || auth()->user()->can('ip_transits.view')
         || auth()->user()->can('zabbix_monitors.view')
+        || auth()->user()->can('maps.view')
     )
     @php
         $isInfraActive = request()->routeIs('routers.*')
@@ -242,7 +243,8 @@
             || request()->routeIs('vendors.*')
             || request()->routeIs('metro-ethernets.*')
             || request()->routeIs('ip-transits.*')
-            || request()->routeIs('zabbix-monitors.*');
+            || request()->routeIs('zabbix-monitors.*')
+            || request()->routeIs('operational-map.*');
     @endphp
     <div class="submenu-container {{ $isInfraActive ? 'submenu-active' : '' }}" id="menu-infrastruktur"
         data-menu-title="Infrastruktur">
@@ -295,6 +297,12 @@
             <a href="{{ route('zabbix-monitors.index') }}"
                 class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('zabbix-monitors.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
                 Zabbix Monitoring
+            </a>
+            @endcan
+            @can('maps.view')
+            <a href="{{ route('operational-map.index') }}"
+                class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('operational-map.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
+                Peta Operasional
             </a>
             @endcan
         </div>

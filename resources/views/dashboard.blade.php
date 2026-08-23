@@ -190,6 +190,25 @@
                 @endcan
                 @endif
 
+                {{-- Operational Map --}}
+                @if($id === 'operational_map')
+                @can('maps.view')
+                <div data-id="operational_map" class="{{ $col }} bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm">
+                    <div class="flex items-center justify-between mb-3">
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">Peta Operasional</p>
+                        <i data-lucide="map" class="w-5 h-5 text-blue-500"></i>
+                    </div>
+                    @if($s['empty'])
+                        <p class="text-sm text-slate-400">Belum ada data pelanggan</p>
+                    @else
+                        <h3 class="text-2xl font-bold text-slate-800 dark:text-white">{{ $s['mapped'] }} <span class="text-sm font-normal text-slate-400">terpetakan</span></h3>
+                        <p class="text-xs text-slate-500 mt-1">{{ $s['unmapped'] }} belum koordinat • {{ $s['total_branches'] }} cabang</p>
+                    @endif
+                    <a href="{{ route('operational-map.index') }}" class="text-xs text-blue-600 hover:underline mt-3 inline-block">Buka Peta Operasional →</a>
+                </div>
+                @endcan
+                @endif
+
             @empty
                 <div class="col-span-12 p-8 text-center text-slate-400 bg-white dark:bg-slate-800 rounded-3xl border">Belum ada widget aktif. Klik Kustomisasi untuk mengaktifkan.</div>
             @endforelse

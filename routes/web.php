@@ -66,6 +66,11 @@ Route::middleware(['auth', 'verified', 'ip.restrict'])->group(function () {
     Route::post('notifications/{notification}/resolve', [\App\Http\Controllers\AdminNotificationController::class, 'resolve'])->name('notifications.resolve');
     Route::post('notifications/{notification}/snooze', [\App\Http\Controllers\AdminNotificationController::class, 'snooze'])->name('notifications.snooze');
 
+    // Operational Map
+    Route::get('operational-map', [\App\Http\Controllers\OperationalMapController::class, 'index'])->name('operational-map.index');
+    Route::get('operational-map/locations', [\App\Http\Controllers\OperationalMapController::class, 'locations'])->name('operational-map.locations');
+    Route::get('operational-map/summary', [\App\Http\Controllers\OperationalMapController::class, 'summary'])->name('operational-map.summary');
+
     // Master Data: Products & Services (Owner, Admin, & Employee)
     Route::middleware(['role:Owner|Admin|Employee|Billing|NOC|CS|Sales|Finance'])->group(function () {
         Route::resource('services', \App\Http\Controllers\ServiceController::class);

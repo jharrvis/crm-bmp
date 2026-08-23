@@ -206,6 +206,19 @@ class DashboardStatsService
         ];
     }
 
+    public function operationalMap(\App\Models\User $user): array
+    {
+        $svc = app(OperationalMapService::class);
+        $summary = $svc->summary([], $user);
+        return [
+            'mapped' => $summary['mapped'],
+            'unmapped' => $summary['unmapped'],
+            'total' => $summary['total'],
+            'total_branches' => $summary['total_branches'],
+            'empty' => $summary['total'] === 0,
+        ];
+    }
+
     private function key(\App\Models\User $user, string $widget, string $period = ''): string
     {
         $p = $period ? ":{$period}" : '';

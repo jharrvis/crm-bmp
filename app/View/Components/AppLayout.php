@@ -95,6 +95,8 @@ class AppLayout extends Component
             'zabbix-monitors' => ['group' => 'Infrastruktur', 'module_label' => 'Zabbix Monitors', 'index_route' => 'zabbix-monitors.index'],
             'services' => ['group' => 'Produk & Layanan', 'module_label' => 'Layanan', 'index_route' => 'services.index', 'param' => 'service'],
             'packages' => ['group' => 'Produk & Layanan', 'module_label' => 'Paket', 'index_route' => 'packages.index', 'param' => 'package'],
+            'operational-map' => ['group' => 'Infrastruktur', 'module_label' => 'Peta Operasional', 'index_route' => 'operational-map.index'],
+            'notifications' => ['group' => 'Sistem', 'module_label' => 'Pusat Notifikasi', 'index_route' => 'notifications.index'],
             'clients' => ['group' => 'Pelanggan', 'module_label' => 'Manajemen Pelanggan', 'index_route' => 'clients.index', 'param' => 'client'],
             'subscriptions' => ['group' => 'Pelanggan', 'module_label' => 'Langganan', 'index_route' => 'subscriptions.index', 'param' => 'subscription'],
             'invoices' => ['group' => 'Billing', 'module_label' => 'Invoice', 'index_route' => 'invoices.index', 'param' => 'invoice'],

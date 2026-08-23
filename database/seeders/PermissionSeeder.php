@@ -54,6 +54,9 @@ class PermissionSeeder extends Seeder
             // Pusat Notifikasi Admin
             'notifications' => ['view', 'manage', 'settings'],
 
+            // Operational Map
+            'maps' => ['view'],
+
             // Settings
             'system_updates' => ['view'],
             'documentation' => ['view'],
@@ -138,6 +141,7 @@ class PermissionSeeder extends Seeder
             'work_orders.view',
             'work_orders.create',
             'work_orders.update',
+            'maps.view',
         ];
         $employeeRole->givePermissionTo($employeePermissions);
 
@@ -204,6 +208,7 @@ class PermissionSeeder extends Seeder
             'domains.manage_dns',
             'notifications.view',
             'notifications.manage',
+            'maps.view',
         ]);
 
         $csRole = Role::findByName('CS');
@@ -221,6 +226,7 @@ class PermissionSeeder extends Seeder
             'tickets.create',
             'tickets.update',
             'notifications.view',
+            'maps.view',
         ]);
 
         $salesRole = Role::findByName('Sales');
@@ -237,6 +243,7 @@ class PermissionSeeder extends Seeder
             'tickets.view',
             'tickets.create',
             'notifications.view',
+            'maps.view',
         ]);
 
         $financeRole = Role::findByName('Finance');
