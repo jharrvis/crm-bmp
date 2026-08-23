@@ -43,6 +43,14 @@ class OperationalMapTest extends TestCase
         $this->actingAs($u)->getJson(route('operational-map.summary'))->assertStatus(403);
     }
 
+    public function test_clients_view_required_even_with_maps(): void
+    {
+        $u = $this->userWith('NOC', ['maps.view']); // tanpa clients.view
+        $this->actingAs($u)->get(route('operational-map.index'))->assertStatus(403);
+        $this->actingAs($u)->getJson(route('operational-map.locations'))->assertStatus(403);
+        $this->actingAs($u)->getJson(route('operational-map.summary'))->assertStatus(403);
+    }
+
     public function test_locations_only_mapped_by_default(): void
     {
         $branch = Branch::create(['name' => 'Branch A', 'code' => 'BRA', 'default_latitude' => -6.9, 'default_longitude' => 110.0]);
@@ -113,6 +121,25 @@ class OperationalMapTest extends TestCase
         $ids = array_column(array_filter($res['data'], fn($d)=>$d['type']==='client'), 'id');
         $this->assertContains($unmapped->id, $ids);
         $this->assertCount(1, $ids);
+    }
+
+    public function test_summary_consistent_with_locations_filters(): void
+    {
+        $b = Branch::create(['name' => 'B', 'code' => 'B']);
+        $u = $this->userWith('NOC', ['maps.view', 'clients.view']);
+        $c1 = Client::create(['branch_id' => $b->id, 'client_code' => 'C1', 'name' => 'Alpha Client', 'status' => 'active', 'latitude' => -6.9, 'longitude' => 110.0]);
+        $c2 = Client::create(['branch_id' => $b->id, 'client_code' => 'C2', 'name' => 'Beta Client', 'status' => 'inactive', 'latitude' => -7.0, 'longitude' => 110.1]);
+
+        // Filter q=Alpha harus konsisten antara locations dan summary
+        $loc = $this->actingAs($u)->getJson(route('operational-map.locations', ['q' => 'Alpha']))->assertOk()->json();
+        $sum = $this->actingAs($u)->getJson(route('operational-map.summary', ['q' => 'Alpha']))->assertOk()->json();
+        $this->assertEquals(1, $loc['meta']['count']);
+        $this->assertEquals(1, $sum['total']);
+        $this->assertEquals(1, $sum['mapped']);
+
+        // Filter branch + mapped
+        $sum2 = $this->actingAs($u)->getJson(route('operational-map.summary', ['mapped' => 'unmapped']))->assertOk()->json();
+        $this->assertEquals(0, $sum2['mapped']);
     }
 
     public function test_dashboard_widget_visible_only_with_maps_view(): void

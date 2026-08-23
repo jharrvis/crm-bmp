@@ -10,6 +10,7 @@ class OperationalMapController extends Controller
     public function __construct()
     {
         $this->middleware('permission:maps.view');
+        $this->middleware('permission:clients.view');
     }
 
     public function index(Request $request)
@@ -28,7 +29,7 @@ class OperationalMapController extends Controller
 
     public function summary(Request $request, OperationalMapService $service)
     {
-        $filters = $request->only(['branch_id', 'status', 'service_id', 'province_code']);
+        $filters = $request->only(['branch_id', 'status', 'subscription_status', 'service_id', 'province_code', 'regency_code', 'mapped', 'q', 'bbox']);
         $data = $service->summary($filters, $request->user());
         return response()->json($data);
     }

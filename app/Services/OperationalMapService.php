@@ -164,14 +164,49 @@ class OperationalMapService
     public function summary(array $filters, \App\Models\User $user): array
     {
         $base = Client::query();
+        // Terapkan filter yang sama dengan locations agar konsisten (kecuali limit/include_unmapped dan default mapped)
         if (! empty($filters['branch_id']) && $filters['branch_id'] !== 'all') {
             $base->where('branch_id', $filters['branch_id']);
         }
         if (! empty($filters['status'])) {
             $base->where('status', $filters['status']);
         }
+        if (! empty($filters['subscription_status'])) {
+            $base->whereHas('subscriptions', fn ($q) => $q->where('status', $filters['subscription_status']));
+        }
         if (! empty($filters['service_id'])) {
             $base->whereHas('subscriptions.package', fn ($q) => $q->where('service_id', $filters['service_id']));
+        }
+        if (! empty($filters['province_code'])) {
+            $base->where('province_code', $filters['province_code']);
+        }
+        if (! empty($filters['regency_code'])) {
+            $base->where('regency_code', $filters['regency_code']);
+        }
+        if (! empty($filters['q'])) {
+            $q = $filters['q'];
+            $base->where(function ($b) use ($q) {
+                $b->where('name', 'like', "%{$q}%")
+                    ->orWhere('client_code', 'like', "%{$q}%")
+                    ->orWhere('city', 'like', "%{$q}%");
+            });
+        }
+        if (! empty($filters['bbox'])) {
+            $parts = explode(',', $filters['bbox']);
+            if (count($parts) === 4) {
+                [$minLng, $minLat, $maxLng, $maxLat] = array_map('floatval', $parts);
+                $base->whereBetween('latitude', [$minLat, $maxLat])
+                    ->whereBetween('longitude', [$minLng, $maxLng]);
+            }
+        }
+        // mapped filter memotong base seperti di locations — agar summary konsisten dengan tampilan peta
+        $mappedFilter = $filters['mapped'] ?? null;
+        if ($mappedFilter === 'only') {
+            $base->whereNotNull('latitude')->whereNotNull('longitude');
+        } elseif ($mappedFilter === 'unmapped') {
+            $base->where(function ($q) {
+                $q->whereNull('latitude')->orWhereNull('longitude');
+            });
         }
 
         $total = (clone $base)->count();
