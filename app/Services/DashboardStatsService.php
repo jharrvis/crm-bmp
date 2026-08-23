@@ -98,15 +98,22 @@ class DashboardStatsService
 
     public function revenue(\App\Models\User $user, string $period = '1M'): array
     {
-        return Cache::remember($this->key($user, 'revenue', $period), 300, function () {
-            $start = now()->startOfMonth();
-            $end = now()->endOfMonth();
+        return Cache::remember($this->key($user, 'revenue', $period), 300, function () use ($period) {
+            if ($period === '30d') {
+                $start = now()->subDays(30)->startOfDay();
+                $end = now()->endOfDay();
+                $prevStart = now()->subDays(60)->startOfDay();
+                $prevEnd = now()->subDays(30)->endOfDay();
+            } else { // 1M default (bulan ini)
+                $start = now()->startOfMonth();
+                $end = now()->endOfMonth();
+                $prevStart = now()->subMonth()->startOfMonth();
+                $prevEnd = now()->subMonth()->endOfMonth();
+            }
             $current = Payment::where('status', 'verified')->whereBetween('payment_date', [$start, $end])->sum('amount');
-            $prevStart = now()->subMonth()->startOfMonth();
-            $prevEnd = now()->subMonth()->endOfMonth();
             $prev = Payment::where('status', 'verified')->whereBetween('payment_date', [$prevStart, $prevEnd])->sum('amount');
             $pct = $prev > 0 ? round((($current - $prev) / $prev) * 100, 1) : null;
-            return ['current' => (float) $current, 'prev' => (float) $prev, 'pct' => $pct, 'empty' => $current == 0 && $prev == 0];
+            return ['current' => (float) $current, 'prev' => (float) $prev, 'pct' => $pct, 'period' => $period, 'empty' => $current == 0 && $prev == 0];
         });
     }
 

@@ -54,19 +54,22 @@ class DashboardController extends Controller
             'period' => 'nullable|string|in:7d,30d,1y,1M,7H,30H',
         ]);
         $user = $request->user();
-        $widget = $request->string('widget');
-        $period = $request->string('period', '30d');
+        $widget = (string) $request->string('widget');
+        $period = (string) $request->string('period', '30d');
 
         if (! DashboardWidgetRegistry::exists($widget)) {
             abort(404);
         }
-        $perm = DashboardWidgetRegistry::all()[$widget]['permission'] ?? null;
-        if ($perm && ! $user->can($perm)) {
-            abort(403);
-        }
-        // Khusus router_server allow either
-        if ($widget === 'router_server' && ! ($user->can('routers.view') || $user->can('servers.view'))) {
-            abort(403);
+        // router_server: allow jika punya salah satu (konsisten dengan visibleForUser)
+        if ($widget === 'router_server') {
+            if (! ($user->can('routers.view') || $user->can('servers.view'))) {
+                abort(403);
+            }
+        } else {
+            $perm = DashboardWidgetRegistry::all()[$widget]['permission'] ?? null;
+            if ($perm && ! $user->can($perm)) {
+                abort(403);
+            }
         }
 
         $data = $this->statsForWidget($stats, $user, $widget, $period);
@@ -82,7 +85,7 @@ class DashboardController extends Controller
             'layout.*.id' => 'required|string',
             'layout.*.visible' => 'required|boolean',
             'widget_periods' => 'nullable|array',
-            'widget_periods.*' => 'nullable|string|max:10',
+            'widget_periods.*' => 'nullable|string|in:7d,30d,1y,1M',
         ]);
 
         // Validasi id exists di registry
