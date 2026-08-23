@@ -131,6 +131,8 @@ class DashboardController extends Controller
             'registrar_health' => $stats->registrarHealth($user),
             'zabbix_health' => ['empty' => true, 'note' => 'Gunakan halaman Zabbix'],
             'notifications_unread', 'notifications_action' => $stats->notifications($user),
+            'financial_attention' => $stats->financialAttention($user),
+            'operational_health' => $stats->operationalHealth($user),
             'operational_map' => $stats->operationalMap($user),
             default => ['empty' => true],
         };

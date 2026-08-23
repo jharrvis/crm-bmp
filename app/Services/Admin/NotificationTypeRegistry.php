@@ -235,6 +235,7 @@ class NotificationTypeRegistry
             'view_ticket' => self::actionIfCan($user, 'tickets.view', fn () => self::ticketRoute($payload)),
             'view_system_update' => self::actionIfCan($user, 'system_updates.view', fn () => ['url' => route('system-updates.index'), 'label' => 'Lihat Pembaruan']),
             'approve_domain_renew' => self::actionIfCan($user, 'domains.approve_renew', fn () => self::subscriptionRoute($payload)),
+            'view_map_filtered' => self::actionIfCan($user, 'maps.view', fn () => self::mapRoute($payload)),
             default => null,
         };
     }
@@ -303,5 +304,16 @@ class NotificationTypeRegistry
             return null;
         }
         return ['url' => route('tickets.show', $ticketId), 'label' => 'Lihat Tiket'];
+    }
+
+    private static function mapRoute(array $payload): ?array
+    {
+        $params = [];
+        if (! empty($payload['branch_id'])) $params['branch_id'] = $payload['branch_id'];
+        if (! empty($payload['domain_name'])) $params['q'] = $payload['domain_name'];
+        elseif (! empty($payload['city'])) $params['q'] = $payload['city'];
+        $url = route('operational-map.index');
+        if ($params) $url .= '?' . http_build_query($params);
+        return ['url' => $url, 'label' => 'Lihat di Peta'];
     }
 }

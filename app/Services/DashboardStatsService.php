@@ -219,6 +219,24 @@ class DashboardStatsService
         ];
     }
 
+    public function financialAttention(\App\Models\User $user): array
+    {
+        return Cache::remember($this->key($user, 'financial_attention'), 120, function () use ($user) {
+            $count = \App\Models\AdminNotification::forUser($user)->actionRequired()->where('category', 'billing')->count();
+            return ['count' => $count, 'empty' => $count === 0];
+        });
+    }
+
+    public function operationalHealth(\App\Models\User $user): array
+    {
+        return Cache::remember($this->key($user, 'operational_health'), 120, function () use ($user) {
+            $count = \App\Models\AdminNotification::forUser($user)->actionRequired()->whereIn('category', ['infrastructure', 'system', 'domain', 'hosting'])->count();
+            // Tambah health summary ringan: registrar offline + domain expiry
+            $registrarIssues = \App\Models\RegistrarAccount::whereNotNull('last_error_summary')->count();
+            return ['count' => $count, 'registrar_issues' => $registrarIssues, 'empty' => $count === 0 && $registrarIssues === 0];
+        });
+    }
+
     private function key(\App\Models\User $user, string $widget, string $period = ''): string
     {
         $p = $period ? ":{$period}" : '';

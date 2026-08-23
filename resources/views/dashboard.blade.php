@@ -190,6 +190,44 @@
                 @endcan
                 @endif
 
+                {{-- Financial Attention --}}
+                @if($id === 'financial_attention')
+                @can('invoices.view')
+                <div data-id="financial_attention" class="{{ $col }} bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm">
+                    <div class="flex items-center justify-between mb-3">
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">Perhatian Keuangan</p>
+                        <i data-lucide="wallet" class="w-5 h-5 text-amber-500"></i>
+                    </div>
+                    @if($s['empty'])
+                        <p class="text-sm text-emerald-600">Tidak ada perhatian</p>
+                    @else
+                        <h3 class="text-2xl font-bold text-amber-600 dark:text-amber-400">{{ $s['count'] }} <span class="text-sm font-normal text-slate-400">perlu tindakan</span></h3>
+                        <p class="text-xs text-slate-500 mt-1">Tagihan & pembayaran</p>
+                    @endif
+                    <a href="{{ route('notifications.index', ['category'=>'billing','filter'=>'action_required']) }}" class="text-xs text-blue-600 hover:underline mt-3 inline-block">Lihat keuangan →</a>
+                </div>
+                @endcan
+                @endif
+
+                {{-- Operational Health --}}
+                @if($id === 'operational_health')
+                @can('zabbix_monitors.view')
+                <div data-id="operational_health" class="{{ $col }} bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm">
+                    <div class="flex items-center justify-between mb-3">
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">Kesehatan Operasional</p>
+                        <i data-lucide="activity" class="w-5 h-5 text-emerald-500"></i>
+                    </div>
+                    @if($s['empty'])
+                        <p class="text-sm text-emerald-600">Semua sehat</p>
+                    @else
+                        <h3 class="text-2xl font-bold text-orange-600 dark:text-orange-400">{{ $s['count'] }} <span class="text-sm font-normal text-slate-400">isu</span></h3>
+                        <p class="text-xs text-slate-500 mt-1">{{ $s['registrar_issues'] }} registrar bermasalah</p>
+                    @endif
+                    <a href="{{ route('notifications.index', ['category'=>'infrastructure','filter'=>'action_required']) }}" class="text-xs text-blue-600 hover:underline mt-3 inline-block">Lihat kesehatan →</a>
+                </div>
+                @endcan
+                @endif
+
                 {{-- Operational Map --}}
                 @if($id === 'operational_map')
                 @can('maps.view')

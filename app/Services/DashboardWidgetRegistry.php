@@ -165,6 +165,23 @@ class DashboardWidgetRegistry
             'default_w' => 6, 'min_w' => 6, 'max_w' => 12,
             'w' => 6,
         ],
+        // Integrasi: Financial Attention & Operational Health (Fase Integrasi)
+        'financial_attention' => [
+            'title' => 'Perhatian Keuangan',
+            'permission' => 'invoices.view', // any of invoices/payments/financial_reports; gate invoices.view
+            'route' => 'notifications.index',
+            'group' => 'Keuangan',
+            'default_w' => 4, 'min_w' => 3, 'max_w' => 6,
+            'w' => 4,
+        ],
+        'operational_health' => [
+            'title' => 'Kesehatan Operasional',
+            'permission' => 'zabbix_monitors.view', // atau registrar_accounts.view — gate any infra
+            'route' => 'operational-map.index',
+            'group' => 'Infrastruktur',
+            'default_w' => 4, 'min_w' => 3, 'max_w' => 6,
+            'w' => 4,
+        ],
     ];
 
     public static function all(): array
