@@ -6,7 +6,7 @@
                     <h3 class="text-xl font-bold">Pusat Notifikasi</h3>
                     <p class="text-sm text-slate-500">Domain expiry, SSL, sync gagal, konflik, invoice, tiket, dan system update — informatif & actionable.</p>
                 </div>
-                <form method="POST" action="{{ route('notifications.read-all') }}">@csrf<button class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">Tandai semua dibaca</button></form>
+                @can('notifications.manage')<form method="POST" action="{{ route('notifications.read-all') }}">@csrf<button class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">Tandai semua dibaca</button></form>@endcan
             </div>
 
             <div class="flex flex-wrap gap-2 mb-4">
@@ -74,6 +74,7 @@
                             @elseif(($payload['subscription_id'] ?? false) && auth()->user()->can('subscriptions.view'))
                                 <a href="{{ route('subscriptions.show', $payload['subscription_id']) }}" class="px-3 py-1 bg-slate-800 text-white rounded text-xs text-center">Lihat Layanan</a>
                             @endif
+                            @can('notifications.manage')
                             @unless($n->read_at)
                             <form method="POST" action="{{ route('notifications.read', $n) }}">@csrf<button class="px-3 py-1 border rounded text-xs w-full">Tandai dibaca</button></form>
                             @endunless
@@ -84,6 +85,7 @@
                             <form method="POST" action="{{ route('notifications.snooze', $n) }}">@csrf<input type="hidden" name="hours" value="24"><button class="px-3 py-1 border rounded text-xs w-full">Tunda 24j</button></form>
                             @endif
                             <form method="POST" action="{{ route('notifications.dismiss', $n) }}">@csrf<button class="px-3 py-1 text-red-600 text-xs">Hapus</button></form>
+                            @endcan
                         </div>
                     </div>
                 </div>

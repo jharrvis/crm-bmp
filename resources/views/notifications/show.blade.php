@@ -17,13 +17,18 @@
                     @if($notification->source_type)<p class="text-xs font-mono text-slate-400 mt-1">source: {{ $notification->source_type }} #{{ $notification->source_id }} • dedupe: {{ Str::limit($notification->dedupe_key ?? '-', 16) }}</p>@endif
                 </div>
                 <div class="flex flex-col gap-2">
+                    @can('notifications.manage')
                     @unless($notification->read_at)
                     <form method="POST" action="{{ route('notifications.read', $notification) }}">@csrf<button class="px-3 py-1.5 bg-blue-600 text-white rounded text-sm">Tandai dibaca</button></form>
                     @endunless
                     @if(!$notification->resolved_at && $notification->action_required)
                     <form method="POST" action="{{ route('notifications.resolve', $notification) }}">@csrf<button class="px-3 py-1.5 bg-emerald-600 text-white rounded text-sm">Tandai selesai</button></form>
                     @endif
+                    @if(!$notification->isSnoozed())
+                    <form method="POST" action="{{ route('notifications.snooze', $notification) }}">@csrf<input type="hidden" name="hours" value="24"><button class="px-3 py-1.5 border rounded text-sm">Tunda 24j</button></form>
+                    @endif
                     <form method="POST" action="{{ route('notifications.dismiss', $notification) }}">@csrf<button class="px-3 py-1.5 border rounded text-sm text-red-600">Hapus</button></form>
+                    @endcan
                 </div>
             </div>
             <div class="mt-4 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl text-sm">
