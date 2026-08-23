@@ -19,7 +19,7 @@ Sumber kebenaran: `AGENTS.md` §4-§6, §10-§11, §22 (graphify), §16 checklis
 
 ## 3. Keputusan User (Final Scope)
 
-1. Customizable: **show/hide + urutan saja** (tanpa resize `w`).
+1. Customizable: **show/hide + posisi/urutan + ukuran kolom widget**. Posisi disimpan sebagai urutan layout, sedangkan ukuran disimpan sebagai `w` (jumlah kolom grid 12). Tidak menggunakan posisi absolut agar layout tetap responsif.
 2. **Default layout per role** (Owner/Admin full, Billing/Finance fokus keuangan, NOC fokus infra/Zabbix, CS fokus klien+tiket, Sales fokus klien+paket).
 3. **Periode per widget** (bukan global). Header `24 Jam/7 Hari/30 Hari` di `dashboard.blade.php:22-33` dihapus — tiap widget punya periode sendiri.
 4. DB kosong → **"Belum ada data"** empty state (bukan angka demo).
@@ -94,12 +94,14 @@ Semua card reuse style `bg-white dark:bg-slate-800 p-6 md:p-8 rounded-[2rem] bor
 
 ### 5.2 Struktur JSON
 
+Format final menyimpan `w` per widget. Catatan awal di bawah yang menyebut `w` tidak disimpan hanya berlaku untuk rancangan sebelum fitur ukuran ditambahkan.
+
 ```json
 {
   "layout": [
-    {"id":"clients_count","visible":true},
-    {"id":"revenue","visible":true},
-    {"id":"zabbix_health","visible":false}
+    {"id":"clients_count","visible":true,"w":3},
+    {"id":"revenue","visible":true,"w":3},
+    {"id":"zabbix_health","visible":false,"w":6}
   ],
   "widget_periods": {
     "growth":"30d",
@@ -109,13 +111,23 @@ Semua card reuse style `bg-white dark:bg-slate-800 p-6 md:p-8 rounded-[2rem] bor
 }
 ```
 
-- `layout` = urutan + visible. `w` tidak disimpan (fixed `grid-cols-12` → `col-span-3/6/12` per widget default). Tidak ada resize.
+- `layout` = urutan/posisi + visible + `w`; ukuran menggunakan preset dan batas registry, bukan resize bebas.
 - `widget_periods` = periode per widget (opsional).
 - Default jika `null` → generate dari `DashboardWidgetRegistry::defaultForRole(Auth::user())` (per role).
 
 ### 5.3 Registry (Single Source of Truth)
 
-`app/Services/DashboardWidgetRegistry.php` — array `id => [title, permission, route, group, default_w, defaultVisiblePerRole]`. Dipakai controller, Blade `@can`, dan JS. Mirror `RoleController::$moduleGroups` agar sidebar dan dashboard sinkron.
+#### Kontrak posisi dan ukuran widget
+
+Setiap item `layout` menyimpan `id`, `visible`, dan `w`. Nilai `w` adalah jumlah kolom pada grid 12 kolom dan hanya boleh menggunakan preset `3`, `4`, `6`, `8`, atau `12`.
+
+- Posisi widget direpresentasikan oleh urutan item pada array `layout`; drag-and-drop mengubah urutan, bukan koordinat absolut `x/y` agar tidak terjadi overlap.
+- Registry wajib mendefinisikan `default_w`, `min_w`, dan `max_w` untuk setiap widget.
+- Stat ringkas default `w=3`, daftar/medium `w=4` atau `w=6`, chart/map `w=6`; `w=12` hanya untuk widget yang memang membutuhkan lebar penuh.
+- Server wajib memvalidasi dan melakukan clamp `w` terhadap preset serta `min_w/max_w` registry sebelum menyimpan preference.
+- Responsive fallback: pada breakpoint kecil widget boleh menjadi `w=12`; pada breakpoint `md/lg`, gunakan ukuran tersimpan yang sudah di-clamp.
+
+`app/Services/DashboardWidgetRegistry.php` — array `id => [title, permission, route, group, default_w, min_w, max_w, defaultVisiblePerRole]`. Dipakai controller, Blade `@can`, dan JS. Mirror `RoleController::$moduleGroups` agar sidebar dan dashboard sinkron.
 
 Contoh:
 ```php
@@ -131,8 +143,10 @@ URL atau action tidak boleh dipercaya dari payload user. Resolver server-side ha
 
 ### 5.5 Alur Persist
 
+Catatan: rancangan ini menggantikan keputusan awal “show/hide + urutan saja”. Implementasi final wajib menyimpan posisi/urutan dan `w` per widget, dengan preset ukuran dan clamp server-side seperti kontrak di atas.
+
 - Load: `DashboardController@index` → `$prefs = Auth::user()->dashboard_preferences ?? Registry::defaultForRole($user)` → pass ke Blade `x-data="dashboardCustom(@js($prefs), @js($registry))"`.
-- Save show/hide & urutan: Alpine `SortableJS` drag → `PUT /dashboard/preferences` (`auth,verified,ip.restrict`) валидасы `layout.*.id exists:registry`, `visible boolean`, `period in [7d,30d,1y]` → `Auth::user()->update(['dashboard_preferences'=>$validated])`. Fallback `localStorage dashboard:layout:{userId}` jika fetch gagal.
+- Save show/hide, posisi/urutan, dan ukuran: Alpine `SortableJS` drag + preset ukuran → `PUT /dashboard/preferences` memvalidasi `layout.*.id`, `visible`, `w`, dan periode yang diizinkan. Server melakukan clamp terhadap `min_w/max_w` registry sebelum `Auth::user()->update()`. Fallback `localStorage dashboard:layout:{userId}` jika fetch gagal.
 
 ## 6. Arsitektur
 
@@ -151,13 +165,15 @@ URL atau action tidak boleh dipercaya dari payload user. Resolver server-side ha
 
 ### Frontend
 
+Kontrol kustomisasi harus menyediakan drag-and-drop untuk posisi serta preset ukuran kolom. Jangan membuat semua widget menjadi satu baris penuh pada desktop; gunakan ukuran default registry dan izinkan `w=12` hanya untuk widget yang memerlukannya.
+
 - `resources/views/dashboard.blade.php` — refactor jadi grid Alpine:
   - Ganti header `24 Jam/7 Hari/30 Hari` (hapus).
   - Grid `grid grid-cols-12 gap-6` → tiap widget `col-span-12 md:col-span-6 lg:col-span-3` (stat) atau `lg:col-span-6` (chart). Bungkus `@can('clients.view') ... @endcan`.
   - Komponen `resources/views/components/dashboard/stat-card.blade.php` + `chart-card.blade.php` reuse `rounded-[2rem] border shadow-sm` + `group-hover:scale-110`.
   - Empty state: `@forelse` else `Belum ada data` (sesuai keputusan 4).
   - Periode per widget: `select` kecil di card header (7H/30H/1T) → `fetch /dashboard/stats?widget=growth&period=30d` via `chart.js` update.
-- Lib: `SortableJS` CDN (15KB, tanpa build) untuk drag urutan; tidak pakai GridStack (resize tidak dibutuhkan). Dark mode aware: `gridColor #334155` sudah ada di `script.js: initCharts()`.
+- Lib: `SortableJS` CDN (15KB, tanpa build) untuk drag posisi/urutan. Ukuran menggunakan preset aman `3/4/6/8/12`; jangan gunakan resize bebas berbasis koordinat pada fase ini. Dark mode aware: `gridColor #334155` sudah ada di `script.js: initCharts()`.
 - `public/assets/js/script.js` — tambah `dashboardCustom()` Alpine, tidak duplikasi `initCharts` (reuse).
 
 ### Integrasi Pusat Notifikasi
@@ -194,7 +210,7 @@ URL atau action tidak boleh dipercaya dari payload user. Resolver server-side ha
 
 ### Fase 3 — Customizable (1 hari)
 
-- Alpine + SortableJS drag urutan, modal checklist show/hide, `PUT /dashboard/preferences` + `localStorage` fallback.
+- Alpine + SortableJS drag posisi/urutan, kontrol ukuran preset, modal checklist show/hide, `PUT /dashboard/preferences` + `localStorage` fallback.
 - Default layout per role (Owner full, Billing/Finance keuangan, NOC infra, CS klien+tiket, Sales klien+paket).
 - Docs `docs/modules/dashboard.md` + update `CHANGELOG.md` + `graphify update`.
 

@@ -84,16 +84,19 @@ class DashboardController extends Controller
             'layout' => 'required|array',
             'layout.*.id' => 'required|string',
             'layout.*.visible' => 'required|boolean',
+            'layout.*.w' => 'nullable|integer|in:3,4,6,8,12',
             'widget_periods' => 'nullable|array',
             'widget_periods.*' => 'nullable|string|in:7d,30d,1y,1M',
         ]);
 
-        // Validasi id exists di registry
-        foreach ($validated['layout'] as $item) {
+        // Validasi id exists di registry dan clamp w
+        foreach ($validated['layout'] as &$item) {
             if (! DashboardWidgetRegistry::exists($item['id'])) {
                 return response()->json(['message' => "Widget {$item['id']} tidak dikenal"], 422);
             }
+            $item['w'] = DashboardWidgetRegistry::clampW($item['id'], isset($item['w']) ? (int) $item['w'] : null);
         }
+        unset($item);
 
         $user = $request->user();
         $prefs = [

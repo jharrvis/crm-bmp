@@ -16,10 +16,10 @@
             </button>
         </div>
 
-        <!-- Dashboard Grid (drag urutan) -->
+        <!-- Dashboard Grid (drag urutan + ukuran preset grid 12) -->
         <div id="dashboard-grid" class="grid grid-cols-12 gap-6">
             @forelse($visible as $item)
-                @php $id = $item['id']; $w = $registry[$id]['w'] ?? 3; $col = $w === 6 ? 'col-span-12 lg:col-span-6' : ($w === 12 ? 'col-span-12' : 'col-span-12 md:col-span-6 lg:col-span-3'); $s = $stats[$id] ?? ['empty'=>true]; @endphp
+                @php $id = $item['id']; $w = (int) ($item['w'] ?? $registry[$id]['default_w'] ?? $registry[$id]['w'] ?? 3); $col = \App\Services\DashboardWidgetRegistry::colClass($w); $s = $stats[$id] ?? ['empty'=>true]; @endphp
 
                 {{-- Clients Count --}}
                 @if($id === 'clients_count')
@@ -197,7 +197,8 @@
             {{-- Growth Chart --}}
             @if(collect($visible)->pluck('id')->contains('growth'))
             @can('clients.view')
-            <div data-id="growth" class="col-span-12 lg:col-span-6 bg-white dark:bg-slate-800 p-6 md:p-8 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-sm">
+            @php $growthItem = collect($visible)->firstWhere('id','growth'); $growthW = (int) ($growthItem['w'] ?? $registry['growth']['default_w'] ?? 6); $growthCol = \App\Services\DashboardWidgetRegistry::colClass($growthW); @endphp
+            <div data-id="growth" class="{{ $growthCol }} bg-white dark:bg-slate-800 p-6 md:p-8 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-sm">
                 <div class="flex items-center justify-between mb-4">
                     <div>
                         <h4 class="font-bold text-slate-800 dark:text-white">Pertumbuhan Pelanggan</h4>
@@ -223,7 +224,8 @@
             {{-- Recent Activity --}}
             @if(collect($visible)->pluck('id')->contains('recent_activity'))
             @can('logs.view')
-            <div data-id="recent_activity" class="col-span-12 lg:col-span-6 bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+            @php $raItem = collect($visible)->firstWhere('id','recent_activity'); $raW = (int) ($raItem['w'] ?? $registry['recent_activity']['default_w'] ?? 6); $raCol = \App\Services\DashboardWidgetRegistry::colClass($raW); @endphp
+            <div data-id="recent_activity" class="{{ $raCol }} bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
                 <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
                     <h4 class="font-bold text-slate-800 dark:text-white">Aktivitas Terakhir</h4>
                     <a href="{{ route('activity-logs.index') }}" class="text-sm font-bold text-blue-600 hover:underline">Lihat Log Lengkap</a>
@@ -251,8 +253,8 @@
             {{-- Additional list widgets --}}
             @if(collect($visible)->pluck('id')->contains('top_packages'))
             @can('packages.view')
-            @php $tp = $stats['top_packages'] ?? ['items'=>[],'empty'=>true]; @endphp
-            <div data-id="top_packages" class="col-span-12 lg:col-span-6 bg-white dark:bg-slate-800 p-6 rounded-[2rem] border shadow-sm">
+            @php $tp = $stats['top_packages'] ?? ['items'=>[],'empty'=>true]; $tpItem = collect($visible)->firstWhere('id','top_packages'); $tpW = (int) ($tpItem['w'] ?? $registry['top_packages']['default_w'] ?? 6); $tpCol = \App\Services\DashboardWidgetRegistry::colClass($tpW); @endphp
+            <div data-id="top_packages" class="{{ $tpCol }} bg-white dark:bg-slate-800 p-6 rounded-[2rem] border shadow-sm">
                 <h4 class="font-bold text-slate-800 dark:text-white mb-3">Paket Terlaris Top 5</h4>
                 @if($tp['empty'])
                     <p class="text-sm text-slate-400">Belum ada data</p>
@@ -277,14 +279,19 @@
                     <h3 class="font-bold text-lg">Kustomisasi Dashboard</h3>
                     <button @click="customizeOpen=false" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl"><i data-lucide="x" class="w-5 h-5"></i></button>
                 </div>
-                <p class="text-xs text-slate-400 mb-3">Centang untuk menampilkan, drag untuk ubah urutan.</p>
+                <p class="text-xs text-slate-400 mb-3">Centang untuk menampilkan, drag untuk ubah urutan, pilih ukuran preset grid 12 (3/4/6/8/12).</p>
                 <div id="customize-list" class="space-y-2">
                     <template x-for="(item, idx) in layout" :key="item.id">
                         <div class="flex items-center gap-3 p-3 border rounded-xl bg-slate-50 dark:bg-slate-700/30" :data-id="item.id">
-                            <span class="cursor-move text-slate-400">≡</span>
+                            <span class="cursor-move text-slate-400 select-none">≡</span>
                             <input type="checkbox" :checked="item.visible" @change="item.visible = $event.target.checked">
-                            <span class="text-sm font-semibold flex-1" x-text="registry[item.id]?.title || item.id"></span>
-                            <span class="text-xs text-slate-400" x-text="registry[item.id]?.group || ''"></span>
+                            <span class="text-sm font-semibold flex-1 min-w-0 truncate" x-text="registry[item.id]?.title || item.id"></span>
+                            <span class="text-xs text-slate-400 hidden sm:block" x-text="registry[item.id]?.group || ''"></span>
+                            <select :value="item.w" @change="item.w = clampW(item.id, parseInt($event.target.value))" class="text-xs border rounded-lg px-2 py-1 bg-white dark:bg-slate-700">
+                                <template x-for="pw in allowedW(item.id)" :key="pw">
+                                    <option :value="pw" :selected="pw === item.w" x-text="pw + ' kol'"></option>
+                                </template>
+                            </select>
                         </div>
                     </template>
                 </div>
@@ -301,12 +308,17 @@
     <script>
         function dashboardCustom(prefs, registry) {
             return {
-                layout: prefs.layout || [],
+                layout: (prefs.layout || []).map(i => ({...i})),
                 widgetPeriods: prefs.widget_periods || {},
                 registry: registry,
+                presetW: [3,4,6,8,12],
                 customizeOpen: false,
                 saving: false,
+                allowedW(id) { const r=this.registry[id]; if(!r) return this.presetW; const min=r.min_w ?? r.default_w ?? r.w ?? 3; const max=r.max_w ?? r.default_w ?? r.w ?? 12; return this.presetW.filter(v=>v>=min && v<=max); },
+                clampW(id,w){ const allowed=this.allowedW(id); if(allowed.includes(w)) return w; const r=this.registry[id]; const def=r?.default_w ?? r?.w ?? 3; return allowed.includes(def)?def:(allowed[0]||def); },
                 init() {
+                    // Normalisasi w preset + clamp untuk migrasi layout lama
+                    this.layout = this.layout.map(i => ({...i, w: this.clampW(i.id, parseInt(i.w) || this.registry[i.id]?.default_w || this.registry[i.id]?.w || 3)}));
                     this.$nextTick(() => {
                         if (typeof lucide !== 'undefined') lucide.createIcons();
                         this.initCharts();
@@ -364,6 +376,8 @@
                 },
                 async save() {
                     this.saving = true;
+                    // Clamp w sebelum kirim
+                    this.layout = this.layout.map(i => ({...i, w: this.clampW(i.id, parseInt(i.w) || this.registry[i.id]?.default_w || 3)}));
                     try {
                         const res = await fetch(`{{ route('dashboard.preferences') }}`, {
                             method: 'PUT',

@@ -116,9 +116,11 @@ Track ini dapat berjalan paralel dengan Track A setelah kontrak registry disepak
    - Pertumbuhan Pelanggan;
    - Aktivitas Terakhir.
 5. Tambahkan empty state dan permission filtering.
-6. Tambahkan `dashboard_preferences` untuk show/hide dan urutan widget.
-7. Implement default layout per role.
-8. Integrasikan widget notification:
+6. Tambahkan `dashboard_preferences` untuk show/hide, posisi/urutan, dan ukuran kolom widget (`w`) berbasis grid 12 kolom.
+7. Tetapkan `min_w`, `max_w`, dan `default_w` di `DashboardWidgetRegistry`; posisi disimpan sebagai urutan array, bukan koordinat absolut.
+8. Tambahkan kontrol drag-and-drop dan preset ukuran `3/4/6/8/12`; validasi dan clamp ukuran wajib dilakukan server-side.
+9. Implement default layout per role.
+10. Integrasikan widget notification:
    - Notification Inbox;
    - Action Required;
    - Financial Attention;
@@ -130,6 +132,7 @@ Track ini dapat berjalan paralel dengan Track A setelah kontrak registry disepak
 - semua widget menggunakan permission server-side dan view gate;
 - default layout role berjalan;
 - preference user tersimpan dan tervalidasi;
+- posisi/urutan dan ukuran widget tersimpan, tervalidasi, di-clamp sesuai registry, serta responsif;
 - cache tidak membocorkan data lintas user/permission;
 - Action Required tidak menampilkan notification resolved/dismissed.
 

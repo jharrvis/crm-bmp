@@ -179,4 +179,61 @@ class DashboardTest extends TestCase
         // previous period untuk 1y harus ada
         $this->assertArrayHasKey('prev', $r1y);
     }
+
+    public function test_widget_w_preset_validation_and_clamp(): void
+    {
+        $user = $this->userWithRole('Owner');
+        $user->givePermissionTo(Permission::all());
+        $this->actingAs($user);
+
+        // w tidak dalam preset → 422
+        $this->putJson(route('dashboard.preferences'), [
+            'layout' => [['id' => 'clients_count', 'visible' => true, 'w' => 5]],
+        ])->assertStatus(422);
+
+        // w melebihi max (clients_count max 4) — harus di-clamp jadi 4, bukan error
+        $this->putJson(route('dashboard.preferences'), [
+            'layout' => [['id' => 'clients_count', 'visible' => true, 'w' => 12]],
+        ])->assertOk();
+        $this->assertEquals(4, $user->fresh()->dashboard_preferences['layout'][0]['w']);
+
+        // w valid dalam rentang
+        $this->putJson(route('dashboard.preferences'), [
+            'layout' => [['id' => 'growth', 'visible' => true, 'w' => 8]],
+        ])->assertOk();
+        $this->assertEquals(8, $user->fresh()->dashboard_preferences['layout'][0]['w']);
+
+        // w di bawah min → clamp ke min
+        $this->putJson(route('dashboard.preferences'), [
+            'layout' => [['id' => 'growth', 'visible' => true, 'w' => 3]],
+        ])->assertOk();
+        $this->assertEquals(6, $user->fresh()->dashboard_preferences['layout'][0]['w']); // growth min 6
+    }
+
+    public function test_widget_position_is_order(): void
+    {
+        $user = $this->userWithRole('Owner');
+        $user->givePermissionTo(Permission::all());
+        $this->actingAs($user);
+        $layout = [
+            ['id' => 'revenue', 'visible' => true, 'w' => 3],
+            ['id' => 'clients_count', 'visible' => true, 'w' => 3],
+            ['id' => 'tickets_open', 'visible' => true, 'w' => 3],
+        ];
+        $this->putJson(route('dashboard.preferences'), ['layout' => $layout])->assertOk();
+        $saved = $user->fresh()->dashboard_preferences['layout'];
+        $this->assertEquals(['revenue', 'clients_count', 'tickets_open'], array_column($saved, 'id'));
+        $this->assertEquals(3, $saved[0]['w']);
+    }
+
+    public function test_clamp_w_and_col_class(): void
+    {
+        $this->assertEquals(4, \App\Services\DashboardWidgetRegistry::clampW('clients_count', 12)); // max 4
+        $this->assertEquals(6, \App\Services\DashboardWidgetRegistry::clampW('growth', 3)); // min 6
+        $this->assertEquals(3, \App\Services\DashboardWidgetRegistry::clampW('clients_count', 3));
+        $this->assertEquals(12, \App\Services\DashboardWidgetRegistry::clampW('growth', 12));
+        $this->assertEquals('col-span-12 md:col-span-6 lg:col-span-3', \App\Services\DashboardWidgetRegistry::colClass(3));
+        $this->assertEquals('col-span-12 lg:col-span-6', \App\Services\DashboardWidgetRegistry::colClass(6));
+        $this->assertEquals('col-span-12', \App\Services\DashboardWidgetRegistry::colClass(12));
+    }
 }
