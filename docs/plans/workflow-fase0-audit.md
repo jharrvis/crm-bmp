@@ -1,8 +1,84 @@
 # Fase 0 Audit — Workflow Dashboard, Notification, Operational Map
 
 > Output Fase 0 sesuai `implementation-workflow-dashboard-notification-map.md` §4.
-> Commit graph: `616c261`, graph: 2762 nodes / 5189 edges / 348 communities — fresh.
-> Tanggal audit: 2026-08-23
+> Commit graph: `b705cac`, graph: 2805 nodes / 5213 edges / 348 communities — fresh (rebuilt 2026-08-23 pasca-audit).
+> Tanggal audit: 2026-08-23 — **Finalisasi 2026-08-23: audience, dedupe_key, map response contract, graph freshness PASS**
+
+## 0. Status Akhir Fase 0
+
+| Item | Status |
+|------|--------|
+| Audit dokumentasi | PASS |
+| Dependency mapping | PASS |
+| Permission mapping | PASS (keputusan audience final — §2) |
+| Migration inventory | PASS |
+| Parallel work planning | PASS |
+| Registry contract | **PASS** — draft promosi ke kontrak final (§8 final) |
+| Map response contract | **PASS** — schema final (§6.1) |
+| Graph freshness | **PASS** — `b705cac` (2805 nodes) |
+| Runtime implementation | BELUM DIMULAI (sesuai rencana — Fase 0 hanya audit) |
+
+**Rekomendasi sebelum Track A/B/C — 5 poin — STATUS:**
+
+| # | Rekomendasi | Status |
+|---|-------------|--------|
+| 1 | Finalkan audience `notifications.view` | **SELESAI** — §2 final |
+| 2 | Finalkan schema response Map | **SELESAI** — §6.1 final |
+| 3 | Finalkan aturan `dedupe_key` | **SELESAI** — §6 final |
+| 4 | Jalankan `graphify update` setelah commit audit | **SELESAI** — `b705cac` |
+| 5 | Tutup Fase 0, mulai 3 track paralel dengan checkpoint | **SIAP** — commit ini menutup Fase 0 |
+
+### Keputusan Final Fase 0 (Tambahan)
+
+**Audience `notifications.view` — FINAL:**
+- Owner/Admin: `view+manage+settings` (tetap).
+- Billing, NOC: `view+manage` (tetap).
+- CS, Sales, Finance, Employee: **`view` saja** (tanpa `manage/settings`) — **diberikan** di Track A via `PermissionSeeder` additively. Alasan: semua role yang punya `clients.view` perlu melihat inbox, hanya Owner/Admin/Billing/NOC yang boleh `markRead/dismiss/resolve`.
+- Implementasi: `PermissionSeeder::assignRole('CS', ..., 'notifications.view')` dst. — additive, `forgetCachedPermissions()`.
+
+**Map response contract — FINAL (§6.1):**
+
+```json
+// GET /operational-map/locations?filter...
+{
+  "data": [
+    {
+      "id": 123,
+      "name": "PT Contoh",
+      "client_code": "1-26-001",
+      "status": "active",
+      "city": "Kota Semarang",
+      "branch_id": 2,
+      "branch_name": "Semarang",
+      "latitude": -6.984,
+      "longitude": 110.42,
+      "subscriptions_count": 2,
+      "service_name": "Internet Dedicated",
+      "type": "client" // atau "branch"
+    }
+  ],
+  "meta": {
+    "mapped": 812,
+    "unmapped": 34,
+    "bounds": {"minLat": -7.1, "maxLat": -6.8, "minLng": 110.3, "maxLng": 110.6}
+  }
+}
+// GET /operational-map/summary
+{
+  "mapped": 812, "unmapped": 34, "total_branches": 3,
+  "by_branch": [{"branch_id":2,"branch_name":"Semarang","count":412}],
+  "by_status": [{"status":"active","count":790}]
+}
+```
+
+Field yang **tidak pernah** dikirim: `identity_number, auth_code_encrypted, provider_metadata, password, token, notes internal`. Popup hanya `id, name, client_code, status, city, branch_name, latitude, longitude, subscriptions_count, service_name` + link `clients.show`.
+
+**Aturan `dedupe_key` — FINAL (menggantikan daily `domain_name+days_left` untuk incident):**
+
+- Generic: `dedupe_key = SHA1(type + ":" + source_type + ":" + source_id + ":" + state)` — `state` = `days_left` untuk expiry harian, `error_code` untuk registrar_offline, kosong untuk overdue single-incident.
+- Expiry reminder: `type=domain_expiry, source_type=SubscriptionDomain, source_id=123, state=7` → `domain_expiry:SubscriptionDomain:123:7` — allow 1/hari/state.
+- Overdue/incident: `type=domain_overdue, source_type=SubscriptionDomain, source_id=123, state=""` → hanya 1 aktif sampai `resolved_at` terisi; escalation tidak buat baru, hanya `snoozed_until`.
+- Redis/lock + DB `WHERE dedupe_key = ? AND created_at >= today` + `resolved_at IS NULL`.
 
 ## 1. Dependency Map
 
