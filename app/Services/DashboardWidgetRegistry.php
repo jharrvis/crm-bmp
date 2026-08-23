@@ -179,6 +179,11 @@ class DashboardWidgetRegistry
 
     public static function defaultForRole(\App\Models\User $user): array
     {
+        // Semua role memakai urutan dan ukuran kanonik seperti dummy dashboard.
+        // visibleForUser() memfilter widget berdasarkan permission masing-masing user.
+        return self::layout(array_keys(self::WIDGETS));
+
+        /* Legacy role-specific layout kept as reference; permission filtering above is canonical.
         // Default per role — sesuai keputusan Fase 0
         $roles = $user->getRoleNames()->toArray();
         $is = fn (array $r) => count(array_intersect($roles, $r)) > 0;
@@ -204,6 +209,9 @@ class DashboardWidgetRegistry
         }
         // Employee & fallback
         return self::layout(['clients_count', 'subscriptions_status', 'tickets_open', 'notifications_unread', 'recent_activity']);
+    }
+
+        */
     }
 
     public static function clampW(string $id, ?int $w): int

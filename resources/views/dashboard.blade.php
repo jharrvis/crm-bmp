@@ -272,9 +272,9 @@
         </div>
 
         <!-- Customize Modal -->
-        <div x-show="customizeOpen" x-transition class="fixed inset-0 z-50 flex items-center justify-center" style="display:none;">
+        <div x-show="customizeOpen" x-transition @keydown.escape.window="customizeOpen=false" class="fixed left-0 top-0 right-0 bottom-0 z-[100] flex min-h-[100dvh] w-screen items-center justify-center p-4 sm:p-6" style="display:none;">
             <div @click="customizeOpen=false" class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
-            <div class="relative bg-white dark:bg-slate-800 rounded-[2rem] p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto border shadow-xl">
+            <div @click.stop class="relative max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-[2rem] border bg-white p-6 shadow-xl dark:bg-slate-800 sm:max-h-[calc(100dvh-3rem)]">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="font-bold text-lg">Kustomisasi Dashboard</h3>
                     <button @click="customizeOpen=false" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -323,7 +323,50 @@
                         if (typeof lucide !== 'undefined') lucide.createIcons();
                         this.initCharts();
                         this.initSortable();
+                        this.initCardSettings();
                     });
+                },
+                initCardSettings() {
+                    const grid = document.getElementById('dashboard-grid');
+                    if (!grid) return;
+                    grid.querySelectorAll('[data-id]').forEach(card => {
+                        const id = card.dataset.id;
+                        if (!id || card.querySelector('.dashboard-card-settings')) return;
+                        card.classList.add('relative', 'cursor-move');
+                        const wrap = document.createElement('div');
+                        wrap.className = 'dashboard-card-settings absolute right-3 top-3 z-10 flex items-center gap-1';
+                        const button = document.createElement('button');
+                        button.type = 'button';
+                        button.className = 'no-dashboard-drag flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white/90 text-slate-400 shadow-sm transition hover:bg-slate-50 hover:text-blue-600 dark:border-slate-600 dark:bg-slate-800/90 dark:hover:bg-slate-700';
+                        button.setAttribute('aria-label', 'Atur ukuran widget');
+                        button.title = 'Atur ukuran widget';
+                        button.innerHTML = '<i data-lucide="settings-2" class="h-4 w-4"></i>';
+                        const select = document.createElement('select');
+                        select.className = 'no-dashboard-drag hidden rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs shadow-sm dark:border-slate-600 dark:bg-slate-800';
+                        select.setAttribute('aria-label', 'Ukuran kolom widget');
+                        this.allowedW(id).forEach(width => {
+                            const option = document.createElement('option');
+                            option.value = width;
+                            option.textContent = `${width} kolom`;
+                            select.appendChild(option);
+                        });
+                        const item = this.layout.find(entry => entry.id === id);
+                        select.value = this.clampW(id, parseInt(item?.w || 3));
+                        button.addEventListener('click', event => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            select.classList.toggle('hidden');
+                            if (!select.classList.contains('hidden')) select.focus();
+                        });
+                        select.addEventListener('change', event => {
+                            const target = this.layout.find(entry => entry.id === id);
+                            if (target) target.w = this.clampW(id, parseInt(event.target.value));
+                            this.save();
+                        });
+                        wrap.append(button, select);
+                        card.appendChild(wrap);
+                    });
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
                 },
                 openCustomize() { this.customizeOpen = true; this.$nextTick(() => this.initSortable()); },
                 initSortable() {
@@ -344,6 +387,8 @@
                         grid._sortable = Sortable.create(grid, {
                             animation: 150,
                             handle: '[data-id]',
+                            filter: 'button, select, input, a, canvas, .no-dashboard-drag',
+                            preventOnFilter: false,
                             onEnd: (evt) => {
                                 const ids = Array.from(grid.querySelectorAll('[data-id]')).map(c => c.dataset.id);
                                 const map = Object.fromEntries(this.layout.map(i => [i.id, i]));

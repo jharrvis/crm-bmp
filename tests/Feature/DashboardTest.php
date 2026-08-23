@@ -46,7 +46,9 @@ class DashboardTest extends TestCase
         $layoutSales = DashboardWidgetRegistry::defaultForRole($sales);
         $ids = array_column($layoutSales, 'id');
         $this->assertContains('clients_count', $ids);
-        $this->assertNotContains('outstanding_invoice', $ids); // Sales tidak ada keuangan
+        $this->assertContains('outstanding_invoice', $ids); // canonical layout; permission filter hides it
+        $visible = DashboardWidgetRegistry::visibleForUser($sales, ['layout' => $layoutSales]);
+        $this->assertNotContains('outstanding_invoice', array_column($visible, 'id'));
     }
 
     public function test_visible_filters_permission(): void
