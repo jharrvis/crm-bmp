@@ -3,6 +3,18 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <style>
+        /* Fallback agar map tetap memiliki viewport stabil bila stylesheet CDN terlambat. */
+        #operationalMap {
+            position: relative;
+            min-height: 600px;
+            background: #e2e8f0;
+        }
+
+        #operationalMap.leaflet-container {
+            overflow: hidden;
+        }
+    </style>
     @endpush
 
     <div class="space-y-6" x-data="operationalMap()" x-init="init()">
