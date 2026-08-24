@@ -286,11 +286,17 @@ class DashboardWidgetRegistry
                 return false;
             }
             $perm = self::WIDGETS[$id]['permission'] ?? null;
+            // Khusus router_server & health widgets: allow any infra
+            if ($id === 'router_server' && ($user->can('routers.view') || $user->can('servers.view'))) {
+                return true;
+            }
+            if ($id === 'operational_health' && ($user->can('zabbix_monitors.view') || $user->can('registrar_accounts.view') || $user->can('maps.view') || $user->can('domains.view'))) {
+                return true;
+            }
+            if ($id === 'financial_attention' && ($user->can('invoices.view') || $user->can('payments.view') || $user->can('financial_reports.view'))) {
+                return true;
+            }
             if ($perm && ! $user->can($perm)) {
-                // Khusus router_server: allow jika punya salah satu
-                if ($id === 'router_server' && ($user->can('routers.view') || $user->can('servers.view'))) {
-                    return true;
-                }
                 return false;
             }
             return true;

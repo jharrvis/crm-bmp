@@ -187,7 +187,11 @@
             await fetch('{{ route('notifications.read-all') }}', {method:'POST', headers:{'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content || '', 'Accept':'application/json'}, credentials:'same-origin'});
             refreshAdminNotifCount(); loadAdminNotifications();
         }
-        document.addEventListener('DOMContentLoaded', refreshAdminNotifCount);
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshAdminNotifCount();
+            // Polling hanya unread count tiap 60s — tidak reload stats dashboard
+            setInterval(refreshAdminNotifCount, 60000);
+        });
         </script>
 
         <div class="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden md:block"></div>

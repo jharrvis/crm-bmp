@@ -231,8 +231,9 @@ class DashboardStatsService
     {
         return Cache::remember($this->key($user, 'operational_health'), 120, function () use ($user) {
             $count = \App\Models\AdminNotification::forUser($user)->actionRequired()->whereIn('category', ['infrastructure', 'system', 'domain', 'hosting'])->count();
-            // Tambah health summary ringan: registrar offline + domain expiry
-            $registrarIssues = \App\Models\RegistrarAccount::whereNotNull('last_error_summary')->count();
+            $registrarIssues = $user->can('registrar_accounts.view')
+                ? \App\Models\RegistrarAccount::whereNotNull('last_error_summary')->count()
+                : 0;
             return ['count' => $count, 'registrar_issues' => $registrarIssues, 'empty' => $count === 0 && $registrarIssues === 0];
         });
     }

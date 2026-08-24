@@ -192,7 +192,7 @@
 
                 {{-- Financial Attention --}}
                 @if($id === 'financial_attention')
-                @can('invoices.view')
+                @canany(['invoices.view','payments.view','financial_reports.view'])
                 <div data-id="financial_attention" class="{{ $col }} bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm">
                     <div class="flex items-center justify-between mb-3">
                         <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">Perhatian Keuangan</p>
@@ -206,12 +206,12 @@
                     @endif
                     <a href="{{ route('notifications.index', ['category'=>'billing','filter'=>'action_required']) }}" class="text-xs text-blue-600 hover:underline mt-3 inline-block">Lihat keuangan →</a>
                 </div>
-                @endcan
+                @endcanany
                 @endif
 
                 {{-- Operational Health --}}
                 @if($id === 'operational_health')
-                @can('zabbix_monitors.view')
+                @canany(['zabbix_monitors.view','registrar_accounts.view','maps.view','domains.view'])
                 <div data-id="operational_health" class="{{ $col }} bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm">
                     <div class="flex items-center justify-between mb-3">
                         <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">Kesehatan Operasional</p>
@@ -225,7 +225,7 @@
                     @endif
                     <a href="{{ route('notifications.index', ['category'=>'infrastructure','filter'=>'action_required']) }}" class="text-xs text-blue-600 hover:underline mt-3 inline-block">Lihat kesehatan →</a>
                 </div>
-                @endcan
+                @endcanany
                 @endif
 
                 {{-- Operational Map --}}
