@@ -80,14 +80,26 @@
                 filters: { branch_id: '', status: '', service_id: '', mapped: '', q: '' },
                 summary: {},
                 meta: {},
+                initializing: false,
                 init() {
+                    // Alpine dapat memanggil x-init lebih dari sekali saat DOM
+                    // di-hydrate ulang. Leaflet hanya boleh menginisialisasi
+                    // satu instance untuk satu container.
+                    if (this.map || this.initializing) return;
+                    this.initializing = true;
                     this.$nextTick(() => {
+                        const container = document.getElementById('operationalMap');
+                        if (!container || container._leaflet_id) {
+                            this.initializing = false;
+                            return;
+                        }
                         const tileUrl = @json(config('maps.tile_url', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'));
                         const attribution = @json(config('maps.attribution', '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'));
-                        this.map = L.map('operationalMap').setView([-7.0, 110.0], 8);
+                        this.map = L.map(container).setView([-7.0, 110.0], 8);
                         L.tileLayer(tileUrl, { attribution: attribution, maxZoom: 18 }).addTo(this.map);
                         this.cluster = L.markerClusterGroup();
                         this.map.addLayer(this.cluster);
+                        this.initializing = false;
                         this.reload();
                     });
                 },
