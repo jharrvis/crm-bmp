@@ -168,19 +168,43 @@
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Provinsi</label>
-                                        <p class="text-base text-slate-700 dark:text-slate-300">{{ $client->province?->name ?? '-' }}</p>
+                                        <p id="view-province" class="text-base text-slate-700 dark:text-slate-300">{{ $client->province?->name ?? '-' }}</p>
+                                        <select id="edit-province" name="province_code" class="hidden w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                                            <option value="">Pilih provinsi</option>
+                                            @if($client->province_code && $client->province)
+                                                <option value="{{ $client->province_code }}" selected>{{ $client->province->name }}</option>
+                                            @endif
+                                        </select>
                                     </div>
                                     <div>
                                         <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Kabupaten/Kota</label>
-                                        <p class="text-base text-slate-700 dark:text-slate-300">{{ $client->regency?->name ?? $client->city ?? '-' }}</p>
+                                        <p id="view-regency" class="text-base text-slate-700 dark:text-slate-300">{{ $client->regency?->name ?? $client->city ?? '-' }}</p>
+                                        <select id="edit-regency" name="regency_code" class="hidden w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                                            <option value="">Pilih kabupaten/kota</option>
+                                            @if($client->regency_code && $client->regency)
+                                                <option value="{{ $client->regency_code }}" selected>{{ $client->regency->name }}</option>
+                                            @endif
+                                        </select>
                                     </div>
                                     <div>
                                         <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Kecamatan</label>
-                                        <p class="text-base text-slate-700 dark:text-slate-300">{{ $client->district?->name ?? '-' }}</p>
+                                        <p id="view-district" class="text-base text-slate-700 dark:text-slate-300">{{ $client->district?->name ?? '-' }}</p>
+                                        <select id="edit-district" name="district_code" class="hidden w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                                            <option value="">Pilih kecamatan</option>
+                                            @if($client->district_code && $client->district)
+                                                <option value="{{ $client->district_code }}" selected>{{ $client->district->name }}</option>
+                                            @endif
+                                        </select>
                                     </div>
                                     <div>
                                         <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Kelurahan/Desa</label>
-                                        <p class="text-base text-slate-700 dark:text-slate-300">{{ $client->village?->name ?? '-' }}</p>
+                                        <p id="view-village" class="text-base text-slate-700 dark:text-slate-300">{{ $client->village?->name ?? '-' }}</p>
+                                        <select id="edit-village" name="village_code" class="hidden w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                                            <option value="">Pilih kelurahan/desa</option>
+                                            @if($client->village_code && $client->village)
+                                                <option value="{{ $client->village_code }}" selected>{{ $client->village->name }}</option>
+                                            @endif
+                                        </select>
                                     </div>
                                 </div>
                                 <div>
@@ -815,6 +839,75 @@
                     customTypeInput.value = '';
                 }
             }
+
+            const detailAdministrativeAreasUrl = '{{ route('administrative-areas.index') }}';
+            const detailAreaFields = {
+                province: { id: 'edit-province', placeholder: 'Pilih provinsi' },
+                regency: { id: 'edit-regency', placeholder: 'Pilih kabupaten/kota' },
+                district: { id: 'edit-district', placeholder: 'Pilih kecamatan' },
+                village: { id: 'edit-village', placeholder: 'Pilih kelurahan/desa' },
+            };
+            const detailAreaValues = @json([
+                'province_code' => $client->province_code,
+                'regency_code' => $client->regency_code,
+                'district_code' => $client->district_code,
+                'village_code' => $client->village_code,
+            ]);
+
+            function resetDetailArea(level) {
+                const field = detailAreaFields[level];
+                const select = document.getElementById(field.id);
+                select.replaceChildren(new Option(field.placeholder, ''));
+                select.value = '';
+            }
+
+            async function loadDetailAreas(level, parentCode = null, selectedCode = '') {
+                const field = detailAreaFields[level];
+                const select = document.getElementById(field.id);
+                const params = new URLSearchParams({ level });
+                if (parentCode) params.set('parent_code', parentCode);
+
+                const response = await fetch(`${detailAdministrativeAreasUrl}?${params.toString()}`, {
+                    headers: { 'Accept': 'application/json' },
+                });
+                if (!response.ok) throw new Error('Gagal memuat data wilayah.');
+                const payload = await response.json();
+                const options = [new Option(field.placeholder, '')];
+                payload.data.forEach((area) => options.push(new Option(area.name, area.code, false, area.code === selectedCode)));
+                select.replaceChildren(...options);
+                select.value = selectedCode || '';
+            }
+
+            async function loadDetailAddressAreas() {
+                try {
+                    await loadDetailAreas('province', null, detailAreaValues.province_code || '');
+                    if (!detailAreaValues.province_code) return;
+                    await loadDetailAreas('regency', detailAreaValues.province_code, detailAreaValues.regency_code || '');
+                    if (!detailAreaValues.regency_code) return;
+                    await loadDetailAreas('district', detailAreaValues.regency_code, detailAreaValues.district_code || '');
+                    if (!detailAreaValues.district_code) return;
+                    await loadDetailAreas('village', detailAreaValues.district_code, detailAreaValues.village_code || '');
+                } catch (error) {
+                    console.error('Administrative area load failed:', error);
+                }
+            }
+
+            document.getElementById('edit-province').addEventListener('change', async (event) => {
+                resetDetailArea('regency');
+                resetDetailArea('district');
+                resetDetailArea('village');
+                if (event.target.value) await loadDetailAreas('regency', event.target.value);
+            });
+            document.getElementById('edit-regency').addEventListener('change', async (event) => {
+                resetDetailArea('district');
+                resetDetailArea('village');
+                if (event.target.value) await loadDetailAreas('district', event.target.value);
+            });
+            document.getElementById('edit-district').addEventListener('change', async (event) => {
+                resetDetailArea('village');
+                if (event.target.value) await loadDetailAreas('village', event.target.value);
+            });
+            loadDetailAddressAreas();
 
             document.getElementById('edit-type').addEventListener('change', () => syncDetailCustomType(true));
 

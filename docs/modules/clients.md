@@ -138,6 +138,6 @@ Format yang dikenali untuk data legacy adalah `{prefix}26{urutan-tiga-digit}`. C
 - Portal account management menggunakan route-level role check (`Owner|Admin`), bukan permission-based. Pertimbangkan migrasi ke permission `portal_accounts.manage` untuk konsistensi.
 - Tidak ada soft delete pada client. Penghapusan bersifat permanen (cascade).
 - Activity log aktif pada model `Client` (entity name: `pelanggan`) dan `ClientContact` (entity name: `kontak pelanggan`).
-- Data referensi wilayah tidak dimuat oleh `DatabaseSeeder`. Jalankan `php artisan db:seed --class=AdministrativeAreaSeeder` sekali setelah migration untuk mengaktifkan dropdown alamat.
+- Data referensi wilayah tidak dimuat oleh `DatabaseSeeder`. Jalankan `php artisan db:seed --class=AdministrativeAreaSeeder --force` sekali setelah migration untuk mengaktifkan dropdown alamat. CSV lokal mencakup provinsi, kabupaten/kota, kecamatan, dan kelurahan/desa di seluruh Pulau Jawa, termasuk Kabupaten Subang (`32.13`). Seeder bersifat idempotent dan aman dijalankan ulang.
 - Tile peta OpenStreetMap hanya dimuat ketika user membuka modal peta. Pencarian Nominatim harus tetap melalui backend, memakai `MAP_NOMINATIM_USER_AGENT`, cache, pembatasan satu request per detik, dan tidak boleh diubah menjadi autocomplete saat pengguna mengetik.
 - Jangan menjalankan `BackfillClientCodeToBranchYearFormatSeeder` untuk koreksi prefix parsial di production karena seeder tersebut merenomori seluruh pelanggan cabang. Gunakan `clients:reconcile-codes` dalam mode dry-run terlebih dahulu.

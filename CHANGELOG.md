@@ -4,6 +4,9 @@ Semua perubahan penting pada project ini dicatat di file ini.
 
 ## 2026-08-23
 
+### Fixed
+- Form edit detail pelanggan sekarang menyediakan dropdown wilayah berantai Provinsi, Kabupaten/Kota, Kecamatan, dan Kelurahan/Desa. Data wilayah lokal mencakup seluruh Pulau Jawa; jalankan `AdministrativeAreaSeeder` di production agar Kabupaten Subang dan wilayah terkait tersedia.
+
 ### Added
 - **Workflow implementasi Dashboard–Notification–Map**: dokumen orkestrasi `docs/plans/implementation-workflow-dashboard-notification-map.md` + audit Fase 0 `docs/plans/workflow-fase0-audit.md` + cheatsheet `docs/commit-push-cheatsheet.md`. Mengatur dependency Track A (Notification Core), Track B (Dashboard Foundation), Track C (Operational Map MVP), fase integrasi, dan network coverage; serta kontrak `NotificationTypeRegistry` vs `DashboardWidgetRegistry` dan keputusan dedupe/audience/lifecycle.
 - **Track A — Notification Registry & Lifecycle** (`app/Services/Admin/NotificationTypeRegistry.php`): 13 tipe generik (`domain_expiry/overdue/sync_failed/conflict/registrar_offline`, `hosting_ssl_expiry/provision_failed`, `invoice_overdue`, `payment_verification`, `ticket_unassigned/high_priority`, `system_update_available`, `approval_requested`) dengan `category/severity/action_required/permission/action_key/dashboard/ttl/dedupe/audience`. Resolver CTA server-side `resolveAction()` (cek `user->can(permission)` + route). `dedupeKey()` = `SHA1(type:source_type:source_id:state)` (daily vs incident).
