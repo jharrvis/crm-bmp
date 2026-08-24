@@ -1,4 +1,15 @@
 <x-app-layout>
+    @push('styles')
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <style>
+        .dashboard-mini-map { z-index: 0; }
+        .dashboard-mini-map .leaflet-pane { z-index: 10 !important; }
+        .dashboard-mini-map .leaflet-top, .dashboard-mini-map .leaflet-bottom { z-index: 20 !important; }
+        .dashboard-mini-map.leaflet-container { z-index: 0; }
+    </style>
+    @endpush
     @php
         $greeting = 'Halo, '.(Auth::user()->name ?? 'User').'! 👋';
         $periods = $prefs['widget_periods'] ?? [];
@@ -231,7 +242,7 @@
                 {{-- Operational Map --}}
                 @if($id === 'operational_map')
                 @can('maps.view')
-                <div data-id="operational_map" class="{{ $col }} bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm">
+                <div data-id="operational_map" class="{{ $col }} bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm" x-data="{ showMiniMap: false, miniMap: null, miniCluster: null, loadingMiniMap: false }">
                     <div class="flex items-center justify-between mb-3">
                         <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">Peta Operasional</p>
                         <i data-lucide="map" class="w-5 h-5 text-blue-500"></i>
@@ -242,7 +253,14 @@
                         <h3 class="text-2xl font-bold text-slate-800 dark:text-white">{{ $s['mapped'] }} <span class="text-sm font-normal text-slate-400">terpetakan</span></h3>
                         <p class="text-xs text-slate-500 mt-1">{{ $s['unmapped'] }} belum koordinat • {{ $s['total_branches'] }} cabang</p>
                     @endif
-                    <a href="{{ route('operational-map.index') }}" class="text-xs text-blue-600 hover:underline mt-3 inline-block">Buka Peta Operasional →</a>
+                    <div class="mt-3 flex gap-2">
+                        <a href="{{ route('operational-map.index') }}" class="text-xs text-blue-600 hover:underline inline-block">Buka Peta →</a>
+                        <button @click="showMiniMap = !showMiniMap; if(showMiniMap) $nextTick(() => initDashboardMiniMap($el.closest('[data-id=operational_map]')))" class="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 underline" x-text="showMiniMap ? 'Sembunyikan' : 'Tampilkan Peta'"></button>
+                    </div>
+                    <div x-show="showMiniMap" x-transition class="mt-3">
+                        <div class="dashboard-mini-map w-full h-[220px] rounded-xl border overflow-hidden bg-slate-100 dark:bg-slate-700 relative" style="z-index: 0;"></div>
+                        <p class="text-[11px] text-slate-400 mt-1">Mini peta — maksimal 150 pelanggan terpetakan (cluster). Klik marker untuk detail. <span x-show="loadingMiniMap" class="text-blue-500">Memuat...</span></p>
+                    </div>
                 </div>
                 @endcan
                 @endif
@@ -329,7 +347,7 @@
         </div>
 
         <!-- Customize Modal -->
-        <div x-show="customizeOpen" x-transition @keydown.escape.window="customizeOpen=false" class="fixed left-0 top-0 right-0 bottom-0 z-[100] flex min-h-[100dvh] w-screen items-center justify-center p-4 sm:p-6" style="display:none;">
+        <div x-show="customizeOpen" x-transition @keydown.escape.window="customizeOpen=false" class="fixed left-0 top-0 right-0 bottom-0 z-[1050] flex min-h-[100dvh] w-screen items-center justify-center p-4 sm:p-6" style="display:none;">
             <div @click="customizeOpen=false" class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
             <div @click.stop class="relative max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-[2rem] border bg-white p-6 shadow-xl dark:bg-slate-800 sm:max-h-[calc(100dvh-3rem)]">
                 <div class="flex justify-between items-center mb-4">
@@ -511,6 +529,49 @@
                     }
                 }
             }
+        }
+    </script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    <script>
+        // Lightweight mini-map untuk widget dashboard — tidak berat karena lazy, limit 150, cluster
+        async function initDashboardMiniMap(container) {
+            const mapEl = container.querySelector('.dashboard-mini-map');
+            if (!mapEl || mapEl._leaflet_id) return;
+            // Tandai loading
+            const alpine = Alpine?.$data(container.closest('[x-data]')) || null;
+            // Fallback: cari x-data parent
+            let loadingEl = container.closest('[data-id=operational_map]')?.querySelector('[x-show="loadingMiniMap"]');
+            // Simple loading via Alpine not needed, just fetch
+
+            const tileUrl = @json(config('maps.tile_url', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'));
+            const attribution = @json(config('maps.attribution', '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'));
+            const map = L.map(mapEl).setView([-7.0, 110.0], 7);
+            L.tileLayer(tileUrl, { attribution: attribution, maxZoom: 18 }).addTo(map);
+            const cluster = L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 40 });
+            map.addLayer(cluster);
+            mapEl._leaflet_map = map;
+            mapEl._leaflet_cluster = cluster;
+
+            try {
+                const res = await fetch(`{{ route('operational-map.locations') }}?limit=150`, {headers:{'Accept':'application/json'}});
+                if (!res.ok) return;
+                const data = await res.json();
+                const items = data.data || [];
+                items.forEach(it => {
+                    if (it.latitude == null || it.longitude == null) return;
+                    if (it.type === 'branch') return; // di mini-map, hanya pelanggan agar ringan
+                    const icon = L.divIcon({ html: `<div style="background:#2563eb;width:8px;height:8px;border-radius:9999px;border:1px solid white;box-shadow:0 1px 2px rgba(0,0,0,0.3)"></div>`, className: '', iconSize: [8,8] });
+                    const m = L.marker([it.latitude, it.longitude], {icon});
+                    m.bindPopup(`<div style="font-weight:700;font-size:12px">${it.name}</div><div style="font-size:11px;color:#64748b">${it.client_code} • ${it.city||''}</div><a href="/clients/${it.id}" style="font-size:11px;color:#2563eb">Lihat →</a>`);
+                    cluster.addLayer(m);
+                });
+                if (data.meta?.bounds) {
+                    const b = data.meta.bounds;
+                    map.fitBounds([[b.minLat, b.minLng],[b.maxLat, b.maxLng]], {padding:[10,10]});
+                }
+                setTimeout(() => map.invalidateSize(), 200);
+            } catch(e) { console.error('Mini-map load failed', e); }
         }
     </script>
 </x-app-layout>

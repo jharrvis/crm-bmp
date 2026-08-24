@@ -109,7 +109,7 @@
         </main>
     </div>
 
-    <div id="searchQuickViewModal" class="fixed inset-0 z-[75] hidden">
+    <div id="searchQuickViewModal" class="fixed inset-0 z-[1050] hidden">
         <div id="searchQuickViewBackdrop" class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm opacity-0 transition-opacity duration-300"></div>
         <div class="absolute inset-0 flex items-center justify-center p-4 sm:p-6">
             <div id="searchQuickViewPanel"

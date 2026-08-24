@@ -9,10 +9,18 @@
             position: relative;
             min-height: 600px;
             background: #e2e8f0;
+            z-index: 0;
         }
 
         #operationalMap.leaflet-container {
             overflow: hidden;
+            z-index: 0;
+        }
+        /* Pastikan modal selalu di atas Leaflet (pane 400-700) */
+        .leaflet-pane { z-index: 10 !important; }
+        .leaflet-top, .leaflet-bottom { z-index: 20 !important; }
+        #searchQuickViewModal, #confirmModal, #formModal, #locationMapModal, #contactModal, [data-modal-root], [id$="Modal"] {
+            z-index: 1050 !important;
         }
     </style>
     @endpush

@@ -209,8 +209,12 @@
                                 </div>
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label
-                                            class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Latitude</label>
+                                        <div class="flex items-center justify-between mb-2">
+                                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Latitude</label>
+                                            <button type="button" id="edit-map-btn" onclick="openDetailLocationMap()" class="hidden text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 inline-flex items-center gap-1">
+                                                <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> Pilih di Peta
+                                            </button>
+                                        </div>
                                         <p id="view-lat" class="text-base text-slate-700 dark:text-slate-300">
                                             {{ $client->latitude ?? '-' }}</p>
                                         <input type="text" id="edit-lat" name="latitude" value="{{ $client->latitude }}"
@@ -748,6 +752,48 @@
         </div>
     </div>
 
+    <!-- Detail Location Picker (Pilih di Peta) -->
+    <div id="detailLocationMapModal" class="fixed inset-0 z-[1050] hidden">
+        <div id="detailLocationMapBackdrop" class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm opacity-0 transition-opacity"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4">
+            <div id="detailLocationMapPanel" class="w-full max-w-3xl bg-white dark:bg-slate-800 rounded-2xl shadow-2xl scale-95 opacity-0 transition-all duration-300 overflow-hidden">
+                <div class="p-5 border-b border-slate-100 dark:border-slate-700 flex items-start justify-between gap-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800 dark:text-white">Pilih Lokasi Pelanggan</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Klik peta atau geser marker untuk mengisi latitude dan longitude.</p>
+                    </div>
+                    <button type="button" onclick="closeDetailLocationMap()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div class="p-4 border-b border-slate-100 dark:border-slate-700 space-y-3">
+                    <form id="detailLocationSearchForm" class="flex gap-2">
+                        <input id="detailLocationSearchQuery" type="search" minlength="3" maxlength="120"
+                            class="flex-1 rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                            placeholder="Cari jalan, gedung, kelurahan, atau kecamatan">
+                        <button id="detailLocationSearchButton" type="submit" class="px-4 py-2.5 rounded-xl text-sm font-bold bg-slate-800 hover:bg-slate-700 dark:bg-slate-600 text-white inline-flex items-center gap-2"><i data-lucide="search" class="w-4 h-4"></i> Cari</button>
+                    </form>
+                    <div id="detailLocationSearchMessage" class="hidden text-sm"></div>
+                    <div id="detailLocationSearchResults" class="hidden max-h-36 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-600 divide-y divide-slate-100 dark:divide-slate-700"></div>
+                </div>
+                <div id="detailLocationMap" class="h-[420px] bg-slate-100 dark:bg-slate-700"></div>
+                <div class="p-5 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between gap-4">
+                    <p id="detailLocationMapCoordinates" class="text-sm text-slate-500 dark:text-slate-400">Belum ada titik dipilih.</p>
+                    <div class="flex gap-3">
+                        <button type="button" onclick="closeDetailLocationMap()" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700">Batal</button>
+                        <button type="button" onclick="useDetailMapLocation()" class="px-4 py-2 rounded-xl text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white">Gunakan Lokasi</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @push('styles')
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    @endpush
+
+    @push('scripts')
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    @endpush
+
     @push('scripts')
         <script>
             const baseUrl = '{{ url('/') }}';
@@ -820,6 +866,7 @@
                 // Toggle all view/edit elements in Data Utama
                 document.querySelectorAll('[id^="view-"]').forEach(el => el.classList.add('hidden'));
                 document.querySelectorAll('[id^="edit-"]').forEach(el => el.classList.remove('hidden'));
+                document.getElementById('edit-map-btn')?.classList.remove('hidden');
                 syncDetailCustomType();
 
                 // Show Contact Actions
@@ -839,6 +886,7 @@
                 // Toggle back to view mode
                 document.querySelectorAll('[id^="edit-"]').forEach(el => el.classList.add('hidden'));
                 document.querySelectorAll('[id^="view-"]').forEach(el => el.classList.remove('hidden'));
+                document.getElementById('edit-map-btn')?.classList.add('hidden');
 
                 // Hide Contact Actions
                 document.getElementById('addContactBtn').classList.add('hidden');
@@ -1231,6 +1279,104 @@
                 panel.classList.add('scale-95', 'opacity-0');
                 setTimeout(() => modal.classList.add('hidden'), 300);
             }
+
+            // Detail Location Picker (Pilih di Peta) — mirror dari clients/index
+            const detailMapConfig = @json(['tileUrl' => config('maps.tile_url'), 'attribution' => config('maps.attribution')]);
+            const detailBranchDefaults = @json(\App\Models\Branch::all()->keyBy('id')->map(fn($b) => ['latitude' => $b->default_latitude, 'longitude' => $b->default_longitude]));
+            let detailLocationMap, detailLocationMarker, selectedDetailLocation;
+            const detailCentralJava = { latitude: -7.15000000, longitude: 110.14000000 };
+
+            function updateDetailMapCoordinates(pos) {
+                selectedDetailLocation = { latitude: pos.lat, longitude: pos.lng };
+                document.getElementById('detailLocationMapCoordinates').textContent = `Lat ${pos.lat.toFixed(8)}, Long ${pos.lng.toFixed(8)}`;
+            }
+            function placeDetailMarker(pos) {
+                if (!detailLocationMarker) {
+                    detailLocationMarker = L.marker(pos, { draggable: true }).addTo(detailLocationMap);
+                    detailLocationMarker.on('dragend', (e) => updateDetailMapCoordinates(e.target.getLatLng()));
+                } else {
+                    detailLocationMarker.setLatLng(pos);
+                }
+                updateDetailMapCoordinates(pos);
+            }
+            window.openDetailLocationMap = function() {
+                if (!window.L) { showToast('Peta belum dapat dimuat.', 'error'); return; }
+                const modal = document.getElementById('detailLocationMapModal');
+                const backdrop = document.getElementById('detailLocationMapBackdrop');
+                const panel = document.getElementById('detailLocationMapPanel');
+                const branchId = document.getElementById('edit-branch')?.value || '{{ $client->branch_id }}';
+                const branchDefault = detailBranchDefaults[branchId] || detailCentralJava;
+                const latVal = document.getElementById('edit-lat').value.trim();
+                const lngVal = document.getElementById('edit-lng').value.trim();
+                const lat = latVal === '' ? NaN : Number(latVal);
+                const lng = lngVal === '' ? NaN : Number(lngVal);
+                const initLat = Number.isFinite(lat) ? lat : Number(branchDefault.latitude || detailCentralJava.latitude);
+                const initLng = Number.isFinite(lng) ? lng : Number(branchDefault.longitude || detailCentralJava.longitude);
+                const initialPos = { lat: initLat, lng: initLng };
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    backdrop.classList.remove('opacity-0');
+                    panel.classList.remove('scale-95','opacity-0');
+                    panel.classList.add('scale-100','opacity-100');
+                    if (!detailLocationMap) {
+                        detailLocationMap = L.map('detailLocationMap').setView(initialPos, 13);
+                        L.tileLayer(detailMapConfig.tileUrl, { maxZoom: 19, attribution: detailMapConfig.attribution }).addTo(detailLocationMap);
+                        detailLocationMap.on('click', (e) => placeDetailMarker(e.latlng));
+                    } else {
+                        detailLocationMap.setView(initialPos, 13);
+                        detailLocationMap.invalidateSize();
+                    }
+                    placeDetailMarker(initialPos);
+                }, 10);
+                if (window.lucide) lucide.createIcons();
+            };
+            window.closeDetailLocationMap = function() {
+                const modal = document.getElementById('detailLocationMapModal');
+                const backdrop = document.getElementById('detailLocationMapBackdrop');
+                const panel = document.getElementById('detailLocationMapPanel');
+                backdrop.classList.add('opacity-0');
+                panel.classList.remove('scale-100','opacity-100');
+                panel.classList.add('scale-95','opacity-0');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            };
+            window.useDetailMapLocation = function() {
+                if (!selectedDetailLocation) return;
+                document.getElementById('edit-lat').value = selectedDetailLocation.latitude.toFixed(8);
+                document.getElementById('edit-lng').value = selectedDetailLocation.longitude.toFixed(8);
+                document.getElementById('view-lat').textContent = selectedDetailLocation.latitude.toFixed(8);
+                document.getElementById('view-lng').textContent = selectedDetailLocation.longitude.toFixed(8);
+                window.closeDetailLocationMap();
+            };
+            document.getElementById('detailLocationSearchForm')?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const q = document.getElementById('detailLocationSearchQuery').value.trim();
+                const btn = document.getElementById('detailLocationSearchButton');
+                const results = document.getElementById('detailLocationSearchResults');
+                const msg = document.getElementById('detailLocationSearchMessage');
+                if (q.length < 3) { msg.textContent='Masukkan minimal 3 karakter.'; msg.className='text-sm text-red-600'; msg.classList.remove('hidden'); return; }
+                btn.disabled=true; btn.innerHTML='<i data-lucide="loader-circle" class="w-4 h-4 animate-spin"></i> Mencari';
+                results.classList.add('hidden'); msg.classList.add('hidden');
+                if (window.lucide) lucide.createIcons();
+                try {
+                    const res = await fetch(`{{ route('map-locations.search') }}?q=${encodeURIComponent(q)}`, {headers:{'Accept':'application/json'}});
+                    const payload = await res.json();
+                    if (!res.ok) throw new Error(payload.message||'Gagal');
+                    if (!payload.data.length) { msg.textContent='Lokasi tidak ditemukan.'; msg.className='text-sm text-slate-500'; msg.classList.remove('hidden'); return; }
+                    results.replaceChildren();
+                    payload.data.forEach(item => {
+                        const b=document.createElement('button'); b.type='button'; b.className='w-full px-4 py-2.5 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700/60'; b.textContent=item.label;
+                        b.addEventListener('click', () => {
+                            const pos={lat:item.latitude,lng:item.longitude};
+                            detailLocationMap.setView(pos,16); placeDetailMarker(pos);
+                            document.getElementById('detailLocationSearchQuery').value=item.label;
+                            results.classList.add('hidden'); msg.classList.add('hidden');
+                        });
+                        results.appendChild(b);
+                    });
+                    results.classList.remove('hidden');
+                } catch(err){ msg.textContent=err.message||'Gagal'; msg.className='text-sm text-red-600'; msg.classList.remove('hidden'); }
+                finally{ btn.disabled=false; btn.innerHTML='<i data-lucide="search" class="w-4 h-4"></i> Cari'; if(window.lucide) lucide.createIcons(); }
+            });
         </script>
     @endpush
 </x-app-layout>
