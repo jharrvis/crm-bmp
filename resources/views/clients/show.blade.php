@@ -847,12 +847,15 @@
                 district: { id: 'edit-district', placeholder: 'Pilih kecamatan' },
                 village: { id: 'edit-village', placeholder: 'Pilih kelurahan/desa' },
             };
-            const detailAreaValues = @json([
-                'province_code' => $client->province_code,
-                'regency_code' => $client->regency_code,
-                'district_code' => $client->district_code,
-                'village_code' => $client->village_code,
-            ]);
+            @php
+                $detailAreaValues = [
+                    'province_code' => $client->province_code,
+                    'regency_code' => $client->regency_code,
+                    'district_code' => $client->district_code,
+                    'village_code' => $client->village_code,
+                ];
+            @endphp
+            const detailAreaValues = @json($detailAreaValues);
 
             function resetDetailArea(level) {
                 const field = detailAreaFields[level];
