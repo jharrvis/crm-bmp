@@ -46,13 +46,13 @@ class InternetBackupSeeder extends Seeder
 
         foreach ($data as $row) {
             InternetBackup::updateOrCreate(
-                ['name' => $row['name'], 'vendor_id' => $vendorMap[$row['vendor']]],
+                ['name' => html_entity_decode($row['name']), 'vendor_id' => $vendorMap[$row['vendor']]],
                 [
                     'bandwidth_mbps' => $row['bandwidth_mbps'],
                     'monthly_cost' => $row['monthly_cost'],
-                    'address' => $row['address'],
+                    'address' => html_entity_decode($row['address']),
                     'status' => 'active',
-                    'notes' => $row['notes'] ?: null,
+                    'notes' => $row['notes'] ? html_entity_decode($row['notes']) : null,
                 ]
             );
         }
