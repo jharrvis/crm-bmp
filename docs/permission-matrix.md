@@ -103,6 +103,18 @@ Dokumen ini merangkum hubungan antara menu, permission, dan role default.
   - Admin
   - NOC
 
+### Internet Backup
+
+- Permission:
+  - `internet_backups.view`
+  - `internet_backups.create`
+  - `internet_backups.update`
+  - `internet_backups.delete`
+- Role default:
+  - Owner
+  - Admin
+  - NOC
+
 ## Catatan
 
 - Sidebar harus mengikuti permission, bukan nama role hardcoded.

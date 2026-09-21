@@ -23,4 +23,9 @@ class Vendor extends Model
     {
         return $this->hasMany(VendorContact::class);
     }
+
+    public function internetBackups()
+    {
+        return $this->hasMany(InternetBackup::class);
+    }
 }

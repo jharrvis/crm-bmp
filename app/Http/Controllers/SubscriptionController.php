@@ -1100,6 +1100,16 @@ class SubscriptionController extends Controller
             return redirect()->route('subscriptions.index')->with('success', $message);
         }
 
+        // Prevent deletion if subscription has active internet backups
+        $activeBackups = $subscription->internetBackups()->where('status', 'active')->count();
+        if ($activeBackups > 0) {
+            $message = 'Subscription tidak dapat dihapus karena masih memiliki internet backup aktif. Nonaktifkan atau ubah status backup terlebih dahulu.';
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $message], 422);
+            }
+            return back()->with('error', $message);
+        }
+
         $subscription->delete(); // Cascade defined in DB
 
         if ($request->wantsJson() || $request->ajax()) {

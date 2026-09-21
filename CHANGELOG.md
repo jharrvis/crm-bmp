@@ -2,6 +2,29 @@
 
 Semua perubahan penting pada project ini dicatat di file ini.
 
+## 2026-09-21
+
+### Added
+- **Internet Backup CRUD**: modul MVP untuk mengelola koneksi internet backup dari provider. Migration, Model (`InternetBackup` dengan `SoftDeletes`, `LogsModelActivity`), Controller (CRUD + DataTables + filter vendor/status), View (`index.blade.php` + `show.blade.php`), Route (`/internet-backups`), Sidebar (menu di Infrastruktur), Global Search, Permission (`internet_backups.view/create/update/delete`), dan 18 feature test.
+- **Relationship Subscription → InternetBackup**: `Subscription::internetBackups()` relasi balik dari subscription ke internet backups.
+- **Validasi subscription hanya connectivity**: controller hanya menerima `subscription_id` yang memiliki `SubscriptionConnectivity` record.
+- **Proteksi hapus subscription aktif**: `SubscriptionController@destroy` menolak hapus subscription yang masih memiliki internet backup aktif.
+- **Breadcrumb Internet Backup**: konfigurasi breadcrumb di `AppLayout` untuk route `internet-backups`.
+- **Permission Internet Backup di Manajemen Role**: `internet_backups` ditambahkan ke `$moduleGroups['Infrastruktur']` di `RoleController`.
+- **Migration Foreign Key Restrict**: `2026_09_21_000002_change_internet_backups_vendor_foreign_key` mengubah `cascadeOnDelete` → `restrictOnDelete` pada `vendor_id` untuk mencegah penghapusan vendor yang masih memiliki internet backup.
+- **7 Model Factories baru**: `InternetBackupFactory`, `VendorFactory`, `SubscriptionFactory`, `ClientFactory`, `PackageFactory`, `ServiceFactory`, `BranchFactory` untuk testing.
+
+### Changed
+- `docs/permission-matrix.md`: menambahkan section Internet Backup.
+- `docs/modules/infrastructure.md`: menambahkan dokumentasi modul Internet Backup.
+
+### Deployment Notes
+- Jalankan `php artisan migrate` untuk 2 migration baru:
+  - `2026_09_21_000001_create_internet_backups_table`
+  - `2026_09_21_000002_change_internet_backups_vendor_foreign_key`
+- Jalankan `php artisan db:seed --class=PermissionSeeder` untuk menambahkan permission `internet_backups` ke role Owner, Admin, NOC.
+- Jalankan `php artisan config:clear && php artisan route:clear && php artisan view:clear`.
+
 ## 2026-08-23
 
 ### Fixed

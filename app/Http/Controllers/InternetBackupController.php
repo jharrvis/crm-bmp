@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\InternetBackup;
 use App\Models\Subscription;
+use App\Models\SubscriptionConnectivity;
 use App\Models\Vendor;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
@@ -52,7 +53,7 @@ class InternetBackupController extends Controller
 
         return view('internet_backups.index', [
             'vendors' => Vendor::orderBy('name')->get(),
-            'subscriptions' => Subscription::with('client')->orderBy('subscription_code')->get(),
+            'subscriptions' => Subscription::whereHas('connectivity')->with('client')->orderBy('subscription_code')->get(),
             'statuses' => InternetBackup::STATUS_OPTIONS,
         ]);
     }
@@ -109,7 +110,7 @@ class InternetBackupController extends Controller
 
     private function validatedData(Request $request): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'vendor_id' => 'required|exists:vendors,id',
             'subscription_id' => 'nullable|exists:subscriptions,id',
             'name' => 'required|string|max:150',
@@ -136,5 +137,17 @@ class InternetBackupController extends Controller
             'status.in' => 'Status tidak valid.',
             'notes.max' => 'Catatan maksimal 1000 karakter.',
         ]);
+
+        // Validate subscription must be connectivity type
+        if (!empty($data['subscription_id'])) {
+            $hasConnectivity = SubscriptionConnectivity::where('subscription_id', $data['subscription_id'])->exists();
+            if (!$hasConnectivity) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'subscription_id' => 'Subscription harus ber jenis layanan connectivity.',
+                ]);
+            }
+        }
+
+        return $data;
     }
 }

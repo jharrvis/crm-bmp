@@ -93,6 +93,11 @@ class Subscription extends Model
         return $this->hasMany(Ticket::class);
     }
 
+    public function internetBackups()
+    {
+        return $this->hasMany(InternetBackup::class);
+    }
+
     /**
      * Get the effective price for billing.
      * Uses custom_price if set, otherwise calculates from package price.

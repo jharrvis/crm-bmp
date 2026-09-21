@@ -107,6 +107,7 @@ class AppLayout extends Component
             'documentation' => ['group' => 'Sistem', 'module_label' => 'Dokumentasi', 'index_route' => 'documentation.index'],
             'activity-logs' => ['group' => 'Sistem', 'module_label' => 'Activity Log', 'index_route' => 'activity-logs.index'],
             'settings' => ['group' => 'Sistem', 'module_label' => 'Pengaturan', 'index_route' => 'settings.index'],
+            'internet-backups' => ['group' => 'Infrastruktur', 'module_label' => 'Internet Backup', 'index_route' => 'internet-backups.index', 'param' => 'internet_backup'],
         ];
 
         $matchedPrefix = null;

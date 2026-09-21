@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Vendor;
 use App\Models\VendorContact;
+use App\Models\InternetBackup;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -151,6 +152,14 @@ class VendorController extends Controller
      */
     public function destroy(Vendor $vendor)
     {
+        if ($vendor->internetBackups()->exists()) {
+            $message = 'Vendor tidak dapat dihapus karena masih memiliki internet backup terkait.';
+            if (request()->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $message], 422);
+            }
+            return back()->with('error', $message);
+        }
+
         $vendor->delete();
         if (request()->wantsJson()) {
             return response()->json(['success' => true, 'message' => 'Vendor berhasil dihapus.']);

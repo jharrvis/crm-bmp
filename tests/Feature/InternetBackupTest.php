@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\InternetBackup;
 use App\Models\Subscription;
+use App\Models\SubscriptionConnectivity;
 use App\Models\Vendor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -238,5 +239,119 @@ class InternetBackupTest extends TestCase
         $this->actingAs($userWith)->getJson(route('search', ['q' => 'Backup']))
             ->assertOk()
             ->assertJsonFragment(['group' => 'Internet Backup']);
+    }
+
+    public function test_non_connectivity_subscription_is_rejected(): void
+    {
+        $user = $this->createUserWithPermission(['internet_backups.create']);
+        $vendor = Vendor::factory()->create();
+        $subscription = Subscription::factory()->create();
+
+        $data = [
+            'vendor_id' => $vendor->id,
+            'name' => 'Backup Test',
+            'bandwidth_mbps' => 10,
+            'status' => 'planned',
+            'subscription_id' => $subscription->id,
+        ];
+        $this->actingAs($user)->postJson(route('internet-backups.store'), $data)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('subscription_id');
+    }
+
+    public function test_connectivity_subscription_is_accepted(): void
+    {
+        $user = $this->createUserWithPermission(['internet_backups.create']);
+        $vendor = Vendor::factory()->create();
+        $subscription = Subscription::factory()->create();
+        SubscriptionConnectivity::factory()->create(['subscription_id' => $subscription->id]);
+
+        $data = [
+            'vendor_id' => $vendor->id,
+            'name' => 'Backup Test',
+            'bandwidth_mbps' => 10,
+            'status' => 'planned',
+            'subscription_id' => $subscription->id,
+        ];
+        $this->actingAs($user)->postJson(route('internet-backups.store'), $data)
+            ->assertOk()
+            ->assertJson(['success' => true]);
+    }
+
+    public function test_update_active_backup_without_subscription_is_rejected(): void
+    {
+        $user = $this->createUserWithPermission(['internet_backups.update']);
+        $vendor = Vendor::factory()->create();
+        $backup = InternetBackup::factory()->create(['vendor_id' => $vendor->id, 'status' => 'planned']);
+
+        $data = [
+            'vendor_id' => $vendor->id,
+            'name' => 'Updated Backup',
+            'bandwidth_mbps' => 20,
+            'status' => 'active',
+            'subscription_id' => null,
+        ];
+        $this->actingAs($user)->putJson(route('internet-backups.update', $backup), $data)
+            ->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'message' => 'Backup aktif harus memiliki subscription.',
+            ]);
+    }
+
+    public function test_index_only_shows_connectivity_subscriptions(): void
+    {
+        $user = $this->createUserWithPermission(['internet_backups.view']);
+        $connectivitySub = Subscription::factory()->create();
+        SubscriptionConnectivity::factory()->create(['subscription_id' => $connectivitySub->id]);
+        $nonConnectivitySub = Subscription::factory()->create();
+
+        $response = $this->actingAs($user)->get(route('internet-backups.index'));
+        $response->assertOk();
+        $response->assertSee($connectivitySub->subscription_code);
+        $response->assertDontSee($nonConnectivitySub->subscription_code);
+    }
+
+    public function test_vendor_with_internet_backups_cannot_be_deleted(): void
+    {
+        config(['app.allowed_ips_cidr' => []]);
+
+        $user = $this->createUserWithPermission(['vendors.delete']);
+        $vendor = Vendor::factory()->create();
+        InternetBackup::factory()->create(['vendor_id' => $vendor->id]);
+
+        $this->actingAs($user)->deleteJson(route('vendors.destroy', $vendor))
+            ->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'message' => 'Vendor tidak dapat dihapus karena masih memiliki internet backup terkait.',
+            ]);
+
+        $this->assertDatabaseHas('vendors', ['id' => $vendor->id]);
+    }
+
+    public function test_subscription_with_active_internet_backup_cannot_be_deleted(): void
+    {
+        $user = $this->createUserWithPermission(['subscriptions.delete']);
+        // Subscriptions routes require role:Owner|Admin|Employee|Billing|NOC|CS|Sales|Finance
+        $adminRole = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
+        $user->assignRole($adminRole);
+        $subscription = Subscription::factory()->create();
+        SubscriptionConnectivity::factory()->create(['subscription_id' => $subscription->id]);
+        $vendor = Vendor::factory()->create();
+        InternetBackup::factory()->create([
+            'vendor_id' => $vendor->id,
+            'subscription_id' => $subscription->id,
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($user)
+            ->deleteJson(route('subscriptions.destroy', $subscription))
+            ->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+            ]);
+
+        $this->assertDatabaseHas('subscriptions', ['id' => $subscription->id]);
     }
 }
