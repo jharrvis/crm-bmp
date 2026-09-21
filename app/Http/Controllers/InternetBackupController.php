@@ -82,7 +82,10 @@ class InternetBackupController extends Controller
             return response()->json($internetBackup);
         }
 
-        return view('internet_backups.show', compact('internetBackup'));
+        $vendors = Vendor::orderBy('name')->get();
+        $subscriptions = Subscription::whereHas('connectivity')->with('client')->orderBy('subscription_code')->get();
+
+        return view('internet_backups.show', compact('internetBackup', 'vendors', 'subscriptions'));
     }
 
     public function update(Request $request, InternetBackup $internetBackup)
