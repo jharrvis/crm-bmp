@@ -4,6 +4,9 @@ Semua perubahan penting pada project ini dicatat di file ini.
 
 ## 2026-09-21
 
+### Fixed
+- **Detail Mail Server Zimbra**: halaman sekarang tetap dapat dibuka ketika autentikasi atau metadata API Zimbra gagal. Field `version` dan `server_id` memakai fallback aman, sementara pesan kegagalan API tetap ditampilkan.
+
 ### Added
 - **Internet Backup CRUD**: modul MVP untuk mengelola koneksi internet backup dari provider. Migration, Model (`InternetBackup` dengan `SoftDeletes`, `LogsModelActivity`), Controller (CRUD + DataTables + filter vendor/status), View (`index.blade.php` + `show.blade.php`), Route (`/internet-backups`), Sidebar (menu di Infrastruktur), Global Search, Permission (`internet_backups.view/create/update/delete`), dan 18 feature test.
 - **Relationship Subscription → InternetBackup**: `Subscription::internetBackups()` relasi balik dari subscription ke internet backups.

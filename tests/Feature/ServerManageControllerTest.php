@@ -74,6 +74,31 @@ class ServerManageControllerTest extends TestCase
         $response->assertNotFound();
     }
 
+    public function test_mail_server_detail_renders_when_zimbra_authentication_fails(): void
+    {
+        $mailServer = HostingServer::create([
+            'name' => 'Zimbra Mail',
+            'host' => 'zimbra.bmpnet.local',
+            'port' => 7071,
+            'type' => 'zimbra',
+            'username' => 'admin@example.test',
+            'secret_key' => 'invalid-password',
+            'max_accounts' => 0,
+            'is_active' => true,
+        ]);
+        $user = $this->setUpUserWithPermission('servers.view');
+
+        Http::fake([
+            '*' => Http::response('<not-a-soap-response', 200),
+        ]);
+
+        $response = $this->actingAs($user)->get("/servers/{$mailServer->id}");
+
+        $response->assertOk()
+            ->assertSee('Autentikasi Zimbra gagal.')
+            ->assertSee('Tidak tersedia dari API');
+    }
+
     public function test_noc_role_cannot_delete_access_guard(): void
     {
         // The permission seeder must NOT grant servers.delete_user to NOC.
