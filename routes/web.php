@@ -45,6 +45,7 @@ Route::middleware(['auth', 'verified', 'ip.restrict'])->group(function () {
     Route::get('zabbix-monitors', [\App\Http\Controllers\ZabbixMonitorController::class, 'index'])->name('zabbix-monitors.index');
     Route::get('zabbix-monitors/chart-data', [\App\Http\Controllers\ZabbixMonitorController::class, 'chartData'])->name('zabbix-monitors.chart-data');
     Route::resource('ip-transits', \App\Http\Controllers\IpTransitController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
+    Route::resource('internet-backups', \App\Http\Controllers\InternetBackupController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
 
     // Domain Registrar SRS-X (Fase 1 read-only)
     Route::resource('registrar-accounts', \App\Http\Controllers\RegistrarAccountController::class)->except(['create', 'edit']);

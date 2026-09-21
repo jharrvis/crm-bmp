@@ -87,6 +87,60 @@ Mencatat koneksi IP Transit yang disediakan vendor untuk kebutuhan operasional j
 - `2026_08_07_090000_create_ip_transits_table.php`
 - `2026_08_07_100000_add_name_to_ip_transits_table.php`
 
+## Internet Backup
+
+### Tujuan
+
+Mencatat koneksi internet backup dari provider berbeda yang digunakan sebagai cadangan koneksi utama pelanggan. Modul ini bersifat inventory operasional; belum termasuk integrasi billing, monitoring provider, atau failover otomatis.
+
+### Data yang Dicatat
+
+- Vendor (master `vendors` yang sudah ada)
+- Subscription (nullable saat status `planned`)
+- Nama koneksi
+- Circuit ID
+- IP Address / CIDR
+- Gateway
+- Bandwidth dalam Mbps
+- Biaya bulanan provider (dicatat saja, tidak otomatis invoice)
+- Tanggal aktif
+- Alamat / lokasi
+- Status: `planned`, `active`, `suspended`, `terminated`
+- Catatan
+- Soft delete (`deleted_at`)
+
+### Relasi
+
+- Internet Backup belongsTo `Vendor`
+- Internet Backup belongsTo `Subscription` (nullable)
+- Subscription hasMany Internet Backup
+
+### Aturan Bisnis
+
+- Backup berstatus `active` wajib memiliki `subscription_id`.
+- Satu subscription dapat memiliki beberapa backup tanpa aturan primary/secondary.
+- Biaya bulanan hanya dicatat sebagai biaya provider internal.
+- Tidak menyimpan kredensial provider (username, password, API key).
+- Data `terminated` dipertahankan untuk histori.
+
+### Route dan Permission
+
+- Halaman: `/internet-backups`
+- Detail: `/internet-backups/{internetBackup}`
+- Permission: `internet_backups.view`, `internet_backups.create`, `internet_backups.update`, `internet_backups.delete`
+- Role default: Owner, Admin, dan NOC
+
+### Integrasi
+
+- Terhubung ke master Vendor dan Subscription.
+- Muncul pada Global Search untuk pencarian nama koneksi, circuit ID, IP, vendor, kode subscription, atau nama client.
+- Perubahan data dicatat oleh Activity Log melalui trait `LogsModelActivity`.
+- Filter DataTables berdasarkan vendor dan status.
+
+### Migration Terkait
+
+- `2026_09_21_000001_create_internet_backups_table.php`
+
 ## Server Web Hosting (HestiaCP)
 
 Detail lengkap ada di `docs/modules/web-hosting.md`. Ringkasan:

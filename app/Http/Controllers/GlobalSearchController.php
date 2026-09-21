@@ -8,6 +8,7 @@ use App\Models\Division;
 use App\Models\HostingServer;
 use App\Models\Invoice;
 use App\Models\IpTransit;
+use App\Models\InternetBackup;
 use App\Models\MetroEthernet;
 use App\Models\Package;
 use App\Models\Router;
@@ -395,6 +396,46 @@ class GlobalSearchController extends Controller
                     $transit->as_number ?: 'ip transit',
                     route('ip-transits.show', $transit),
                     route('ip-transits.show', $transit)
+                ),
+            ];
+        }
+
+        if ($user?->can('internet_backups.view')) {
+            $definitions[] = [
+                'key' => 'internet_backups',
+                'group' => 'Internet Backup',
+                'icon' => 'shield',
+                'columns' => ['id', 'vendor_id', 'subscription_id', 'name', 'circuit_id', 'ip_address', 'gateway', 'bandwidth_mbps', 'status'],
+                'query' => fn (string $query) => InternetBackup::query()
+                    ->where(function ($builder) use ($query) {
+                        $builder->where('name', 'like', "%{$query}%")
+                            ->orWhere('circuit_id', 'like', "%{$query}%")
+                            ->orWhere('ip_address', 'like', "%{$query}%")
+                            ->orWhere('gateway', 'like', "%{$query}%")
+                            ->orWhereHas('vendor', function ($vendorBuilder) use ($query) {
+                                $vendorBuilder->where('name', 'like', "%{$query}%");
+                            })
+                            ->orWhereHas('subscription', function ($subBuilder) use ($query) {
+                                $subBuilder->where('subscription_code', 'like', "%{$query}%")
+                                    ->orWhereHas('client', function ($clientBuilder) use ($query) {
+                                        $clientBuilder->where('name', 'like', "%{$query}%");
+                                    });
+                            });
+                    })
+                    ->with(['vendor:id,name', 'subscription.subscription_code', 'subscription.client.name']),
+                'map' => fn (InternetBackup $backup) => $this->quickViewResult(
+                    'internet_backup',
+                    $backup->id,
+                    $backup->name,
+                    [
+                        $backup->vendor?->name,
+                        $backup->subscription?->subscription_code,
+                        $backup->ip_address,
+                        $backup->bandwidth_mbps ? $backup->bandwidth_mbps.' Mbps' : null,
+                    ],
+                    $backup->status,
+                    route('internet-backups.show', $backup),
+                    route('internet-backups.show', $backup)
                 ),
             ];
         }

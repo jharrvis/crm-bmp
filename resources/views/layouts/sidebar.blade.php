@@ -234,6 +234,7 @@
         || auth()->user()->can('vendors.view')
         || auth()->user()->can('metro_ethernets.view')
         || auth()->user()->can('ip_transits.view')
+        || auth()->user()->can('internet_backups.view')
         || auth()->user()->can('zabbix_monitors.view')
         || auth()->user()->can('maps.view')
     )
@@ -243,6 +244,7 @@
             || request()->routeIs('vendors.*')
             || request()->routeIs('metro-ethernets.*')
             || request()->routeIs('ip-transits.*')
+            || request()->routeIs('internet-backups.*')
             || request()->routeIs('zabbix-monitors.*')
             || request()->routeIs('operational-map.*');
     @endphp
@@ -291,6 +293,12 @@
             <a href="{{ route('ip-transits.index') }}"
                 class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('ip-transits.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
                 IP Transit
+            </a>
+            @endcan
+            @can('internet_backups.view')
+            <a href="{{ route('internet-backups.index') }}"
+                class="text-sm py-2 hover:text-blue-600 dark:hover:text-blue-400 text-left transition-colors px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ request()->routeIs('internet-backups.*') ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400' }}">
+                Internet Backup
             </a>
             @endcan
             @can('zabbix_monitors.view')
