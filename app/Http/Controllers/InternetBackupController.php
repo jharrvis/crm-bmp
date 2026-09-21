@@ -84,8 +84,9 @@ class InternetBackupController extends Controller
 
         $vendors = Vendor::orderBy('name')->get();
         $subscriptions = Subscription::whereHas('connectivity')->with('client')->orderBy('subscription_code')->get();
+        $statuses = InternetBackup::STATUS_OPTIONS;
 
-        return view('internet_backups.show', compact('internetBackup', 'vendors', 'subscriptions'));
+        return view('internet_backups.show', compact('internetBackup', 'vendors', 'subscriptions', 'statuses'));
     }
 
     public function update(Request $request, InternetBackup $internetBackup)
