@@ -40,6 +40,7 @@ class InternetBackupController extends Controller
             $totalCost = (clone $query)->sum('monthly_cost');
 
             return DataTables::of($query)
+                ->escapeColumns([])
                 ->addColumn('vendor_name', fn (InternetBackup $backup) => $backup->vendor?->name ?? '-')
                 ->addColumn('subscription_code', fn (InternetBackup $backup) => $backup->subscription?->subscription_code ?? '-')
                 ->addColumn('client_name', fn (InternetBackup $backup) => $backup->subscription?->client?->name ?? '-')
